@@ -1,3 +1,10 @@
+## [1.7.3](https://github.com/jarrodek/lupa/compare/v1.7.2...v1.7.3) (2026-05-16)
+
+
+### Bug Fixes
+
+* update dependencies and move playwright and trace-mapping to production dependencies ([29f9453](https://github.com/jarrodek/lupa/commit/29f94535a2e942bf10d295fe5e092a769b236500))
+
 ## [1.7.2](https://github.com/jarrodek/lupa/compare/v1.7.1...v1.7.2) (2026-05-16)
 
 
