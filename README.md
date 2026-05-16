@@ -110,6 +110,25 @@ For the ultimate developer experience, run it in **Watch Mode**:
 npx tsx bin/test.ts --watch
 ```
 
+## AI Agent Integration (MCP)
+
+Lupa features a built-in Model Context Protocol (MCP) server that empowers AI agents inside your IDE (like Cline, Roo, or Cursor) to programmatically discover, filter, and run your test suites. 
+
+To connect an agent to Lupa, add the following configuration to your IDE's MCP settings (adjusting the `-c` command to match how you run your test script):
+
+```json
+{
+  "mcpServers": {
+    "lupa": {
+      "command": "npx",
+      "args": ["lupa", "mcp", "-c", "npx tsx bin/test.ts"]
+    }
+  }
+}
+```
+
+Once connected, your AI assistant will be able to efficiently list the test tree without executing it, and intelligently isolate and run only the specific test suites or tags it needs to verify while writing or refactoring your code.
+
 ## Troubleshooting
 
 - **Watch Mode Collisions:** You cannot run `npx tsx bin/test.ts` with both `--watch` and a parallel suite runner like `concurrently`. Multiple browser instances and Vite dev servers will conflict. Use parallelization strictly in headless CI environments.

@@ -43,6 +43,7 @@ export class EventManager {
     this.#emitter.on('test:end', this.#handleTestEnd.bind(this))
     this.#emitter.on('uncaught:exception', this.#handleUncaughtException.bind(this))
     this.#emitter.on('runner:pinned_tests', (data) => this.#passThrough('runner:pinned_tests', data))
+    this.#emitter.on('runner:list', (data) => this.#passThrough('runner:list', data))
   }
 
   #serializeError(error: TestError): TestError {

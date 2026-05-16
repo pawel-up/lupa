@@ -191,6 +191,7 @@ export class ConfigManager {
       parallel,
       concurrency,
       watch: this.#config.watch ?? this.#cliArgs.watch === true,
+      list: this.#config.list ?? this.#cliArgs.list === true,
     }
 
     /**

@@ -142,6 +142,46 @@ export class WebRunner extends Macroable {
       this.#emitter.emit('runner:pinned_tests', { tests: pinnedTests })
     }
 
+    if (window.__lupa__?.config?.list) {
+      const listPayload = {
+        suites: this.suites.map((suite) => {
+          const mapTest = (t: any) => ({
+            title: t.title,
+            tags: t.options.tags || [],
+            timeout: t.options.timeout,
+            retries: t.options.retries,
+            isSkipped: !!t.options.isSkipped,
+            isTodo: !!t.options.isTodo,
+            meta: t.options.meta,
+          })
+
+          const tests = []
+          const groups = []
+
+          for (const item of suite.stack) {
+            if (item instanceof Group) {
+              groups.push({
+                title: item.title,
+                tests: item.tests.map(mapTest),
+                groups: [], // nested groups not supported
+              })
+            } else {
+              tests.push(mapTest(item))
+            }
+          }
+
+          return {
+            name: suite.name,
+            groups,
+            tests,
+          }
+        }),
+      }
+
+      await this.#emitter.emit('runner:list', listPayload)
+      return
+    }
+
     for (const suite of this.suites) {
       /**
        * Skip tests in bail mode when there is an error

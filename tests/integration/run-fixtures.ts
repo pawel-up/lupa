@@ -1,6 +1,6 @@
 import path from 'node:path'
 import { configure, processCLIArgs, run } from '../../src/runner/index.js'
-import { progress } from '../../src/reporters/index.js'
+import { progress, json } from '../../src/reporters/index.js'
 
 processCLIArgs(process.argv.slice(2))
 
@@ -9,7 +9,7 @@ configure({
   testPlugins: [path.join(process.cwd(), 'src/assert/index.ts')],
   reporters: {
     activated: ['progress'],
-    list: [progress()],
+    list: [progress(), json()],
   },
   harness: {
     stylesheets: [path.join(process.cwd(), 'tests/fixtures/test.styles.css')],

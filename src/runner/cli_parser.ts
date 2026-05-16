@@ -37,7 +37,7 @@ const OPTIONS = {
     'browser',
     'vite-config',
   ],
-  boolean: ['help', 'matchAll', 'failed', 'bail', 'listPinned', 'watch', 'verbose'],
+  boolean: ['help', 'matchAll', 'failed', 'bail', 'listPinned', 'watch', 'verbose', 'list'],
   alias: {
     forceExit: 'force-exit',
     matchAll: 'match-all',
@@ -71,6 +71,7 @@ ${colors.green('--watch')}                     ${colors.dim('Watch for file chan
 ${colors.green('--verbose')}                   ${colors.dim('Enable verbose logging, including browser telemetry')}
 ${colors.green('--browser')}                   ${colors.dim('Specify the browser to run tests in (chromium, firefox, webkit)')}
 ${colors.green('--vite-config')}               ${colors.dim('Path to a custom Vite configuration file')}
+${colors.green('--list')}                      ${colors.dim('Dry-run tests and output the list of suites and tests')}
 ${colors.green('-h, --help')}                  ${colors.dim('View help')}
 
 ${colors.yellow('Examples:')}

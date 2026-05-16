@@ -23,6 +23,7 @@ declare global {
         timeout?: number
         retries?: number
         filters?: any
+        list?: boolean
       }
       testPlugins?: (string | [string, any])[]
     }

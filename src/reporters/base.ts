@@ -25,6 +25,7 @@ import type {
   GroupStartNode,
   SuiteStartNode,
   RunnerStartNode,
+  RunnerListNode,
   BaseReporterOptions,
   RunnerEvents,
 } from '../types.js'
@@ -40,6 +41,7 @@ export type {
   GroupStartNode,
   SuiteStartNode,
   RunnerStartNode,
+  RunnerListNode,
   BaseReporterOptions,
 } from '../types.js'
 
@@ -304,6 +306,11 @@ export abstract class BaseReporter {
   protected end?(node: RunnerEndNode): Promise<void> | void
 
   /**
+   * Invoked when the runner is in list mode and dumps the test tree.
+   */
+  protected onRunnerList?(node: RunnerListNode): void
+
+  /**
    * Print tests summary
    */
   protected async printSummary(summary: RunnerSummary) {
@@ -382,6 +389,12 @@ export abstract class BaseReporter {
     emitter.on('runner:end', async (payload) => {
       if (this.end) {
         await this.end(payload as unknown as RunnerEndNode)
+      }
+    })
+
+    emitter.on('runner:list', (payload) => {
+      if (this.onRunnerList) {
+        this.onRunnerList(payload as unknown as RunnerListNode)
       }
     })
 

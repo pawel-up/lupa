@@ -125,6 +125,10 @@ export type CLIArgs = {
    * Concurrency level
    */
   concurrency?: string | number
+  /**
+   * Whether to output the list of suites and tests
+   */
+  list?: boolean
 } & Record<string, string | string[] | boolean | number>
 
 /**
@@ -330,6 +334,11 @@ export interface BaseConfig {
    * Can be 'auto' or a specific number.
    */
   concurrency?: number | 'auto'
+
+  /**
+   * Whether to output the list of suites and tests
+   */
+  list?: boolean
 }
 
 /**
@@ -432,6 +441,11 @@ export type NormalizedBaseConfig = Required<
    * Number of concurrent pages per browser
    */
   concurrency: number | 'auto'
+
+  /**
+   * Whether to output the list of suites and tests
+   */
+  list: boolean
 }
 
 /**

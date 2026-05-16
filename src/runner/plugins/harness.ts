@@ -53,6 +53,7 @@ export default function harnessPlugin(
             filters: runnerConfig?.filters,
             timeout: runnerConfig?.timeout,
             retries: runnerConfig?.retries,
+            list: runnerConfig?.list,
           },
         })
 

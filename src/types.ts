@@ -494,6 +494,58 @@ export interface UncaughtExceptionNode {
 }
 
 /**
+ * Test node inside the test discovery list tree.
+ */
+export interface RunnerListTestNode {
+  /** The title of the test. */
+  title: string
+  /** An array of tags assigned to the test. */
+  tags: string[]
+  /** The timeout for the test execution in milliseconds. */
+  timeout: number
+  /** The number of retries configured for the test, if any. */
+  retries?: number
+  /** Whether the test has been marked as skipped. */
+  isSkipped: boolean
+  /** Whether the test has been marked as a TODO. */
+  isTodo: boolean
+  /** Metadata associated with the test, such as its location. */
+  meta: TestMetadata
+}
+
+/**
+ * Group node inside the test discovery list tree.
+ */
+export interface RunnerListGroupNode {
+  /** The title of the test group. */
+  title: string
+  /** A collection of tests directly within this group. */
+  tests: RunnerListTestNode[]
+  /** A collection of nested groups within this group. */
+  groups: RunnerListGroupNode[]
+}
+
+/**
+ * Suite node inside the test discovery list tree.
+ */
+export interface RunnerListSuiteNode {
+  /** The name of the test suite. */
+  name: string
+  /** A collection of test groups belonging to this suite. */
+  groups: RunnerListGroupNode[]
+  /** A collection of tests directly belonging to this suite (not inside any group). */
+  tests: RunnerListTestNode[]
+}
+
+/**
+ * Data payload shared with the "runner:list" telemetry event.
+ */
+export interface RunnerListNode {
+  /** A collection of all suites discovered during the dry-run. */
+  suites: RunnerListSuiteNode[]
+}
+
+/**
  * Runner pinned tests
  */
 export interface RunnerPinnedTestsNode {
@@ -549,6 +601,10 @@ export interface FrameworkEvents {
    */
   'runner:pinned_tests': RunnerPinnedTestsNode
   /**
+   * Emitted when the runner is in list mode and dumps the test tree
+   */
+  'runner:list': RunnerListNode
+  /**
    * Emitted when the runner starts.
    */
   'runner:start': RunnerStartNode
@@ -594,6 +650,10 @@ export interface BrowserTelemetryEvents {
    * Emitted when the runner finds pinned tests.
    */
   'runner:pinned_tests': RunnerPinnedTestsNode & Partial<CorrelationIds>
+  /**
+   * Emitted when the runner is in list mode and dumps the test tree
+   */
+  'runner:list': RunnerListNode & Partial<CorrelationIds>
   /**
    * Emitted when the runner starts.
    */

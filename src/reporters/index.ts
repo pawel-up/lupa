@@ -8,6 +8,7 @@
 import { DotReporter } from './dot.js'
 import { NdJSONReporter } from './ndjson.js'
 import { GithubReporter } from './github.js'
+import { JSONReporter } from './json.js'
 import type { BaseReporterOptions, NamedReporterContract } from '../types.js'
 
 import { ProgressReporter } from './progress.js'
@@ -17,7 +18,7 @@ export { BaseReporterOptions, NamedReporterContract }
 /**
  * Built-in reporter names.
  */
-export const reporterNames = ['dot', 'ndjson', 'github', 'progress'] as const
+export const reporterNames = ['dot', 'ndjson', 'github', 'progress', 'json'] as const
 
 /**
  * Create an instance of the progress reporter
@@ -58,5 +59,15 @@ export const github: (options?: BaseReporterOptions) => NamedReporterContract = 
   return {
     name: 'github',
     handler: (...args) => new GithubReporter(options).boot(...args),
+  }
+}
+
+/**
+ * Create an instance of the json reporter
+ */
+export const json: (options?: BaseReporterOptions) => NamedReporterContract = (options) => {
+  return {
+    name: 'json',
+    handler: (...args) => new JSONReporter(options).boot(...args),
   }
 }
