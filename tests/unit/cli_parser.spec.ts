@@ -30,6 +30,6 @@ test('CliParser', async (t) => {
     const help = parser.getHelp()
     assert.ok(help.includes('--tests'))
     assert.ok(help.includes('--browser'))
-    assert.ok(help.includes('@jarrodek/lupa'))
+    assert.ok(help.includes('@pawel-up/lupa'))
   })
 })

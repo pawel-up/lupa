@@ -2,7 +2,7 @@
  * Core testing primitives for Lupa including DOM fixtures and testing helpers.
  *
  * @packageDocumentation
- * @module @jarrodek/lupa/testing
+ * @module @pawel-up/lupa/testing
  */
 // All modules from this folder are executed in the browser and can only use browser APIs.
 export { test, fixture, html } from './api.js'

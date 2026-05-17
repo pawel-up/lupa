@@ -105,6 +105,21 @@ export class Orchestrator {
     return this.browserNames[0]
   }
 
+  #completionPromise?: Promise<number>
+  #resolveCompletion?: (code: number) => void
+
+  /**
+   * Returns a promise that resolves with the exit code when the test run completes.
+   */
+  async waitForCompletion(): Promise<number> {
+    if (!this.#completionPromise) {
+      this.#completionPromise = new Promise((resolve) => {
+        this.#resolveCompletion = resolve
+      })
+    }
+    return this.#completionPromise
+  }
+
   /**
    * Boots the test environment.
    * Initializes the exceptions monitor, server, browser instances, and test pools.
@@ -153,6 +168,10 @@ export class Orchestrator {
       const exitCode =
         (this.activeNodeRunner && this.activeNodeRunner.failed) || this.exceptionsManager.hasErrors ? 1 : 0
 
+      if (this.#resolveCompletion) {
+        this.#resolveCompletion(exitCode)
+      }
+
       if (!this.isWatchMode) {
         await this.shutdown(exitCode)
       } else {
@@ -167,8 +186,9 @@ export class Orchestrator {
    * all browser instances and the Vite server before exiting the process.
    *
    * @param exitCode - The process exit code to terminate with (0 for success, 1 for failure).
+   * @param options - Additional options, e.g., to prevent terminating the Node process.
    */
-  async shutdown(exitCode: number) {
+  async shutdown(exitCode: number, options: { preventExit?: boolean } = {}) {
     if (this.isShuttingDown) return
     this.isShuttingDown = true
     debug('shutting down (exit code: %d)', exitCode)
@@ -222,7 +242,9 @@ export class Orchestrator {
       exitCode = 1
     }
 
-    process.exit(exitCode)
+    if (!options.preventExit) {
+      process.exit(exitCode)
+    }
   }
 
   /**
@@ -265,6 +287,10 @@ export class Orchestrator {
       this.globalTimeout = setTimeout(async () => {
         console.error('\n\nGlobal timeout reached. The test run took too long and was forcefully terminated.')
         console.error('Consider increasing the timeout or checking for infinite loops in your tests.\n')
+
+        if (this.#resolveCompletion) {
+          this.#resolveCompletion(1)
+        }
         await this.shutdown(1)
       }, DEFAULT_GLOBAL_TIMEOUT)
       this.globalTimeout?.unref()

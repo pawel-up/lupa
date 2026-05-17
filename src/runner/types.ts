@@ -254,8 +254,8 @@ export interface BaseConfig {
    * and config.
    *
    * @example
-   * testPlugins: ['@jarrodek/lupa/assert']
-   * testPlugins: [['@jarrodek/lupa/assert', { openApi: false }]]
+   * testPlugins: ['@pawel-up/lupa/assert']
+   * testPlugins: [['@pawel-up/lupa/assert', { openApi: false }]]
    */
   testPlugins?: TestPluginEntry[]
 

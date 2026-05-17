@@ -25,12 +25,11 @@ function getTemplateWithSuites(reportersList: string[], suitesList: string[], is
     .join(',\n')
 
   const imports =
-    `import { configure, processCLIArgs, run } from '@jarrodek/lupa/runner'
-import reporters from '@jarrodek/lupa/reporters'` +
-    (isTS ? `\nimport type { Assert } from '@jarrodek/lupa/assert'` : '')
+    `import { defineConfig } from '@pawel-up/lupa/runner'\nimport reporters from '@pawel-up/lupa/reporters'` +
+    (isTS ? `\nimport type { Assert } from '@pawel-up/lupa/assert'` : '')
 
   const declarations = isTS
-    ? `\n\ndeclare module '@jarrodek/lupa/testing' {
+    ? `\n\ndeclare module '@pawel-up/lupa/testing' {
   interface TestContext {
     assert: Assert
   }
@@ -39,10 +38,8 @@ import reporters from '@jarrodek/lupa/reporters'` +
 
   return `${imports}
 
-processCLIArgs(process.argv.slice(2))
-
-configure({
-  testPlugins: ['@jarrodek/lupa/assert'],
+export default defineConfig({
+  testPlugins: ['@pawel-up/lupa/assert'],
   reporters: {
     activated: [${repsArr}],
     list: [${reps}],
@@ -50,9 +47,7 @@ configure({
   suites: [
 ${suitesStr}
   ],
-})
-
-run()${declarations}`
+})${declarations}`
 }
 
 function getTemplateWithoutSuites(reportersList: string[], isTS: boolean) {
@@ -61,12 +56,11 @@ function getTemplateWithoutSuites(reportersList: string[], isTS: boolean) {
   const ext = isTS ? 'ts' : 'js'
 
   const imports =
-    `import { configure, processCLIArgs, run } from '@jarrodek/lupa/runner'
-import reporters from '@jarrodek/lupa/reporters'` +
-    (isTS ? `\nimport type { Assert } from '@jarrodek/lupa/assert'` : '')
+    `import { defineConfig } from '@pawel-up/lupa/runner'\nimport reporters from '@pawel-up/lupa/reporters'` +
+    (isTS ? `\nimport type { Assert } from '@pawel-up/lupa/assert'` : '')
 
   const declarations = isTS
-    ? `\n\ndeclare module '@jarrodek/lupa/testing' {
+    ? `\n\ndeclare module '@pawel-up/lupa/testing' {
   interface TestContext {
     assert: Assert
   }
@@ -75,23 +69,19 @@ import reporters from '@jarrodek/lupa/reporters'` +
 
   return `${imports}
 
-processCLIArgs(process.argv.slice(2))
-
-configure({
+export default defineConfig({
   files: ['{TESTS_LOCATION}/**/*.test.${ext}', '{TESTS_LOCATION}/**/*.spec.${ext}'],
-  testPlugins: ['@jarrodek/lupa/assert'],
+  testPlugins: ['@pawel-up/lupa/assert'],
   reporters: {
     activated: [${repsArr}],
     list: [${reps}],
   },
-})
-
-run()${declarations}`
+})${declarations}`
 }
 
 function getTestTemplate(isTS: boolean) {
   const ext = isTS ? 'ts' : 'js'
-  return `import { test } from '@jarrodek/lupa/testing'
+  return `import { test } from '@pawel-up/lupa/testing'
 
 test.group('Example Group', () => {
   test('example.spec.${ext}', async ({ assert }) => {
@@ -173,14 +163,17 @@ class InitCommand {
 
   private async initializeConfigPath(): Promise<void> {
     const ext = this.isTS ? 'ts' : 'js'
-    const defaultName = `./bin/test.${ext}`
+    const defaultName = `lupa.config.${ext}`
     if (existsSync(path.join(this.cwd, defaultName))) {
       const overwrite = await confirm({ message: `File ${defaultName} already exists. Overwrite?`, default: false })
       if (overwrite) {
         this.configPath = defaultName
         this.shouldBackupConfig = true
       } else {
-        this.configPath = await input({ message: 'Enter new path for test config file:', default: `./bin/lupa.${ext}` })
+        this.configPath = await input({
+          message: 'Enter new path for test config file:',
+          default: `lupa.config.${ext}`,
+        })
       }
     } else {
       this.configPath = await input({ message: 'Path to the test configuration file:', default: defaultName })

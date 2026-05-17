@@ -3,7 +3,7 @@
 import { Command } from 'commander'
 import { initCommand } from './cli/commands/init.js'
 import { skillsCommand } from './cli/commands/skills.js'
-import { mcpCommand } from './cli/commands/mcp.js'
+import { testCommand } from './cli/commands/test.js'
 import readPackageJson from './cli/package_info.js'
 
 import useColors from '@poppinss/colors'
@@ -31,7 +31,7 @@ program.name('lupa').description(packageJson.description).version(packageJson.ve
 
 program.addCommand(initCommand)
 program.addCommand(skillsCommand)
-program.addCommand(mcpCommand)
+program.addCommand(testCommand)
 
 program.parseAsync(process.argv).catch((err) => {
   const e = err as Error

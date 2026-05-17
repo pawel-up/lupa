@@ -6,7 +6,7 @@ Lifecycle hooks are functions you can run before or after a test or a group of t
 - The `teardown` hooks are called after the action.
 
 ```ts
-import { test } from '@jarrodek/lupa/testing'
+import { test } from '@pawel-up/lupa/testing'
 
 test('add two numbers', () => {
   console.log('executed in the test')
@@ -34,7 +34,7 @@ Defining hooks on every single test is not practical. Therefore, you can wrap yo
 In the following example, the hooks will be executed before and after **every test** inside the group.
 
 ```ts
-import { test } from '@jarrodek/lupa/testing'
+import { test } from '@pawel-up/lupa/testing'
 
 test.group('Maths.add', (group) => {
   
@@ -61,7 +61,7 @@ test.group('Maths.add', (group) => {
 Similar to tests, groups can also have lifecycle hooks. The hooks defined directly on a group will run once **before all the tests** and once **after all the tests**.
 
 ```ts
-import { test } from '@jarrodek/lupa/testing'
+import { test } from '@pawel-up/lupa/testing'
 
 test.group('Maths.add', (group) => {
   
@@ -90,7 +90,7 @@ Lupa allows you to return cleanup functions from your setup hooks. The sole purp
 For example, if you create an HTTP mock inside the setup hook, you can use the cleanup function to remove it.
 
 ```ts
-import { test } from '@jarrodek/lupa/testing'
+import { test } from '@pawel-up/lupa/testing'
 import { mockFetch, restoreFetch } from 'my-mocking-lib'
 
 test.group('Users.create', (group) => {
@@ -162,7 +162,7 @@ In addition to returning cleanup functions from `setup` blocks, Lupa allows you 
 This is especially useful for one-off resources.
 
 ```ts
-import { test } from '@jarrodek/lupa/testing'
+import { test } from '@pawel-up/lupa/testing'
 
 test('tests a generic listener', ({ cleanup }) => {
   

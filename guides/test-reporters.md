@@ -9,8 +9,8 @@ A test reporter can choose the format and the destination where it wants to disp
 Reporters are registered when configuring Lupa via the `configure` method.
 
 ```ts
-import { configure } from '@jarrodek/lupa/runner'
-import * as reporters from '@jarrodek/lupa/reporters'
+import { configure } from '@pawel-up/lupa/runner'
+import * as reporters from '@pawel-up/lupa/reporters'
 
 configure({
   reporters: {
@@ -70,8 +70,8 @@ The `github` reporter reports errors as annotations when running tests as part o
 The reporter is activated automatically in the GitHub Actions environment. However, if you have overridden the `reporters` property inside the configuration, you must enable it manually:
 
 ```ts
-import { configure } from '@jarrodek/lupa/runner'
-import * as reporters from '@jarrodek/lupa/reporters'
+import { configure } from '@pawel-up/lupa/runner'
+import * as reporters from '@pawel-up/lupa/reporters'
 
 const activated = ['progress']
 // Or using multiple reporters:
@@ -95,15 +95,15 @@ configure({
 
 ## Creating a custom reporter
 
-You can create and register custom test reporters with Lupa. A test reporter must implement the core reporting lifecycle by extending `BaseReporter` from `@jarrodek/lupa/reporters` or by registering a custom class conforming to the reporting contract.
+You can create and register custom test reporters with Lupa. A test reporter must implement the core reporting lifecycle by extending `BaseReporter` from `@pawel-up/lupa/reporters` or by registering a custom class conforming to the reporting contract.
 
 ### Defining a reporter
 
 Let's start by creating a custom reporter class. You can implement methods to listen for different events emitted during the test lifecycle.
 
 ```ts
-import { BaseReporter } from '@jarrodek/lupa/reporters/base'
-import type { TestStartNode, TestEndNode, GroupStartNode, GroupEndNode, SuiteStartNode, SuiteEndNode, RunnerStartNode, RunnerEndNode } from '@jarrodek/lupa/reporters/base'
+import { BaseReporter } from '@pawel-up/lupa/reporters/base'
+import type { TestStartNode, TestEndNode, GroupStartNode, GroupEndNode, SuiteStartNode, SuiteEndNode, RunnerStartNode, RunnerEndNode } from '@pawel-up/lupa/reporters/base'
 
 class MyCustomReporter extends BaseReporter {
   static name = 'custom'

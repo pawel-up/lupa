@@ -2,7 +2,7 @@
 
 Lupa provides a lightweight, interactive Command-Line Interface to help you quickly scaffold testing environments and import agent skills into your workspace. 
 
-Unlike other frameworks, Lupa's CLI is **only for scaffolding and setup**. You execute your tests directly via your custom configuration script (e.g., `npx tsx bin/test.ts`), keeping the execution flow entirely within your control.
+Unlike other frameworks, Lupa's CLI is **only for scaffolding and setup**. You execute your tests directly via your custom configuration script (e.g., `npx lupa test`), keeping the execution flow entirely within your control.
 
 ---
 
@@ -16,7 +16,7 @@ npx lupa init
 
 ### Interactive Flow
 By default, `lupa init` runs in interactive mode and will prompt you to:
-1. Provide a path for the configuration file (defaults to `./bin/test.ts`).
+1. Provide a path for the configuration file (defaults to `./lupa.config.ts`).
 2. Specify the target directory for your test files (e.g., `./tests`).
 3. Select which test suites you want to organize your project into (e.g., `unit`, `functional`, `e2e`).
 4. Select the reporters you wish to activate (e.g., `spec`, `dot`).
@@ -25,7 +25,7 @@ By default, `lupa init` runs in interactive mode and will prompt you to:
 You can bypass the interactive prompts by providing the required flags. This is particularly useful for automated setup scripts or CI environments.
 
 ```bash
-npx lupa init --config ./bin/test.ts --test-dir ./tests --suites unit,functional --reporters spec --yes
+npx lupa init --config ./lupa.config.ts --test-dir ./tests --suites unit,functional --reporters spec --yes
 ```
 
 **Options:**

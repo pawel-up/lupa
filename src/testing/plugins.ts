@@ -2,7 +2,7 @@
  * Advanced plugin and test runner authoring APIs for Lupa.
  *
  * @packageDocumentation
- * @module @jarrodek/lupa/testing/api
+ * @module @pawel-up/lupa/testing/api
  */
 export { Test } from './test/main.js'
 export { Suite } from './suite/main.js'

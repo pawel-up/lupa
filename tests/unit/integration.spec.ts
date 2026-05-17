@@ -11,14 +11,14 @@ test('Integration: Lupa Framework End-to-End', async (t) => {
     'executes browser tests, reports telemetry, and exits with correct code',
     { timeout: TIMEOUT },
     async () => {
-      const runnerPath = path.join(process.cwd(), 'tests', 'integration', 'run-fixtures.ts')
+      const runnerPath = path.join(process.cwd(), 'bin', 'lupa.ts')
 
       const { exitCode, stdout, stderr } = await new Promise<{
         exitCode: number | null
         stdout: string
         stderr: string
       }>((resolve, reject) => {
-        const child = fork(runnerPath, [], {
+        const child = fork(runnerPath, ['test'], {
           execArgv: ['--import', 'tsx'],
           cwd: process.cwd(),
           env: {
@@ -51,6 +51,59 @@ test('Integration: Lupa Framework End-to-End', async (t) => {
         output.includes('Tests  50 passed, 1 skipped (51)'),
         `Summary should report 50 passed and 1 skipped. Actual output: ${output}`
       )
+    }
+  )
+
+  await t.test(
+    'executes programmatic test run and returns strictly typed JSON reporter payload',
+    { timeout: TIMEOUT },
+    async () => {
+      const runnerPath = path.join(process.cwd(), 'tests', 'integration', 'run-programmatic.ts')
+
+      const { exitCode, stdout, stderr } = await new Promise<{
+        exitCode: number | null
+        stdout: string
+        stderr: string
+      }>((resolve, reject) => {
+        const child = fork(runnerPath, [], {
+          execArgv: ['--import', 'tsx'],
+          cwd: process.cwd(),
+          env: {
+            ...process.env,
+            FORCE_COLOR: '0',
+            CI: '1',
+          },
+          stdio: 'pipe',
+        })
+
+        let out = ''
+        let err = ''
+        child.stdout?.on('data', (data) => (out += data))
+        child.stderr?.on('data', (data) => (err += data))
+
+        child.on('exit', (code) => {
+          resolve({ exitCode: code, stdout: out, stderr: err })
+        })
+
+        child.on('error', reject)
+      })
+
+      const output = stdout + '\n' + stderr
+
+      assert.strictEqual(exitCode, 0, `Expected runner to exit with code 0. Output:\n${output}`)
+
+      const resultMarker = '___PROGRAMMATIC_RESULT___'
+      const lineWithResult = stdout.split('\n').find((line) => line.startsWith(resultMarker))
+
+      assert.ok(lineWithResult, 'Could not find the programmatic result in stdout')
+
+      const rawJson = lineWithResult.replace(resultMarker, '')
+      const payload = JSON.parse(rawJson)
+
+      assert.strictEqual(payload.success, true)
+      assert.strictEqual(payload.summary.total, 7) // 7 tests in dummy.spec.ts
+      assert.strictEqual(payload.summary.passed, 7)
+      assert.strictEqual(payload.failures.length, 0)
     }
   )
 })

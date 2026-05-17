@@ -7,7 +7,7 @@ We all write tests that deal with exceptions and promise rejections. For example
 Usually, you might wrap these function calls inside a `try/catch` statement and write assertions for the error object.
 
 ```ts
-import { test } from '@jarrodek/lupa/testing'
+import { test } from '@pawel-up/lupa/testing'
 
 test('validate property', ({ assert }) => {
   try {
@@ -34,7 +34,7 @@ The `assert.throws` method accepts a function as the first parameter and the err
 This method only works with synchronous function calls.
 
 ```ts
-import { test } from '@jarrodek/lupa/testing'
+import { test } from '@pawel-up/lupa/testing'
 
 test('validate property', ({ assert }) => {
   assert.throws(
@@ -49,7 +49,7 @@ test('validate property', ({ assert }) => {
 Similar to `assert.throws`, the `assert.rejects` method also accepts a function and the error message for assertion. However, in this case, the callback function **must** return a Promise.
 
 ```ts
-import { test } from '@jarrodek/lupa/testing'
+import { test } from '@pawel-up/lupa/testing'
 
 test('do not fetch invalid user', async ({ assert }) => {
   
@@ -68,7 +68,7 @@ An elegant alternative API that is completely independent of the assertion libra
 Let's re-write the above two examples with a high-order assertion:
 
 ```ts
-import { test } from '@jarrodek/lupa/testing'
+import { test } from '@pawel-up/lupa/testing'
 
 test('validate property', () => {
   // If this doesn't throw, the test fails
@@ -78,7 +78,7 @@ test('validate property', () => {
 ```
 
 ```ts
-import { test } from '@jarrodek/lupa/testing'
+import { test } from '@pawel-up/lupa/testing'
 
 test('do not fetch invalid user', async () => {
   

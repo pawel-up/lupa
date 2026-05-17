@@ -1,6 +1,6 @@
 # Browser Commands
 
-Lupa provides a powerful set of commands to interact with the browser and DOM elements natively during your tests. These commands are available via the `@jarrodek/lupa/commands` module.
+Lupa provides a powerful set of commands to interact with the browser and DOM elements natively during your tests. These commands are available via the `@pawel-up/lupa/commands` module.
 
 The commands are fully typed and use RPC to communicate directly with the underlying browser (Playwright) runner.
 
@@ -10,7 +10,7 @@ The `query()` function allows you to select elements on the page using a variety
 but it is not the same. Only methods relevant to testing (in our opinion) are exposed.
 
 ```ts
-import { query } from '@jarrodek/lupa/commands'
+import { query } from '@pawel-up/lupa/commands'
 
 // Semantic locators
 await query({ role: 'button' }).click()
@@ -54,7 +54,7 @@ In addition to interacting with specific elements, you can also manipulate the g
 Sets the viewport size of the browser.
 
 ```ts
-import { setViewport } from '@jarrodek/lupa/commands'
+import { setViewport } from '@pawel-up/lupa/commands'
 
 await setViewport({
   width: 1024,
@@ -67,7 +67,7 @@ await setViewport({
 Emulates browser media features, such as screen/print or color schemes, which is useful for testing CSS media queries like dark mode.
 
 ```ts
-import { emulateMedia } from '@jarrodek/lupa/commands'
+import { emulateMedia } from '@pawel-up/lupa/commands'
 
 // Test dark mode
 await emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' })
@@ -81,7 +81,7 @@ await emulateMedia({ media: 'print' })
 Sends a string of keys for the browser to press natively (all at once like a shortcut, or typed in sequence).
 
 ```ts
-import { sendKeys } from '@jarrodek/lupa/commands'
+import { sendKeys } from '@pawel-up/lupa/commands'
 
 // Press a shortcut
 await sendKeys({ press: 'Shift+a' })
@@ -98,7 +98,7 @@ Sends raw mouse events (move, click, down, up) to specific coordinates.
 *WARNING*: When holding down a mouse button, the mouse stays in that state until explicitly released. Use `resetMouse()` to clean up state between tests.
 
 ```ts
-import { sendMouse } from '@jarrodek/lupa/commands'
+import { sendMouse } from '@pawel-up/lupa/commands'
 
 await sendMouse({ type: 'move', position: [100, 100] })
 await sendMouse({ type: 'down', button: 'middle' })
@@ -109,7 +109,7 @@ await sendMouse({ type: 'down', button: 'middle' })
 Resets the mouse position to `(0, 0)` and releases any held mouse buttons. Highly recommended in an `afterEach` hook if you are using `sendMouse`.
 
 ```ts
-import { resetMouse } from '@jarrodek/lupa/commands'
+import { resetMouse } from '@pawel-up/lupa/commands'
 
 await resetMouse()
 ```
@@ -119,7 +119,7 @@ await resetMouse()
 Selects an option within a `<select>` element by its value.
 
 ```ts
-import { selectOption } from '@jarrodek/lupa/commands'
+import { selectOption } from '@pawel-up/lupa/commands'
 
 await selectOption({ 
   selector: '#my-dropdown', 

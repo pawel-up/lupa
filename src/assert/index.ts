@@ -2,7 +2,7 @@
  * The built-in assertion library for Lupa. It uses the Japa Assert library under the hood.
  *
  * @packageDocumentation
- * @module @jarrodek/lupa/assert
+ * @module @pawel-up/lupa/assert
  */
 
 /*
@@ -31,7 +31,7 @@ declare module '../testing/test_context.js' {
  *
  * Usage in config:
  * ```typescript
- * testPlugins: ['@jarrodek/lupa/assert']
+ * testPlugins: ['@pawel-up/lupa/assert']
  * ```
  */
 const setup: WebPluginFn = () => {

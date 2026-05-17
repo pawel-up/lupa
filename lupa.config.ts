@@ -1,10 +1,9 @@
 import path from 'node:path'
-import { configure, processCLIArgs, run } from '../../src/runner/index.js'
-import { progress, json } from '../../src/reporters/index.js'
+import { defineConfig } from './src/runner/index.js'
+import { progress, json } from './src/reporters/index.js'
+import type { Assert } from './src/assert/index.js'
 
-processCLIArgs(process.argv.slice(2))
-
-configure({
+export default defineConfig({
   files: ['tests/fixtures/integration/**/*.spec.ts'],
   testPlugins: [path.join(process.cwd(), 'src/assert/index.ts')],
   reporters: {
@@ -33,8 +32,8 @@ configure({
   },
 })
 
-run().catch((error) => {
-  // eslint-disable-next-line no-console
-  console.error(error)
-  process.exit(1)
-})
+declare module './src/testing/index.js' {
+  interface TestContext {
+    assert: Assert
+  }
+}

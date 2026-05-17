@@ -5,7 +5,7 @@ Sometimes, you might run into situations where you want to skip specific tests t
 The `test.skip` method accepts a boolean as the first parameter and skips the test if the value is `true`. Optionally, you can define the reason for skipping the test as the second parameter.
 
 ```ts
-import { test } from '@jarrodek/lupa/testing'
+import { test } from '@pawel-up/lupa/testing'
 
 test('get payments list', async () => {
   // ...
@@ -15,7 +15,7 @@ test('get payments list', async () => {
 You can also skip tests conditionally based on external variables. For example, not running specific integration tests in the CI environment:
 
 ```ts
-import { test } from '@jarrodek/lupa/testing'
+import { test } from '@pawel-up/lupa/testing'
 
 const isInCI = !!process.env.CI
 
@@ -27,7 +27,7 @@ test('add two numbers', () => {
 Finally, you may pass a function as the first parameter to lazily evaluate whether or not to skip the test. This is incredibly useful if the decision to skip requires an asynchronous check.
 
 ```ts
-import { test } from '@jarrodek/lupa/testing'
+import { test } from '@pawel-up/lupa/testing'
 
 test('get payments list', async () => {
   // ...
@@ -46,7 +46,7 @@ Lupa allows you to create placeholder tests without any implementation. You can 
 You may create a test without passing the callback function, and it will automatically be marked as `todo`.
 
 ```ts
-import { test } from '@jarrodek/lupa/testing'
+import { test } from '@pawel-up/lupa/testing'
 
 test('fail if email is invalid')
 test('fail if email is not unique')

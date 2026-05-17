@@ -7,7 +7,7 @@ Datasets are usually helpful when testing a piece of code against varying values
 You can define datasets using the `with` method. It accepts an array of values and passes each row to the test callback function as the second argument.
 
 ```ts
-import { test } from '@jarrodek/lupa/testing'
+import { test } from '@pawel-up/lupa/testing'
 
 test('validate email', ({ assert }, email) => {
   assert.isTrue(validateEmail(email))
@@ -22,7 +22,7 @@ test('validate email', ({ assert }, email) => {
 The dataset array can have objects as well. Continuing with the validate email example, let's pass some valid and invalid email addresses as a dataset.
 
 ```ts
-import { test } from '@jarrodek/lupa/testing'
+import { test } from '@pawel-up/lupa/testing'
 
 test('validate email', ({ assert }, row) => {
   assert.equal(validateEmail(row.email), row.result)
@@ -50,7 +50,7 @@ test('validate email', ({ assert }, email) => {
 Instead, you can move the test callback to the `run` method and call the `with` method *before* it.
 
 ```ts
-import { test } from '@jarrodek/lupa/testing'
+import { test } from '@pawel-up/lupa/testing'
 
 test('validate email')
   .with([
@@ -72,7 +72,7 @@ The above approach has a couple of benefits:
 You can compute the dataset lazily by passing a function to the `test.with` method. The function can be `async` and must return an array of values.
 
 ```ts
-import { test } from '@jarrodek/lupa/testing'
+import { test } from '@pawel-up/lupa/testing'
 
 test('validate email')
   .with(async () => {
@@ -88,7 +88,7 @@ test('validate email')
 You may use the interpolation syntax to reference values from the dataset within the test title. The interpolation syntax uses a single curly brace `{}` as a delimiter.
 
 ```ts
-import { test } from '@jarrodek/lupa/testing'
+import { test } from '@pawel-up/lupa/testing'
 
 test('validate email - "{email}"')
   .with([

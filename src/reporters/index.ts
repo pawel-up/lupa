@@ -2,18 +2,18 @@
  * Built-in test reporters for Lupa (spec, dot, ndjson, github) and a way to register custom reporters.
  *
  * @packageDocumentation
- * @module @jarrodek/lupa/reporters
+ * @module @pawel-up/lupa/reporters
  */
 
 import { DotReporter } from './dot.js'
 import { NdJSONReporter } from './ndjson.js'
 import { GithubReporter } from './github.js'
-import { JSONReporter } from './json.js'
-import type { BaseReporterOptions, NamedReporterContract } from '../types.js'
+import { JSONReporter, type JSONReporterResult } from './json.js'
+import type { BaseReporterOptions, NamedReporterContract, ProgrammaticReporterContract } from '../types.js'
 
 import { ProgressReporter } from './progress.js'
 
-export { BaseReporterOptions, NamedReporterContract }
+export { BaseReporterOptions, NamedReporterContract, ProgrammaticReporterContract }
 
 /**
  * Built-in reporter names.
@@ -65,9 +65,19 @@ export const github: (options?: BaseReporterOptions) => NamedReporterContract = 
 /**
  * Create an instance of the json reporter
  */
-export const json: (options?: BaseReporterOptions) => NamedReporterContract = (options) => {
+export const json: (options?: BaseReporterOptions) => ProgrammaticReporterContract<JSONReporterResult> = (options) => {
+  const reporter = new JSONReporter(options)
   return {
     name: 'json',
-    handler: (...args) => new JSONReporter(options).boot(...args),
+    handler: (runner, emitter, config) => reporter.boot(runner, emitter, config),
+    set isProgrammatic(val: boolean) {
+      reporter.isProgrammatic = val
+    },
+    getResult: () => {
+      if (!reporter.result) {
+        throw new Error('Reporter result is not yet available.')
+      }
+      return reporter.result
+    },
   }
 }

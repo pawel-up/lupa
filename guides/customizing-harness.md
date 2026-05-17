@@ -2,7 +2,7 @@
 
 Sometimes you need to inject global stylesheets (like a CSS reset or design system variables) into the browser environment, or you might need a very specific HTML structure surrounding your tests.
 
-Lupa allows you to customize the underlying HTML document via the `harness` configuration block in your `bin/test.ts` file.
+Lupa allows you to customize the underlying HTML document via the `harness` configuration block in your `lupa.config.ts` file.
 
 ---
 
@@ -13,7 +13,7 @@ The simplest way to customize your harness is by injecting global CSS. This is p
 Lupa accepts an array of strings. External URLs (like Google Fonts) are injected directly, while local paths are automatically resolved and served through Vite's module pipeline!
 
 ```ts
-import { configure } from '@jarrodek/lupa/runner'
+import { configure } from '@pawel-up/lupa/runner'
 
 configure({
   suites: [
@@ -40,7 +40,7 @@ If you need to define custom HTML elements outside of your test fixtures (e.g., 
 When using a string template, **you must include the `<!-- lupa-stylesheets -->` and `<!-- lupa-scripts -->` placeholders** so Lupa knows where to inject the testing framework and configuration payload.
 
 ```ts
-import { configure } from '@jarrodek/lupa/runner'
+import { configure } from '@pawel-up/lupa/runner'
 
 configure({
   suites: [
@@ -75,7 +75,7 @@ For the highest level of control, you can define `template` as a function. The f
 This is highly useful if you need to programmatically construct the document based on environment variables or external logic.
 
 ```ts
-import { configure } from '@jarrodek/lupa/runner'
+import { configure } from '@pawel-up/lupa/runner'
 
 configure({
   suites: [

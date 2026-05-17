@@ -62,6 +62,9 @@ export class JSONReporter extends BaseReporter {
   #failures: { file: string; title: string; error: ErrorObject }[] = []
   #listPayload?: RunnerListNode
 
+  public isProgrammatic = false
+  public result?: JSONReporterResult
+
   #getRelativeFilename(fileName: string) {
     return relative(process.cwd(), fileName)
   }
@@ -105,6 +108,10 @@ export class JSONReporter extends BaseReporter {
       }
     }
 
-    console.log(JSON.stringify(result, null, 2))
+    this.result = result
+
+    if (!this.isProgrammatic) {
+      console.log(JSON.stringify(result, null, 2))
+    }
   }
 }

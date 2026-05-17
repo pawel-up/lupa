@@ -2,7 +2,7 @@
  * Refines tests based on applied filters. It is used by the runner to filter out tests that should not be executed.
  *
  * @packageDocumentation
- * @module @jarrodek/lupa/refiner
+ * @module @pawel-up/lupa/refiner
  */
 
 /*

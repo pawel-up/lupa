@@ -142,7 +142,7 @@ export class WebRunner extends Macroable {
       this.#emitter.emit('runner:pinned_tests', { tests: pinnedTests })
     }
 
-    if (window.__lupa__?.config?.list) {
+    if (typeof window !== 'undefined' && window.__lupa__?.config?.list) {
       const listPayload = {
         suites: this.suites.map((suite) => {
           const mapTest = (t: any) => ({

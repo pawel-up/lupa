@@ -91,7 +91,7 @@ The current `SpecReporter`'s legacy stream-based rendering is incompatible with 
 The most critical requirement is that test files remain unchanged.
 
 ```typescript
-import { test } from '@jarrodek/lupa'
+import { test } from '@pawel-up/lupa'
 
 test('my component renders', async ({ assert }) => {
   // This must still work identically.

@@ -327,21 +327,21 @@ export interface UncheckOptions extends TimeoutOption, ForceOption, TrialOption,
  *
  * @example Clicking on a button with text "Submit".
  * ```typescript
- * import { query } from '@jarrodek/lupa/commands'
+ * import { query } from '@pawel-up/lupa/commands'
  *
  * await query({ text: 'Submit' }).click()
  * ```
  *
  * @example Checking a checkbox with label "Subscribe".
  * ```typescript
- * import { query } from '@jarrodek/lupa/commands'
+ * import { query } from '@pawel-up/lupa/commands'
  *
  * await query({ label: 'Subscribe' }).check()
  * ```
  *
  * @example Filling a text input with "admin" username.
  * ```typescript
- * import { query } from '@jarrodek/lupa/commands'
+ * import { query } from '@pawel-up/lupa/commands'
  *
  * await query({ placeholder: 'Username' }).fill('admin')
  * ```
@@ -378,7 +378,7 @@ export class Locator {
    *
    * @example Calling blur on the focused element.
    * ```typescript
-   * import { query } from '@jarrodek/lupa/commands'
+   * import { query } from '@pawel-up/lupa/commands'
    *
    * await query({ text: 'Focus me' }).blur()
    * ```
@@ -395,7 +395,7 @@ export class Locator {
    *
    * @example Clearing the input field.
    * ```typescript
-   * import { query } from '@jarrodek/lupa/commands'
+   * import { query } from '@pawel-up/lupa/commands'
    *
    * await query({ label: 'Email' }).clear()
    * ```
@@ -412,7 +412,7 @@ export class Locator {
    *
    * @example Checking a checkbox.
    * ```typescript
-   * import { query } from '@jarrodek/lupa/commands'
+   * import { query } from '@pawel-up/lupa/commands'
    *
    * await query({ label: 'Subscribe' }).check()
    * ```
@@ -429,7 +429,7 @@ export class Locator {
    *
    * @example Clicking on a button with text "Submit".
    * ```typescript
-   * import { query } from '@jarrodek/lupa/commands'
+   * import { query } from '@pawel-up/lupa/commands'
    *
    * await query({ text: 'Submit' }).click()
    * ```
@@ -446,7 +446,7 @@ export class Locator {
    *
    * @example Filling a text input with "admin" username.
    * ```typescript
-   * import { query } from '@jarrodek/lupa/commands'
+   * import { query } from '@pawel-up/lupa/commands'
    *
    * await query({ placeholder: 'Username' }).fill('admin')
    * ```
@@ -464,7 +464,7 @@ export class Locator {
    *
    * @example Double clicking on a button with text "Submit".
    * ```typescript
-   * import { query } from '@jarrodek/lupa/commands'
+   * import { query } from '@pawel-up/lupa/commands'
    *
    * await query({ text: 'Submit' }).dblclick()
    * ```
@@ -481,7 +481,7 @@ export class Locator {
    *
    * @example Hovering over an element with text "Submit".
    * ```typescript
-   * import { query } from '@jarrodek/lupa/commands'
+   * import { query } from '@pawel-up/lupa/commands'
    *
    * await query({ text: 'Submit' }).hover()
    * ```
@@ -498,7 +498,7 @@ export class Locator {
    *
    * @example Pressing the "Enter" key.
    * ```typescript
-   * import { query } from '@jarrodek/lupa/commands'
+   * import { query } from '@pawel-up/lupa/commands'
    *
    * await query({ text: 'Submit' }).press('Enter')
    * ```
@@ -516,7 +516,7 @@ export class Locator {
    *
    * @example Tapping on an element with text "Submit".
    * ```typescript
-   * import { query } from '@jarrodek/lupa/commands'
+   * import { query } from '@pawel-up/lupa/commands'
    *
    * await query({ text: 'Submit' }).tap()
    * ```
@@ -533,7 +533,7 @@ export class Locator {
    *
    * @example Unchecking an element with text "Subscribe".
    * ```typescript
-   * import { query } from '@jarrodek/lupa/commands'
+   * import { query } from '@pawel-up/lupa/commands'
    *
    * await query({ text: 'Subscribe' }).uncheck()
    * ```

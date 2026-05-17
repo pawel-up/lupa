@@ -5,7 +5,7 @@ You may group a collection of related tests using the `test.group` method.
 The `test.group` method accepts the group title as the first parameter and a callback function as the second parameter. The callback function receives an instance of the `Group` class.
 
 ```ts
-import { test } from '@jarrodek/lupa/testing'
+import { test } from '@pawel-up/lupa/testing'
 
 test.group('Maths.add', (group) => {
   test('add two numbers', ({ assert }) => {
@@ -17,7 +17,7 @@ test.group('Maths.add', (group) => {
 You may use the `group` object to bulk configure tests that are part of the surrounded group. In the following example, we define a timeout, after which a test will be marked as failed if not completed.
 
 ```ts
-import { test } from '@jarrodek/lupa/testing'
+import { test } from '@pawel-up/lupa/testing'
 
 test.group('register user', (group) => {
   group.each.timeout(1000 * 60)
@@ -35,7 +35,7 @@ You may define lifecycle hooks for individual or all the tests using the `group`
 In the following example, we define a lifecycle hook using the `each.setup` method to render a generic DOM fixture before every test, and remove it afterward.
 
 ```ts
-import { test, fixture, html } from '@jarrodek/lupa/testing'
+import { test, fixture, html } from '@pawel-up/lupa/testing'
 
 test.group('register user', (group) => {
   
@@ -62,7 +62,7 @@ You may use the `group.tap` method to access the underlying test object for each
 This method opens possibilities for bulk/conditionally configuring tests. For example, dynamically appending metadata to test titles.
 
 ```ts
-import { test } from '@jarrodek/lupa/testing'
+import { test } from '@pawel-up/lupa/testing'
 
 test.group('polls list', (group) => {
   

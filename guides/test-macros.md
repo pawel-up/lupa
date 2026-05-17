@@ -12,7 +12,7 @@ You can write a macro for this using the `test.macro` helper:
 - Finally, you can return any value from the callback function to be used inside your test.
 
 ```ts
-import { test } from '@jarrodek/lupa/testing'
+import { test } from '@pawel-up/lupa/testing'
 
 export const loginAs = test.macro((t, userRole: string) => {
   const token = `fake-jwt-for-role-${userRole}`
@@ -38,7 +38,7 @@ export const loginAs = test.macro((t, userRole: string) => {
 Once you have defined a macro, you can simply import it and invoke it inside any test. Because it's a macro, the cleanup logic is handled completely invisibly.
 
 ```ts
-import { test } from '@jarrodek/lupa/testing'
+import { test } from '@pawel-up/lupa/testing'
 import { loginAs } from './macros.js'
 
 test('admin dashboard renders correctly', async ({ assert }) => {
@@ -55,7 +55,7 @@ test('admin dashboard renders correctly', async ({ assert }) => {
 Macros are also excellent for temporarily mocking global browser APIs. Let's take an example where we want to intercept `window.fetch` to return a mocked response, and then automatically restore the original `fetch` implementation when the test finishes.
 
 ```ts
-import { test } from '@jarrodek/lupa/testing'
+import { test } from '@pawel-up/lupa/testing'
 
 export const mockFetch = test.macro((t, mockData: any) => {
   
@@ -77,7 +77,7 @@ export const mockFetch = test.macro((t, mockData: any) => {
 ### Usage
 
 ```ts
-import { test, fixture, html } from '@jarrodek/lupa/testing'
+import { test, fixture, html } from '@pawel-up/lupa/testing'
 import { mockFetch } from './macros.js'
 
 test('user profile component fetches data', async ({ assert }) => {

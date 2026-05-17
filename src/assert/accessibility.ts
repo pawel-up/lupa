@@ -12,7 +12,7 @@ import type { Assert } from './assert.js'
  * Any violations found will be formatted into a readable error message and trigger an assertion failure.
  *
  * @example
- * import { assert } from '@jarrodek/lupa/assert'
+ * import { assert } from '@pawel-up/lupa/assert'
  * await assert.isAccessible('#my-element')
  * await assert.isAccessible(document.querySelector('main'))
  *

@@ -11,11 +11,11 @@ A great exercise is creating test suites with the resources they need. Also, whe
 ```bash
 # Filter tests by suite positional argument
 
-npx tsx bin/test.ts components
+npx lupa test components
 
-npx tsx bin/test.ts functional
+npx lupa test functional
 
-npx tsx bin/test.ts e2e
+npx lupa test e2e
 ```
 
 ## Organize using folders
@@ -36,12 +36,12 @@ You can run tests from a specific file or folder as follows:
 
 Run tests from any filename ending with "primary":
 ```bash
-npx tsx bin/test.ts --files="primary"
+npx lupa test --files="primary"
 ```
 
 Run tests from any filename ending with "primary" inside the `button` folder:
 ```bash
-npx tsx bin/test.ts --files="button/primary"
+npx lupa test --files="button/primary"
 ```
 
 ## Tagging tests
@@ -62,22 +62,22 @@ test('charge user and create order', () => {
 
 You can run tests with the `@api_mock` tag as follows:
 ```bash
-npx tsx bin/test.ts --tags="@api_mock"
+npx lupa test --tags="@api_mock"
 ```
 
 You can **ignore tests** with the `@api_mock` tag by negating it with a tilde `~` symbol:
 ```bash
-npx tsx bin/test.ts --tags="~@api_mock"
+npx lupa test --tags="~@api_mock"
 ```
 
 You can also specify multiple tags using the `--tags` filter:
 ```bash
-npx tsx bin/test.ts --tags="@api_mock,@slow"
+npx lupa test --tags="@api_mock,@slow"
 ```
 
 When filtering for multiple tags, all the tests containing **any** mentioned tags will run. You must use the `--match-all` flag if you want to run tests that have **all** the mentioned tags:
 ```bash
-npx tsx bin/test.ts --tags="@api_mock,@slow" --match-all
+npx lupa test --tags="@api_mock,@slow" --match-all
 ```
 
 ## Filtering by group title
@@ -85,7 +85,7 @@ npx tsx bin/test.ts --tags="@api_mock,@slow" --match-all
 You can filter tests by the group title using the `--groups` filter. The filter accepts the exact title (a substring will not work).
 
 ```ts
-import { test } from '@jarrodek/lupa/testing'
+import { test } from '@pawel-up/lupa/testing'
 
 test.group('polls list', () => {
   test('show list of public polls', () => {})
@@ -93,7 +93,7 @@ test.group('polls list', () => {
 ```
 
 ```bash
-npx tsx bin/test.ts --groups="polls list"
+npx lupa test --groups="polls list"
 ```
 
 ## Filtering by test title
@@ -101,13 +101,13 @@ npx tsx bin/test.ts --groups="polls list"
 You can filter tests by the test title using the `--tests` filter. The filter accepts the exact title (a substring will not work).
 
 ```ts
-import { test } from '@jarrodek/lupa/testing'
+import { test } from '@pawel-up/lupa/testing'
 
 test('show list of public polls', () => {})
 ```
 
 ```bash
-npx tsx bin/test.ts --tests="show list of public polls"
+npx lupa test --tests="show list of public polls"
 ```
 
 ## Pinning tests
@@ -115,7 +115,7 @@ npx tsx bin/test.ts --tests="show list of public polls"
 Pinning tests is exceptionally helpful when you want to debug an individual or a group of tests for the time being. You can pin a test using the `test.pin()` method, and Lupa will only run the pinned tests and immediately skip everything else.
 
 ```ts
-import { test } from '@jarrodek/lupa/testing'
+import { test } from '@pawel-up/lupa/testing'
 
 test.group('polls list', () => {
   test('show list of public polls', () => {})
@@ -131,7 +131,7 @@ test.group('polls list', () => {
 You can view the list of all the currently pinned tests using the `--list-pinned` CLI flag. The output will contain the test title and its source code location.
 
 ```bash
-npx tsx bin/test.ts --list-pinned
+npx lupa test --list-pinned
 ```
 
 ## Running failed tests
@@ -139,5 +139,5 @@ npx tsx bin/test.ts --list-pinned
 You can automatically run only the tests that failed during the last run using the `--failed` CLI flag. It will run all the tests if there are no failing tests currently recorded.
 
 ```bash
-npx tsx bin/test.ts --failed
+npx lupa test --failed
 ```

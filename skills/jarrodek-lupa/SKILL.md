@@ -4,7 +4,7 @@ license: Apache-2.0
 name: jarrodek-lupa
 ---
 
-# @jarrodek/lupa
+# @pawel-up/lupa
 
 A lightning-fast, Vite-powered browser testing framework for Web Components with an elegant, Japa-inspired API.
 
@@ -36,7 +36,7 @@ API surface: 18 functions, 12 classes, 92 types, 7 constants
 
 ## Troubleshooting
 
-- **Watch Mode Collisions:** You cannot run `npx tsx bin/test.ts` with both `--watch` and a parallel suite runner like `concurrently`. Multiple browser instances and Vite dev servers will conflict. Use parallelization strictly in headless CI environments.
+- **Watch Mode Collisions:** You cannot run `npx lupa test` with both `--watch` and a parallel suite runner like `concurrently`. Multiple browser instances and Vite dev servers will conflict. Use parallelization strictly in headless CI environments.
 - **Hanging Tests:** If a test is failing to exit or hanging indefinitely, ensure that any external asynchronous resources (like custom servers) instantiated in `setup()` hooks return a proper cleanup function (e.g., `return () => server.close()`). Lupa guarantees execution of teardown cleanups even when assertions fail.
 
 ## Configuration

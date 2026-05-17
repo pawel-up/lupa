@@ -4,10 +4,10 @@ Lupa requires Node.js >= 22.0.0 and works seamlessly with the ES module system.
 
 ## Installation
 
-Install the `@jarrodek/lupa` package as a development dependency using your preferred package manager:
+Install the `@pawel-up/lupa` package as a development dependency using your preferred package manager:
 
 ```bash
-npm install --save-dev @jarrodek/lupa
+npm install --save-dev @pawel-up/lupa
 ```
 
 ## Configuring Lupa
@@ -20,14 +20,14 @@ The easiest way to generate this file is using our interactive initialization CL
 npx lupa init
 ```
 
-This command will ask you a few questions and automatically scaffold a `bin/test.ts` file, your test directories, and example test files.
+This command will ask you a few questions and automatically scaffold a `lupa.config.ts` file, your test directories, and example test files.
 
-Alternatively, you can manually create a `bin/test.ts` file in the root of your project:
+Alternatively, you can manually create a `lupa.config.ts` file in the root of your project:
 
 ```ts
-import { configure, processCLIArgs, run } from '@jarrodek/lupa/runner'
-import type { Assert } from '@jarrodek/lupa/assert'
-import '@jarrodek/lupa/testing'
+import { configure, processCLIArgs, run } from '@pawel-up/lupa/runner'
+import type { Assert } from '@pawel-up/lupa/assert'
+import '@pawel-up/lupa/testing'
 
 // 1. Process command line arguments
 processCLIArgs(process.argv.slice(2))
@@ -35,7 +35,7 @@ processCLIArgs(process.argv.slice(2))
 // 2. Configure Lupa
 configure({
   files: ['tests/browser/**/*.spec.ts'],
-  testPlugins: ['@jarrodek/lupa/assert'],
+  testPlugins: ['@pawel-up/lupa/assert'],
 })
 
 // 3. Run the orchestrator
@@ -45,7 +45,7 @@ run().catch((error) => {
 })
 
 // 4. Augment TestContext for strong typing
-declare module '@jarrodek/lupa/testing' {
+declare module '@pawel-up/lupa/testing' {
   interface TestContext {
     assert: Assert
   }
@@ -68,7 +68,7 @@ As per your configuration above, your tests should be placed in `tests/browser/`
 Let's create our first test:
 
 ```ts
-import { test, fixture, html } from '@jarrodek/lupa/testing'
+import { test, fixture, html } from '@pawel-up/lupa/testing'
 
 test('renders text correctly', async ({ assert }) => {
   const el = await fixture(html`<div>Hello World</div>`)
@@ -83,7 +83,7 @@ The test callback function receives a `TestContext`. We destructure `assert` fro
 You can logically group related tests together using the `test.group` method. Groups allow you to define lifecycle hooks that run before or after every test in the group.
 
 ```ts
-import { test, fixture, html } from '@jarrodek/lupa/testing'
+import { test, fixture, html } from '@pawel-up/lupa/testing'
 
 test.group('My Component', (group) => {
   
@@ -103,27 +103,27 @@ test.group('My Component', (group) => {
 You can run your tests by simply executing your entry point file using Node or `tsx`!
 
 ```bash
-npx tsx bin/test.ts
+npx lupa test
 ```
 
 Lupa's orchestrator also acts as a CLI application, allowing you to pass standard arguments:
 
 ```bash
 # Run in watch mode with visual DevTools
-npx tsx bin/test.ts --watch
+npx lupa test --watch
 
 # Use a specific Vite config
-npx tsx bin/test.ts --vite-config=vite.test.config.ts
+npx lupa test --vite-config=vite.test.config.ts
 
 # See all available options
-npx tsx bin/test.ts --help
+npx lupa test --help
 ```
 
 ## Writing assertions
 
 Lupa comes bundled with a powerful assertion plugin built on top of Chai. 
 
-Since you registered the `@jarrodek/lupa/assert` plugin in your `bin/test.ts` file and augmented the `TestContext` interface, the `assert` object is automatically typed and available in every test context.
+Since you registered the `@pawel-up/lupa/assert` plugin in your `lupa.config.ts` file and augmented the `TestContext` interface, the `assert` object is automatically typed and available in every test context.
 
 ```ts
 test('testing values', ({ assert }) => {

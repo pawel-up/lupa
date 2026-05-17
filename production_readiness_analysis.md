@@ -53,7 +53,7 @@ Most of the critical architectural and testing gaps have been resolved. The rema
 | Issue | Severity | Details |
 |-------|----------|---------|
 | Watch mode disabled | ✅ Addressed | `WatchManager` successfully implements full dependency-aware incremental test execution, focus mode, and debugging. |
-| No `npx lupa` CLI entry | ✅ By Design | No `bin` field in `package.json`. Tests must be explicitly run via a user-defined script (e.g., `bin/test.ts`) with a specific configuration. |
+| No `npx lupa` CLI entry | ✅ By Design | No `bin` field in `package.json`. Tests must be explicitly run via a user-defined script (e.g., `lupa.config.ts`) with a specific configuration. |
 | `[Browser Console]` logs | ✅ Addressed | Browser `console.log` output is completely suppressed by default to keep test output pristine. Logs (with prefix) only appear if the `--verbose` flag is passed. |
 | Fixture cleanup | ✅ Addressed | `fixture()` automatically hooks into `activeTest.cleanup()` to remove DOM nodes. |
 | No `--browser` flag documented | ✅ Addressed | Added `--browser` to `CLIArgs` typing, the parser options, and the interactive help menu. |

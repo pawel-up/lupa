@@ -7,7 +7,7 @@ Browser test plugin for assertion support.
 
 Usage in config:
 ```typescript
-testPlugins: ['@jarrodek/lupa/assert']
+testPlugins: ['@pawel-up/lupa/assert']
 ```
 ```ts
 const default: WebPluginFn

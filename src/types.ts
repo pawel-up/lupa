@@ -709,6 +709,17 @@ export interface NamedReporterContract {
 }
 
 /**
+ * An extension of NamedReporterContract that allows the reporter to be used programmatically
+ * to return a typed result instead of just printing to stdout.
+ */
+export interface ProgrammaticReporterContract<T> extends NamedReporterContract {
+  /** Set to true by the framework when executing programmatically to suppress stdout. */
+  isProgrammatic?: boolean
+  /** Returns the parsed result */
+  getResult(): T | Promise<T>
+}
+
+/**
  * Test reporters must adhere to the following contract
  */
 export type ReporterContract = ReporterHandlerContract | NamedReporterContract

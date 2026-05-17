@@ -22,7 +22,7 @@ try {
 
 /**
  * Known commandline options. The user can still define additional flags and they
- * will be parsed aswell, but without any normalization
+ * will be parsed as well, but without any normalization
  */
 const OPTIONS = {
   string: [
@@ -52,7 +52,7 @@ const OPTIONS = {
  * Help string to display when the `--help flag is used`
  */
 const GET_HELP = () => `
-${colors.yellow(`@jarrodek/lupa ${pkg.version}`)}
+${colors.yellow(`@pawel-up/lupa ${pkg.version}`)}
 
 ${colors.green('--tests')}                     ${colors.dim('Filter tests by the test title')}
 ${colors.green('--groups')}                    ${colors.dim('Filter tests by the group title')}

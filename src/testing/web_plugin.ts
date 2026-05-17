@@ -23,7 +23,7 @@ export interface WebPluginContext {
  *
  * @example
  * ```typescript
- * import type { WebPluginFn } from '@jarrodek/lupa/testing'
+ * import type { WebPluginFn } from '@pawel-up/lupa/testing'
  *
  * const setup: WebPluginFn = ({ runner, emitter }) => {
  *   TestContext.getter('assert', () => new Assert(), true)

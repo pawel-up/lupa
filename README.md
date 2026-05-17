@@ -32,7 +32,7 @@ A lot of Lupa's core logic, CLI parsing, and reporter architecture was directly 
 
 ## Quick Start Overview
 
-Lupa avoids injecting a massive global CLI tool for executing tests. Instead, tests are configured and executed via a custom script (typically `bin/test.ts`), giving you total control over the environment.
+Lupa avoids injecting a massive global CLI tool for executing tests. Instead, tests are configured and executed via a custom script (typically `lupa.config.ts`), giving you total control over the environment.
 
 We provide a lightweight setup CLI to instantly scaffold this configuration for you.
 
@@ -44,30 +44,25 @@ Run the interactive initialization command in your project root:
 npx lupa init
 ```
 
-This will automatically create your `bin/test.ts` configuration file, set up your test directories, and scaffold example tests based on your preferences.
+This will automatically create your `lupa.config.ts` configuration file, set up your test directories, and scaffold example tests based on your preferences.
 
 If you prefer to configure things manually, here is an example of what `npx lupa init` generates for your execution script:
 
 ```typescript
-import { configure, processCLIArgs, run } from '@jarrodek/lupa/runner'
-import { spec } from '@jarrodek/lupa/reporters'
-import type { Assert } from '@jarrodek/lupa/assert'
-import '@jarrodek/lupa/testing'
+import { defineConfig } from '@pawel-up/lupa/runner'
+import { spec } from '@pawel-up/lupa/reporters'
+import type { Assert } from '@pawel-up/lupa/assert'
 
-processCLIArgs(process.argv.slice(2))
-
-configure({
+export default defineConfig({
   files: ['tests/**/*.spec.ts'],
-  testPlugins: ['@jarrodek/lupa/assert'],
+  testPlugins: ['@pawel-up/lupa/assert'],
   reporters: {
     activated: ['progress'],
     list: [spec()],
   },
 })
 
-run().catch(console.error)
-
-declare module '@jarrodek/lupa/testing' {
+declare module '@pawel-up/lupa/testing' {
   interface TestContext {
     assert: Assert
   }
@@ -80,7 +75,7 @@ Write your tests using the beautiful, explicit Japa-style API alongside Lupa's b
 
 ```typescript
 // tests/button.spec.ts
-import { test, fixture, html } from '@jarrodek/lupa/testing'
+import { test, fixture, html } from '@pawel-up/lupa/testing'
 import '../src/components/my-button.js'
 
 test.group('My Button Component', () => {
@@ -101,27 +96,27 @@ test.group('My Button Component', () => {
 Execute your test script using a transpiler like `tsx`:
 
 ```bash
-npx tsx bin/test.ts
+npx lupa test
 ```
 
 For the ultimate developer experience, run it in **Watch Mode**:
 
 ```bash
-npx tsx bin/test.ts --watch
+npx lupa test --watch
 ```
 
 ## AI Agent Integration (MCP)
 
-Lupa features a built-in Model Context Protocol (MCP) server that empowers AI agents inside your IDE (like Cline, Roo, or Cursor) to programmatically discover, filter, and run your test suites. 
+Lupa features a standalone Model Context Protocol (MCP) server package that empowers AI agents inside your IDE (like Cline, Roo, or Cursor) to programmatically discover, filter, and run your test suites. 
 
-To connect an agent to Lupa, add the following configuration to your IDE's MCP settings (adjusting the `-c` command to match how you run your test script):
+To connect an agent to Lupa, add the following configuration to your IDE's MCP settings:
 
 ```json
 {
   "mcpServers": {
     "lupa": {
       "command": "npx",
-      "args": ["lupa", "mcp", "-c", "npx tsx bin/test.ts"]
+      "args": ["-y", "@pawel-up/lupa-mcp"]
     }
   }
 }
@@ -131,7 +126,7 @@ Once connected, your AI assistant will be able to efficiently list the test tree
 
 ## Troubleshooting
 
-- **Watch Mode Collisions:** You cannot run `npx tsx bin/test.ts` with both `--watch` and a parallel suite runner like `concurrently`. Multiple browser instances and Vite dev servers will conflict. Use parallelization strictly in headless CI environments.
+- **Watch Mode Collisions:** You cannot run `npx lupa test` with both `--watch` and a parallel suite runner like `concurrently`. Multiple browser instances and Vite dev servers will conflict. Use parallelization strictly in headless CI environments.
 - **Hanging Tests:** If a test is failing to exit or hanging indefinitely, ensure that any external asynchronous resources (like custom servers) instantiated in `setup()` hooks return a proper cleanup function (e.g., `return () => server.close()`). Lupa guarantees execution of teardown cleanups even when assertions fail.
 
 ## Contributing

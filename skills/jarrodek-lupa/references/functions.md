@@ -19,7 +19,7 @@ assertIsAccessible(assertInstance: Assert, element: string | Element | NodeList,
 - `options: RunOptions` (optional) — axe-core run options
 **Returns:** `Promise<void>` — A Promise that resolves when the assertion has been evaluated.
 ```ts
-import { assert } from '@jarrodek/lupa/assert'
+import { assert } from '@pawel-up/lupa/assert'
 await assert.isAccessible('#my-element')
 await assert.isAccessible(document.querySelector('main'))
 ```
@@ -63,18 +63,18 @@ configure(options: Config): void
                  or a `suites` array to define your test files.
 **Basic Configuration**
 ```ts
-import { configure, run } from '@jarrodek/lupa/runner'
+import { configure, run } from '@pawel-up/lupa/runner'
 
 configure({
   files: ['tests/**/*.spec.ts'],
-  testPlugins: ['@jarrodek/lupa/assert']
+  testPlugins: ['@pawel-up/lupa/assert']
 })
 
 run()
 ```
 **Using Test Suites**
 ```ts
-import { configure, run } from '@jarrodek/lupa/runner'
+import { configure, run } from '@pawel-up/lupa/runner'
 
 configure({
   suites: [
@@ -99,7 +99,7 @@ processCLIArgs(argv: string[]): void
 **Parameters:**
 - `argv: string[]` — The command line arguments to parse.
 ```ts
-import { processCLIArgs, configure, run } from '@jarrodek/lupa/runner'
+import { processCLIArgs, configure, run } from '@pawel-up/lupa/runner'
 
 processCLIArgs(['--spec', 'tests/**/*.spec.ts'])
 configure({})
@@ -121,7 +121,7 @@ run(): Promise<void>
          or rejects if the test run encounters an error (e.g., uncaught exceptions).
 **Throws:** Throws if configuration is missing or invalid.
 ```ts
-import { configure, run } from '@jarrodek/lupa/runner'
+import { configure, run } from '@pawel-up/lupa/runner'
 
 configure({
   files: ['tests/**/*.spec.ts'],
@@ -386,17 +386,17 @@ query(query: LocatorQuery): Locator
 - `query: LocatorQuery` — The query to use to locate the element.
 **Returns:** `Locator` — A locator.
 ```typescript
-import { query } from '@jarrodek/lupa/commands'
+import { query } from '@pawel-up/lupa/commands'
 
 await query({ text: 'Submit' }).click()
 ```
 ```typescript
-import { query } from '@jarrodek/lupa/commands'
+import { query } from '@pawel-up/lupa/commands'
 
 await query({ label: 'Subscribe' }).check()
 ```
 ```typescript
-import { query } from '@jarrodek/lupa/commands'
+import { query } from '@pawel-up/lupa/commands'
 
 await query({ placeholder: 'Username' }).fill('admin')
 ```

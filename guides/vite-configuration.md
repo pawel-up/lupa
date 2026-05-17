@@ -51,18 +51,18 @@ export default defineConfig({
 
 ### 2. Run your tests
 
-Lupa will automatically pick up your `vite.config.ts` without any extra configuration required in your `bin/test.ts` file!
+Lupa will automatically pick up your `vite.config.ts` without any extra configuration required in your `lupa.config.ts` file!
 
 ```bash
-npx tsx bin/test.ts
+npx lupa test
 ```
 
 ## Inline configuration
 
-If you do not want to use a `vite.config.ts` file, or if you need specific Vite settings that only apply during testing (and shouldn't affect your production build), you can pass Vite configuration directly to the `configure()` method in your `bin/test.ts` runner:
+If you do not want to use a `vite.config.ts` file, or if you need specific Vite settings that only apply during testing (and shouldn't affect your production build), you can pass Vite configuration directly to the `configure()` method in your `lupa.config.ts` runner:
 
 ```ts
-import { configure, run } from '@jarrodek/lupa/runner'
+import { configure, run } from '@pawel-up/lupa/runner'
 import esbuild from 'esbuild'
 
 configure({
