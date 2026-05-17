@@ -1,6 +1,6 @@
 {
   "name": "@pawel-up/lupa",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A lightning-fast, Vite-powered browser testing framework for Web Components with an elegant, Japa-inspired API.",
   "repository": {
     "type": "git",
