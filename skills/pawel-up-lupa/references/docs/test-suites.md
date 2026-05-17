@@ -2,7 +2,7 @@
 
 Test suites allow you to organize your tests logically by their type or domain. For example, you can create separate suites for component unit tests and end-to-end user flows, keeping their test files in dedicated folders.
 
-When using suites, you configure them in your `bin/test.ts` file instead of using the top-level `files` property.
+When using suites, you configure them in your `lupa.config.ts` file instead of using the top-level `files` property.
 
 ```ts
 import { configure, run } from '@pawel-up/lupa/runner'
@@ -33,13 +33,13 @@ You can run tests for a specific suite by specifying the suite name as a positio
 In the following example, only the component tests will run:
 
 ```bash
-npx tsx bin/test.ts components
+npx lupa test components
 ```
 
 The following example will run the tests for both the components and the e2e suites:
 
 ```bash
-npx tsx bin/test.ts components e2e
+npx lupa test components e2e
 ```
 
 ## Lifecycle hooks
@@ -112,8 +112,8 @@ Register the scripts in your `package.json`:
 ```json
 {
   "scripts": {
-    "test:components": "tsx bin/test.ts components",
-    "test:e2e": "tsx bin/test.ts e2e",
+    "test:components": "lupa test components",
+    "test:e2e": "lupa test e2e",
     "test:parallel": "concurrently \"npm:test:components\" \"npm:test:e2e\""
   }
 }

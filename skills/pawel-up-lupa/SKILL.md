@@ -1,5 +1,5 @@
 ---
-description: "A lightning-fast, Vite-powered browser testing framework for Web Components with an elegant, Japa-inspired API. Use when: Setting up your test runner execution script.. Also: testing, web-components, browser-runner, vite, playwright, japa, dom, test-runner, shadow-dom, lit-html, browser-testing, component-testing."
+description: "A lightning-fast, Vite-powered browser testing framework for Web Components with an elegant, Japa-inspired API. Use when: Building a programmatic test runner or custom CLI integration.. Also: testing, web-components, browser-runner, vite, playwright, japa, dom, test-runner, shadow-dom, lit-html, browser-testing, component-testing."
 license: Apache-2.0
 name: pawel-up-lupa
 ---
@@ -21,18 +21,14 @@ A lightning-fast, Vite-powered browser testing framework for Web Components with
 ## When to Use
 
 **Use this skill when:**
-- Setting up your test runner execution script. → use `configure`
+- Building a programmatic test runner or custom CLI integration. → use `configure`
 - Rendering templates and Custom Elements into the DOM for interaction → use `fixture`
 
 **Do NOT use when:**
 - You are already inside a running test or suite. (`configure`)
 - Testing pure logic or functions that do not require a DOM (`fixture`)
 
-API surface: 18 functions, 12 classes, 92 types, 7 constants
-
-## NEVER
-
-- NEVER call this inside a test suite or hook. Fix: Call it only once at the end of your execution script.
+API surface: 21 functions, 12 classes, 97 types, 8 constants
 
 ## Troubleshooting
 
@@ -46,9 +42,9 @@ API surface: 18 functions, 12 classes, 92 types, 7 constants
 ## Quick Reference
 
 **Key functions:** `assertIsAccessible` (Asserts that a given DOM element or NodeList has no accessibility violations
-according to axe-core), `configure` (Configure the Lupa test runner), `run` (Run the test suite), `waitUntil` (Polls the condition function until it returns true or the timeout is reached), `fixture` (Renders a HTML string or a Lit template into a dedicated fixture container and mounts it to the DOM)
+according to axe-core), `configure` (Configure the Lupa test runner), `waitUntil` (Polls the condition function until it returns true or the timeout is reached), `fixture` (Renders a HTML string or a Lit template into a dedicated fixture container and mounts it to the DOM)
 
-*129 exports total — see references/ for full API.*
+*138 exports total — see references/ for full API.*
 
 ## Documentation
 

@@ -4,10 +4,10 @@
   "description": "A lightning-fast, Vite-powered browser testing framework for Web Components with an elegant, Japa-inspired API.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jarrodek/lupa.git"
+    "url": "https://github.com/pawel-up/lupa.git"
   },
   "bugs": {
-    "url": "https://github.com/jarrodek/lupa/issues"
+    "url": "https://github.com/pawel-up/lupa/issues"
   },
   "license": "Apache-2.0",
   "author": "Pawel Uchida-Psztyc",

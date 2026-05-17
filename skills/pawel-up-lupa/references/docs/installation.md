@@ -20,9 +20,9 @@ The easiest way to generate this file is using our interactive initialization CL
 npx lupa init
 ```
 
-This command will ask you a few questions and automatically scaffold a `bin/test.ts` file, your test directories, and example test files.
+This command will ask you a few questions and automatically scaffold a `lupa.config.ts` file, your test directories, and example test files.
 
-Alternatively, you can manually create a `bin/test.ts` file in the root of your project:
+Alternatively, you can manually create a `lupa.config.ts` file in the root of your project:
 
 ```ts
 import { configure, processCLIArgs, run } from '@pawel-up/lupa/runner'
@@ -103,27 +103,27 @@ test.group('My Component', (group) => {
 You can run your tests by simply executing your entry point file using Node or `tsx`!
 
 ```bash
-npx tsx bin/test.ts
+npx lupa test
 ```
 
 Lupa's orchestrator also acts as a CLI application, allowing you to pass standard arguments:
 
 ```bash
 # Run in watch mode with visual DevTools
-npx tsx bin/test.ts --watch
+npx lupa test --watch
 
 # Use a specific Vite config
-npx tsx bin/test.ts --vite-config=vite.test.config.ts
+npx lupa test --vite-config=vite.test.config.ts
 
 # See all available options
-npx tsx bin/test.ts --help
+npx lupa test --help
 ```
 
 ## Writing assertions
 
 Lupa comes bundled with a powerful assertion plugin built on top of Chai.
 
-Since you registered the `@pawel-up/lupa/assert` plugin in your `bin/test.ts` file and augmented the `TestContext` interface, the `assert` object is automatically typed and available in every test context.
+Since you registered the `@pawel-up/lupa/assert` plugin in your `lupa.config.ts` file and augmented the `TestContext` interface, the `assert` object is automatically typed and available in every test context.
 
 ```ts
 test('testing values', ({ assert }) => {

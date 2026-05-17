@@ -2,7 +2,7 @@
 
 Sometimes you need to inject global stylesheets (like a CSS reset or design system variables) into the browser environment, or you might need a very specific HTML structure surrounding your tests.
 
-Lupa allows you to customize the underlying HTML document via the `harness` configuration block in your `bin/test.ts` file.
+Lupa allows you to customize the underlying HTML document via the `harness` configuration block in your `lupa.config.ts` file.
 
 ---
 

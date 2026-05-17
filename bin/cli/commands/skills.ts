@@ -34,7 +34,7 @@ export const skillsCommand = new Command('skills')
   .action(async (options) => {
     const isInteractive = Boolean(process.stdin.isTTY && process.stdout.isTTY)
     const targetDir = path.join(process.cwd(), '.agents', 'skills', 'lupa-testing')
-    const sourceDir = path.join(pkgRoot, 'skills', 'jarrodek-lupa')
+    const sourceDir = path.join(pkgRoot, 'skills', 'pawel-up-lupa')
 
     if (!existsSync(sourceDir)) {
       renderCriticalError('E_SKILLS_PKG_MISSING', `Could not find skills directory in the package at ${sourceDir}`)

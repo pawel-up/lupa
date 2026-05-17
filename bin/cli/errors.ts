@@ -36,7 +36,7 @@ function createBugReportUrl(error: Error): string {
   const title = `[${error.name}] ${error.message}`
   const body = `Version: ${packageJson.version}\n\nError:\n${error.stack}`
 
-  return `https://github.com/jarrodek/lupa/issues/new?title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`
+  return `https://github.com/pawel-up/lupa/issues/new?title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`
 }
 
 /**

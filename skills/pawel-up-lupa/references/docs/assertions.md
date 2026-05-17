@@ -8,7 +8,7 @@ However, Lupa does ship with an officially supported, first-party assertion plug
 
 To use the built-in assert library, you need to register it as a test plugin inside your runner configuration.
 
-Update your `bin/test.ts` file to include `@pawel-up/lupa/assert` in the `testPlugins` array:
+Update your `lupa.config.ts` file to include `@pawel-up/lupa/assert` in the `testPlugins` array:
 
 ```ts
 import { configure, processCLIArgs, run } from '@pawel-up/lupa/runner'
@@ -37,7 +37,7 @@ run()
 
 Because plugins extend the base `TestContext` dynamically at runtime, TypeScript doesn't automatically know that the `assert` property exists on the context object.
 
-To tell the TypeScript compiler about the `assert` property, you must use **Module Augmentation**. You can place this declaration directly at the bottom of your `bin/test.ts` file, or inside a dedicated `global.d.ts` file in your project.
+To tell the TypeScript compiler about the `assert` property, you must use **Module Augmentation**. You can place this declaration directly at the bottom of your `lupa.config.ts` file, or inside a dedicated `global.d.ts` file in your project.
 
 ```ts
 import type { Assert } from '@pawel-up/lupa/assert'
@@ -61,12 +61,12 @@ With the plugin registered and TypeScript configured, the `assert` object is inj
 import { test } from '@pawel-up/lupa/testing'
 
 test('validates user input', ({ assert }) => {
-  const username = 'pawel-up'
+  const username = 'pawel'
 
   // You now have full autocomplete on the assert object!
-  assert.equal(username, 'pawel-up')
+  assert.equal(username, 'pawel')
   assert.isString(username)
-  assert.lengthOf(username, 8)
+  assert.lengthOf(username, 5)
 })
 ```
 

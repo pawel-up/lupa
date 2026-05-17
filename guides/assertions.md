@@ -61,12 +61,12 @@ With the plugin registered and TypeScript configured, the `assert` object is inj
 import { test } from '@pawel-up/lupa/testing'
 
 test('validates user input', ({ assert }) => {
-  const username = 'jarrodek'
+  const username = 'pawel'
   
   // You now have full autocomplete on the assert object!
-  assert.equal(username, 'jarrodek')
+  assert.equal(username, 'pawel')
   assert.isString(username)
-  assert.lengthOf(username, 8)
+  assert.lengthOf(username, 5)
 })
 ```
 
