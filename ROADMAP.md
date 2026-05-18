@@ -16,10 +16,10 @@ While we have a solid base with Chai, we need a robust, web-component specific a
 ~~- Extract `window.__coverage__` via the Playwright telemetry bridge.~~
 ~~- Map coverage back to original TypeScript sources and generate standard `lcov`/`html` reports.~~
 
-### 3. Parallel Execution & Cross-Browser Matrix
-Scale test execution speed and browser matrix.
-- **Parallel Workers:** Run suites concurrently across multiple Playwright browser contexts.
-- **Multi-Browser Runs:** Configure Lupa to run the same suite against Chromium, Firefox, and WebKit simultaneously.
+~~### 3. Parallel Execution & Cross-Browser Matrix~~
+~~Scale test execution speed and browser matrix.~~
+~~- **Parallel Workers:** Run suites concurrently across multiple Playwright browser contexts.~~
+~~- **Multi-Browser Runs:** Configure Lupa to run the same suite against Chromium, Firefox, and WebKit simultaneously.~~
 
 ~~### 4. AI Coding Agent Skills (`SKILL.md`)~~
 ~~Create standard instructions for AI coding assistants.~~
