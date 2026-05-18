@@ -1,7 +1,7 @@
 import logUpdate from 'log-update'
 import { BaseReporter } from './base.js'
 import type { RunnerEvents, TestEndNode, RunnerStartNode, SuiteEndNode } from '../types.js'
-import { colors } from '../runner/helpers.js'
+import { colors, icons } from '../runner/helpers.js'
 
 const PROGRESS_BLOCKS = [' ', '▏', '▎', '▍', '▌', '▋', '▊', '▉', '█']
 const PROGRESS_WIDTH = 30
@@ -121,7 +121,7 @@ export class ProgressReporter extends BaseReporter {
       console.log('')
 
       for (const log of fileLogs) {
-        const prefix = log.type === 'error' ? '✖ Browser errors:' : '🚧 Browser logs:'
+        const prefix = log.type === 'error' ? `${icons.cross} Browser errors:` : `${icons.browserLog} Browser logs:`
         const prefixColored = log.type === 'error' ? colors.red(prefix) : colors.yellow(prefix)
         console.log(` ${prefixColored}`)
 
@@ -148,9 +148,27 @@ export class ProgressReporter extends BaseReporter {
     const scheduledBlocks = colors.gray(progressBlocks.slice(finishedBlockCount))
     const bar = `|${finishedBlocks}${scheduledBlocks}|`
 
-    const text = `${bar} ${completedFiles}/${totalExpected} test files | ${this.#passedTests} passed, ${this.#failedTests} failed, ${this.#skippedTests} skipped`
+    const message: string[] = [bar, `${completedFiles}/${totalExpected}`, 'test files |']
 
-    return text
+    if (this.#passedTests > 0) {
+      message.push(colors.green(`${this.#passedTests} passed,`))
+    } else {
+      message.push(`${this.#passedTests} passed,`)
+    }
+
+    if (this.#failedTests > 0) {
+      message.push(colors.red(`${this.#failedTests} failed,`))
+    } else {
+      message.push(`${this.#failedTests} failed,`)
+    }
+
+    if (this.#skippedTests > 0) {
+      message.push(colors.yellow(`${this.#skippedTests} skipped`))
+    } else {
+      message.push(`${this.#skippedTests} skipped`)
+    }
+
+    return message.join(' ')
   }
 
   protected render() {

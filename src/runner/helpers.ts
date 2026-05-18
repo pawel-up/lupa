@@ -35,6 +35,7 @@ export const icons =
         warning: '‼',
         branch: ' -',
         squareSmallFilled: '[█]',
+        browserLog: '🚧',
       }
     : {
         tick: '✔',
@@ -46,6 +47,7 @@ export const icons =
         warning: '⚠',
         branch: '└──',
         squareSmallFilled: '◼',
+        browserLog: '🚧',
       }
 
 /**
