@@ -15,7 +15,7 @@ import { type Test } from '../test/main.js'
 import { type Refiner } from '../../refiner/main.js'
 import { type Emitter } from '../emitter.js'
 import { GroupRunner } from './runner.js'
-import type { GroupHooksHandler, TestHooksHandler, GroupOptions, GroupHooks } from '../../types.js'
+import type { GroupHooksHandler, TestHooksHandler, GroupOptions, GroupHooks, RunnerListGroupNode } from '../../types.js'
 
 /**
  * Group class exposes an API to group multiple tests together
@@ -257,5 +257,24 @@ export class Group extends Macroable {
 
     await runner.run()
     this.#failed = runner.failed
+  }
+
+  /**
+   * Return JSON representation of the group
+   */
+  toJSON(): RunnerListGroupNode {
+    const tests = []
+
+    for (const test of this.tests) {
+      if (this.#refiner.allows(test)) {
+        tests.push(test.toJSON())
+      }
+    }
+
+    return {
+      title: this.title,
+      tests,
+      groups: [],
+    }
   }
 }

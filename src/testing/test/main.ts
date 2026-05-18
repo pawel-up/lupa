@@ -24,6 +24,7 @@ import type {
   TestExecutor,
   TestHooksHandler,
   TestHooksCleanupHandler,
+  RunnerListTestNode,
 } from '../../types.js'
 
 /**
@@ -522,5 +523,20 @@ export class Test<TestData extends DataSetNode = undefined> extends Macroable {
     await this.#activeRunner.run()
     this.#failed = this.#activeRunner.failed
     this.#activeRunner = undefined
+  }
+
+  /**
+   * Return JSON representation of the test
+   */
+  toJSON(): RunnerListTestNode {
+    return {
+      title: this.title,
+      tags: this.options.tags || [],
+      timeout: this.options.timeout,
+      retries: this.options.retries,
+      isSkipped: !!this.options.isSkipped,
+      isTodo: !!this.options.isTodo,
+      meta: this.options.meta,
+    }
   }
 }

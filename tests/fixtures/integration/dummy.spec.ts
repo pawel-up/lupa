@@ -14,7 +14,7 @@ test.group('Dummy Group', () => {
 
   test('this test should pass', ({ assert }) => {
     assert.ok(true)
-  })
+  }).tags(['@dummy-tag'])
 
   test('this test uses fixture', async ({ assert }) => {
     const el = await fixture(html`<span>lit html works</span>`)

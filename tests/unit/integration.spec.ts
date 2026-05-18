@@ -144,4 +144,148 @@ test('Integration: Lupa Framework End-to-End', async (t) => {
       assert.strictEqual(payload.failures.length, 0)
     }
   )
+
+  await t.test(
+    'executes list command with filters and correctly outputs filtered test table',
+    { timeout: TIMEOUT },
+    async () => {
+      const runnerPath = path.join(process.cwd(), 'bin', 'lupa.ts')
+
+      const { exitCode, stdout, stderr } = await new Promise<{
+        exitCode: number | null
+        stdout: string
+        stderr: string
+      }>((resolve, reject) => {
+        const child = fork(runnerPath, ['list', '--groups', 'Dummy Group'], {
+          execArgv: ['--import', 'tsx'],
+          cwd: process.cwd(),
+          env: {
+            ...process.env,
+            FORCE_COLOR: '0',
+            CI: '1',
+          },
+          stdio: 'pipe',
+        })
+
+        let out = ''
+        let err = ''
+
+        child.stdout?.on('data', (data) => (out += data))
+        child.stderr?.on('data', (data) => (err += data))
+
+        child.on('exit', (code) => {
+          resolve({ exitCode: code, stdout: out, stderr: err })
+        })
+
+        child.on('error', reject)
+      })
+
+      const output = stdout + '\n' + stderr
+
+      assert.strictEqual(exitCode, 0, `Expected runner to exit with code 0. Output:\n${output}`)
+      assert.ok(
+        output.includes('Total tests: 4'),
+        `Expected list output to show 4 tests for Dummy Group. Actual output: ${output}`
+      )
+      assert.ok(output.includes('Suite'), 'Expected list output to contain a table with Suite column.')
+    }
+  )
+
+  await t.test(
+    'executes list command with tag filter and correctly outputs filtered test table',
+    { timeout: TIMEOUT },
+    async () => {
+      const runnerPath = path.join(process.cwd(), 'bin', 'lupa.ts')
+
+      const { exitCode, stdout, stderr } = await new Promise<{
+        exitCode: number | null
+        stdout: string
+        stderr: string
+      }>((resolve, reject) => {
+        const child = fork(runnerPath, ['list', '--tags', '@dummy-tag'], {
+          execArgv: ['--import', 'tsx'],
+          cwd: process.cwd(),
+          env: {
+            ...process.env,
+            FORCE_COLOR: '0',
+            CI: '1',
+          },
+          stdio: 'pipe',
+        })
+
+        let out = ''
+        let err = ''
+
+        child.stdout?.on('data', (data) => (out += data))
+        child.stderr?.on('data', (data) => (err += data))
+
+        child.on('exit', (code) => {
+          resolve({ exitCode: code, stdout: out, stderr: err })
+        })
+
+        child.on('error', reject)
+      })
+
+      const output = stdout + '\n' + stderr
+
+      assert.strictEqual(exitCode, 0, `Expected runner to exit with code 0. Output:\n${output}`)
+      assert.ok(
+        output.includes('Total tests: 1'),
+        `Expected list output to show 1 test for @dummy-tag. Actual output: ${output}`
+      )
+      assert.ok(
+        output.includes('this test should pass'),
+        `Expected output to include the matching test name. Actual output: ${output}`
+      )
+    }
+  )
+
+  await t.test(
+    'executes list command with files filter and correctly outputs filtered test table',
+    { timeout: TIMEOUT },
+    async () => {
+      const runnerPath = path.join(process.cwd(), 'bin', 'lupa.ts')
+
+      const { exitCode, stdout, stderr } = await new Promise<{
+        exitCode: number | null
+        stdout: string
+        stderr: string
+      }>((resolve, reject) => {
+        const child = fork(runnerPath, ['list', '--files', 'dummy2.spec.ts'], {
+          execArgv: ['--import', 'tsx'],
+          cwd: process.cwd(),
+          env: {
+            ...process.env,
+            FORCE_COLOR: '0',
+            CI: '1',
+          },
+          stdio: 'pipe',
+        })
+
+        let out = ''
+        let err = ''
+
+        child.stdout?.on('data', (data) => (out += data))
+        child.stderr?.on('data', (data) => (err += data))
+
+        child.on('exit', (code) => {
+          resolve({ exitCode: code, stdout: out, stderr: err })
+        })
+
+        child.on('error', reject)
+      })
+
+      const output = stdout + '\n' + stderr
+
+      assert.strictEqual(exitCode, 0, `Expected runner to exit with code 0. Output:\n${output}`)
+      assert.ok(
+        output.includes('Total tests: 4'),
+        `Expected list output to show 4 tests for dummy2.spec.ts. Actual output: ${output}`
+      )
+      assert.ok(
+        output.includes('Math Operations Group'),
+        `Expected output to include the correct group. Actual output: ${output}`
+      )
+    }
+  )
 })

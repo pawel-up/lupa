@@ -4,6 +4,7 @@ import debug from './debug.js'
 import { type Suite } from './suite/main.js'
 import { type Emitter } from './emitter.js'
 import { Group } from './group/main.js'
+import { RunnerListNode } from '../types.js'
 
 /**
  * The WebRunner class exposes the API to register test suites and execute
@@ -23,6 +24,14 @@ export class WebRunner extends Macroable {
    * A collection of suites
    */
   suites: Suite[] = []
+
+  /**
+   * A flag determining if the runner is configured to list all the tests
+   * instead of running them
+   */
+  get isList(): boolean {
+    return typeof window !== 'undefined' && !!window.__lupa__?.config?.list
+  }
 
   /**
    * Constructor
@@ -113,10 +122,34 @@ export class WebRunner extends Macroable {
    * @returns Promise that resolves when the runner finishes
    */
   async exec(): Promise<void> {
+    const pinnedTests = this.collectPinnedTests()
+    if (pinnedTests.length > 0) {
+      await this.#emitter.emit('runner:pinned_tests', { tests: pinnedTests })
+    }
+
+    if (this.isList) {
+      await this.executeList()
+    } else {
+      await this.executeTest()
+    }
+  }
+
+  /**
+   * End the runner process. Emits "runner:end" event
+   */
+  async end() {
+    await this.#notifyEnd()
+  }
+
+  /**
+   * Collects all pinned tests from the runner.
+   *
+   * @returns Array of pinned tests
+   */
+  protected collectPinnedTests(): { title: string; stack: string }[] {
     const pinnedTests: { title: string; stack: string }[] = []
 
     for (const suite of this.suites) {
-      // Collect pinned tests
       suite.stack.forEach((groupOrTest) => {
         if (groupOrTest instanceof Group) {
           groupOrTest.tests.forEach(($test) => {
@@ -138,50 +171,37 @@ export class WebRunner extends Macroable {
       })
     }
 
-    if (pinnedTests.length > 0) {
-      this.#emitter.emit('runner:pinned_tests', { tests: pinnedTests })
+    return pinnedTests
+  }
+
+  /**
+   * Executes the list command.
+   *
+   * @returns Promise that resolves when the list is executed
+   */
+  protected async executeList(): Promise<void> {
+    const result: RunnerListNode = {
+      suites: [],
     }
 
-    if (typeof window !== 'undefined' && window.__lupa__?.config?.list) {
-      const listPayload = {
-        suites: this.suites.map((suite) => {
-          const mapTest = (t: any) => ({
-            title: t.title,
-            tags: t.options.tags || [],
-            timeout: t.options.timeout,
-            retries: t.options.retries,
-            isSkipped: !!t.options.isSkipped,
-            isTodo: !!t.options.isTodo,
-            meta: t.options.meta,
-          })
-
-          const tests = []
-          const groups = []
-
-          for (const item of suite.stack) {
-            if (item instanceof Group) {
-              groups.push({
-                title: item.title,
-                tests: item.tests.map(mapTest),
-                groups: [], // nested groups not supported
-              })
-            } else {
-              tests.push(mapTest(item))
-            }
-          }
-
-          return {
-            name: suite.name,
-            groups,
-            tests,
-          }
-        }),
+    for (const suite of this.suites) {
+      const tmp = suite.toJSON()
+      if (tmp.groups.length === 0 && tmp.tests.length === 0) {
+        continue
       }
 
-      await this.#emitter.emit('runner:list', listPayload)
-      return
+      result.suites.push(tmp)
     }
 
+    await this.#emitter.emit('runner:list', result)
+  }
+
+  /**
+   * Executes the test command.
+   *
+   * @returns Promise that resolves when the test is executed
+   */
+  protected async executeTest(): Promise<void> {
     for (const suite of this.suites) {
       /**
        * Skip tests in bail mode when there is an error
@@ -201,12 +221,5 @@ export class WebRunner extends Macroable {
         this.#failed = true
       }
     }
-  }
-
-  /**
-   * End the runner process. Emits "runner:end" event
-   */
-  async end() {
-    await this.#notifyEnd()
   }
 }

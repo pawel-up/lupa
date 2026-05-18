@@ -16,7 +16,7 @@ import { type Emitter } from '../emitter.js'
 import { type Refiner } from '../../refiner/main.js'
 import { Group } from '../group/main.js'
 import { SuiteRunner } from './runner.js'
-import type { SuiteHooks, SuiteHooksHandler } from '../../types.js'
+import type { SuiteHooks, SuiteHooksHandler, RunnerListSuiteNode } from '../../types.js'
 
 /**
  * The Suite class exposes the API to run a group of tests
@@ -202,5 +202,34 @@ export class Suite extends Macroable {
     })
     await runner.run()
     this.#failed = runner.failed
+  }
+
+  /**
+   * Return JSON representation of the suite
+   */
+  toJSON(): RunnerListSuiteNode {
+    const tests = []
+    const groups = []
+
+    for (const item of this.stack) {
+      if (!this.#refiner.allows(item as any)) {
+        continue
+      }
+
+      if (item instanceof Group) {
+        const groupJSON = item.toJSON()
+        if (groupJSON.tests.length > 0) {
+          groups.push(groupJSON)
+        }
+      } else {
+        tests.push((item as Test<any>).toJSON())
+      }
+    }
+
+    return {
+      name: this.name,
+      groups,
+      tests,
+    }
   }
 }
