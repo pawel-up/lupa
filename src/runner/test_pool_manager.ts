@@ -1,4 +1,5 @@
 import os from 'node:os'
+import { fileURLToPath } from 'node:url'
 import type { NormalizedConfig, TestSuite } from './types.js'
 import { PlannedTestSuite } from '../types.js'
 
@@ -135,8 +136,22 @@ export class TestPoolManager {
    * @returns Total number of test files
    */
   getFilesCount(): number {
+    const fileFilters = this.config.filters?.files
+
     return Array.from(this.#chunks.values()).reduce((acc, chunk) => {
-      return acc + chunk.suites.reduce((sum, s) => sum + s.filesURLs.length, 0)
+      return (
+        acc +
+        chunk.suites.reduce((sum, s) => {
+          if (fileFilters && fileFilters.length > 0) {
+            const count = s.filesURLs.filter((u) => {
+              const path = fileURLToPath(u)
+              return fileFilters.some((allowed) => path.endsWith(allowed))
+            }).length
+            return sum + count
+          }
+          return sum + s.filesURLs.length
+        }, 0)
+      )
     }, 0)
   }
 }
