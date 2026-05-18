@@ -1,16 +1,14 @@
-import { chromium, firefox, webkit, type Browser } from 'playwright'
+import { type BrowserType, chromium, firefox, webkit, type Browser } from 'playwright'
+import type { Key } from 'node:readline'
+import type { ViteDevServer } from 'vite'
 import { Emitter } from '../testing/emitter.js'
 import type { RunnerEvents } from '../types.js'
 import { FilesManager } from './files_manager.js'
-
 import debug from './debug.js'
 import { CommandsHandler } from '../commands/rpc_handler.js'
-import type { Key } from 'node:readline'
 import { colors } from './helpers.js'
 import { Runner } from './runner.js'
-
 import type { Orchestrator } from './orchestrator.js'
-import type { ViteDevServer } from 'vite'
 
 export class Cli {
   #orchestrator: Orchestrator
@@ -187,53 +185,68 @@ export class Cli {
         await this.#replayEvents()
       }
     } else if (key.name === 'd') {
-      if (!this.#focusedFile) {
-        console.log('\n[Focus Mode] Select a file to debug')
-        await this.#promptFocusFile()
-      }
-
-      if (!this.#focusedFile) {
-        return
-      }
-
-      if (!this.debugBrowser) {
-        console.log('\nOpening debug browser...')
-        let launchClass = chromium
-        if (this.#orchestrator.defaultBrowserType === 'firefox') launchClass = firefox
-        if (this.#orchestrator.defaultBrowserType === 'webkit') launchClass = webkit
-
-        const launchOptions: any = { headless: false }
-        if (launchClass === chromium) {
-          launchOptions.devtools = true
-        }
-
-        this.debugBrowser = await launchClass.launch(launchOptions)
-        const debugPage = await this.debugBrowser.newPage()
-
-        const commandsHandler = new CommandsHandler(debugPage)
-        await commandsHandler.boot()
-
-        const browser = this.debugBrowser
-        debugPage.on('close', async () => {
-          debug('closing debug browser')
-          await commandsHandler.teardown()
-          await browser.close().catch(() => {
-            debug('browser already closed')
-          })
-          if (this.debugBrowser === browser) {
-            this.debugBrowser = undefined
-          }
-        })
-
-        const vite = this.#orchestrator.vite as ViteDevServer
-        const serverUrl = vite.resolvedUrls?.local[0] || `http://localhost:${vite.config.server.port}`
-        await debugPage.goto(
-          `${serverUrl}__lupa__/runner.html?chunkId=${this.#orchestrator.defaultBrowserType}-0&debug=1`
-        )
-      } else {
-        console.log('\nDebug browser is already open.')
-      }
+      this.handleDebugBrowser()
     }
+  }
+
+  protected async handleDebugBrowser() {
+    if (!this.#focusedFile) {
+      console.log('\n[Focus Mode] Select a file to debug')
+      await this.#promptFocusFile()
+    }
+
+    if (!this.#focusedFile) {
+      return
+    }
+
+    if (this.debugBrowser) {
+      console.log('\nDebug browser is already open.')
+      return
+    }
+
+    let launchClass = chromium
+    if (this.#orchestrator.defaultBrowserType === 'firefox') launchClass = firefox
+    if (this.#orchestrator.defaultBrowserType === 'webkit') launchClass = webkit
+
+    await this.openDebugBrowser(launchClass)
+  }
+
+  protected async openDebugBrowser(launchClass: BrowserType): Promise<void> {
+    console.log('\nOpening debug browser...')
+
+    const launchOptions: any = { headless: false }
+    if (launchClass === chromium) {
+      launchOptions.devtools = true
+    }
+
+    this.debugBrowser = await launchClass.launch(launchOptions)
+    const debugPage = await this.debugBrowser.newPage()
+
+    const commandsHandler = new CommandsHandler(debugPage)
+    await commandsHandler.boot()
+
+    const browser = this.debugBrowser
+    debugPage.on('close', async () => {
+      debug('closing debug browser')
+      await commandsHandler.teardown()
+      await browser.close().catch(() => {
+        debug('browser already closed')
+      })
+      if (this.debugBrowser === browser) {
+        this.debugBrowser = undefined
+      }
+    })
+
+    const vite = this.#orchestrator.vite as ViteDevServer
+    const url = new URL(
+      '/__lupa__/runner.html',
+      vite.resolvedUrls?.local[0] || `http://localhost:${vite.config.server.port}`
+    )
+
+    url.searchParams.append('chunkId', `${this.#orchestrator.defaultBrowserType}-0`)
+    url.searchParams.append('debug', '1')
+
+    await debugPage.goto(url.toString())
   }
 
   async start() {
@@ -307,7 +320,7 @@ export class Cli {
     const displayList: URL[] = []
 
     if (passed.length > 0) {
-      console.log(failed.length > 0 ? '\nAll other tests:' : '\nAll tests:')
+      console.log(failed.length > 0 ? '\nPassing tests:' : '\nAll tests:')
       passed.forEach((file) => {
         const cwd = this.#orchestrator.config.cwd || process.cwd()
         const relPath = file.pathname.replace(cwd + '/', '')
@@ -326,38 +339,33 @@ export class Cli {
       })
     }
 
-    const readline = await import('node:readline')
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
+    const { number } = await import('@inquirer/prompts')
+    const num = await number({
+      message: 'Enter file number (or press Enter to cancel):',
+      min: 1,
+      max: displayList.length,
+      required: false,
     })
 
-    return new Promise((resolve) => {
-      rl.question('\nEnter file number (or press Enter to cancel): ', (answer) => {
-        rl.close()
-        process.stdin.resume()
+    process.stdin.resume()
 
-        if (process.stdin.isTTY) {
-          process.stdin.setRawMode(true)
-        }
+    if (process.stdin.isTTY) {
+      process.stdin.setRawMode(true)
+    }
 
-        process.stdin.on('keypress', this.#onKeypress)
+    process.stdin.on('keypress', this.#onKeypress)
 
-        const num = parseInt(answer.trim(), 10)
-        if (!isNaN(num) && num > 0 && num <= displayList.length) {
-          const selected = displayList[num - 1]
-          this.#focusedFile = selected.pathname.split('/').pop() || null
-          this.#orchestrator.config.filters.files = [selected.pathname]
-          console.log(`\nFocusing on: ${this.#focusedFile}`)
-          this.#orchestrator.executeTests()
-          resolve()
-        } else {
-          console.log('\nCancelled focus mode selection.')
-          this.printWaitingMessage()
-          resolve()
-        }
-      })
-    })
+    if (num === undefined) {
+      console.log('\nCancelled focus mode selection.')
+      this.printWaitingMessage()
+      return
+    }
+
+    const selected = displayList[num - 1]
+    this.#focusedFile = selected.pathname.split('/').pop() || null
+    this.#orchestrator.config.filters.files = [selected.pathname]
+    console.log(`\nFocusing on: ${this.#focusedFile}`)
+    this.#orchestrator.executeTests()
   }
 
   async #replayEvents() {
