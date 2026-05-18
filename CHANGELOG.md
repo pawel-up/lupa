@@ -1,3 +1,10 @@
+## [0.1.4](https://github.com/pawel-up/lupa/compare/v0.1.3...v0.1.4) (2026-05-18)
+
+
+### Bug Fixes
+
+* the list command now applies filters from the refiner ([28fcca7](https://github.com/pawel-up/lupa/commit/28fcca763051835eaec90df96a97be2658684cb1))
+
 ## [0.1.3](https://github.com/pawel-up/lupa/compare/v0.1.2...v0.1.3) (2026-05-18)
 
 
