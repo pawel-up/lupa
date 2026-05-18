@@ -1,4 +1,3 @@
-import { isRunningInAIAgent } from '@poppinss/utils'
 import debug from './debug.js'
 import type { CLIArgs, Config, Filters, NormalizedBaseConfig, NormalizedConfig } from './types.js'
 import { dot, github, ndjson, progress, json } from '../reporters/index.js'
@@ -20,7 +19,7 @@ const DEFAULTS = {
   runnerPlugins: [],
   reporters: {
     activated:
-      isRunningInAIAgent() || process.env.CI === 'true'
+      !process.stdout.isTTY || process.env.CI === 'true'
         ? ['dot'].concat(process.env.GITHUB_ACTIONS === 'true' ? ['github'] : [])
         : ['progress'],
     list: [ndjson(), dot(), github(), progress(), json()],
