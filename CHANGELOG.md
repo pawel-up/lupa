@@ -1,3 +1,11 @@
+## [0.1.5](https://github.com/pawel-up/lupa/compare/v0.1.4...v0.1.5) (2026-05-18)
+
+
+### Bug Fixes
+
+* adding colors to the progress reporter ([a77e6fb](https://github.com/pawel-up/lupa/commit/a77e6fb98a867828913e2e9dd4077c5e1e41d4f1))
+* fixes [#5](https://github.com/pawel-up/lupa/issues/5) files count in the focus mode ([04942e1](https://github.com/pawel-up/lupa/commit/04942e17176c7f53e8a0bf1699d630aae8d1f2cf))
+
 ## [0.1.4](https://github.com/pawel-up/lupa/compare/v0.1.3...v0.1.4) (2026-05-18)
 
 
