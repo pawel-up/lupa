@@ -71,7 +71,6 @@
     "emittery": "^2.0.0",
     "error-stack-parser-es": "^1.0.5",
     "fast-glob": "^3.3.3",
-    "getopts": "^2.3.0",
     "lit-html": "^3.3.2",
     "log-update": "^8.0.0",
     "nyc": "^18.0.0",
