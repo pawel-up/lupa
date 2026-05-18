@@ -9,10 +9,10 @@ A test reporter can choose the format and the destination where it wants to disp
 Reporters are registered when configuring Lupa via the `configure` method.
 
 ```ts
-import { configure } from '@pawel-up/lupa/runner'
+import { defineConfig } from '@pawel-up/lupa/runner'
 import * as reporters from '@pawel-up/lupa/reporters'
 
-configure({
+export default defineConfig({
   reporters: {
     activated: ['progress'],
     list: [
@@ -40,14 +40,14 @@ If you manually define the `reporters` property inside the configuration block, 
 You can activate or switch between the reporters from the command line using the `--reporters` CLI flag when running tests. Ensure the reporter is registered in the `list` before you can activate it.
 
 ```sh
-node bin/test.js --reporters=dot
-node bin/test.js --reporters=ndjson
+npx lupa test --reporters=dot
+npx lupa test --reporters=ndjson
 ```
 
 If you try to activate a non-registered reporter, Lupa will throw an error:
 
 ```sh
-node bin/test.js --reporters=list
+npx lupa test --reporters=list
 # Error: Invalid reporter "list". Make sure to register it first inside the "reporters.list" array.
 ```
 
@@ -70,7 +70,7 @@ The `github` reporter reports errors as annotations when running tests as part o
 The reporter is activated automatically in the GitHub Actions environment. However, if you have overridden the `reporters` property inside the configuration, you must enable it manually:
 
 ```ts
-import { configure } from '@pawel-up/lupa/runner'
+import { defineConfig } from '@pawel-up/lupa/runner'
 import * as reporters from '@pawel-up/lupa/reporters'
 
 const activated = ['progress']
@@ -80,7 +80,7 @@ if (process.env.GITHUB_ACTIONS === 'true') {
   activated.push('github')
 }
 
-configure({
+export default defineConfig({
   reporters: {
     activated,
     list: [
@@ -147,7 +147,9 @@ class MyCustomReporter extends BaseReporter {
 Once you have defined a custom reporter, register it in the entry point file.
 
 ```ts
-configure({
+import { defineConfig } from '@pawel-up/lupa/runner'
+
+export default defineConfig({
   reporters: {
     activated: [MyCustomReporter.name],
     list: [

@@ -11,12 +11,10 @@ To use the built-in assert library, you need to register it as a test plugin ins
 Update your `lupa.config.ts` file to include `@pawel-up/lupa/assert` in the `testPlugins` array:
 
 ```ts
-import { configure, processCLIArgs, run } from '@pawel-up/lupa/runner'
+import { defineConfig } from '@pawel-up/lupa/runner'
 import { spec } from '@pawel-up/lupa/reporters'
 
-processCLIArgs(process.argv.slice(2))
-
-configure({
+export default defineConfig({
   suites: [
     {
       name: 'unit',
@@ -26,11 +24,9 @@ configure({
   testPlugins: ['@pawel-up/lupa/assert'], // Register the assert plugin
   reporters: {
     activated: ['progress'],
-    list: [progress()],
+    list: [spec()],
   },
 })
-
-run()
 ```
 
 ## TypeScript Configuration
@@ -42,7 +38,7 @@ To tell the TypeScript compiler about the `assert` property, you must use **Modu
 ```ts
 import type { Assert } from '@pawel-up/lupa/assert'
 
-// ... your configure() and run() logic ...
+// ... your defineConfig() logic ...
 
 declare module '@pawel-up/lupa/testing' {
   interface TestContext {
@@ -712,5 +708,8 @@ Assert two arrays to have same members. The values comparison is same the `asser
 assert.sameMembers(
 [1, 2, 3],
 [1, 2, 3]
+) // passes
+assert.sameMembers(
+[1, { id: 1 }, 3],
 
 <!-- truncated -->

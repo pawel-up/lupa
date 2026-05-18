@@ -58,7 +58,7 @@ according to axe-core), `configure` (Configure the Lupa test runner), `run` (Run
 Lupa doesn't force a specific assertion library onto you.
 - **cli** — # Lupa CLI Reference
 
-Lupa provides a lightweight, interactive Command-Line Interface to help you quickly scaffold testing environments and import agent skills into your workspace.
+Lupa provides a lightweight, interactive Command-Line Interface to help you run tests, scaffold environments, and import agent skills into your workspace.
 - **commands** — # Browser Commands
 
 Lupa provides a powerful set of commands to interact with the browser and DOM elements natively during your tests.

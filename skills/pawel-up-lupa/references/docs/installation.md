@@ -25,23 +25,12 @@ This command will ask you a few questions and automatically scaffold a `lupa.con
 Alternatively, you can manually create a `lupa.config.ts` file in the root of your project:
 
 ```ts
-import { configure, processCLIArgs, run } from '@pawel-up/lupa/runner'
+import { defineConfig } from '@pawel-up/lupa/runner'
 import type { Assert } from '@pawel-up/lupa/assert'
-import '@pawel-up/lupa/testing'
 
-// 1. Process command line arguments
-processCLIArgs(process.argv.slice(2))
-
-// 2. Configure Lupa
-configure({
+export default defineConfig({
   files: ['tests/browser/**/*.spec.ts'],
   testPlugins: ['@pawel-up/lupa/assert'],
-})
-
-// 3. Run the orchestrator
-run().catch((error) => {
-  console.error(error)
-  process.exit(1)
 })
 
 // 4. Augment TestContext for strong typing
@@ -52,14 +41,8 @@ declare module '@pawel-up/lupa/testing' {
 }
 ```
 
-### `processCLIArgs`
-The `processCLIArgs` method intercepts command line arguments (like `--watch` or `--reporters`) and automatically tweaks the Lupa configuration.
-
-### `configure`
-The `configure` method sets up the Lupa runner. You must provide the `files` array (glob patterns pointing to your tests) and any required `testPlugins`.
-
-### `run`
-The `run` method boots the Vite server, spins up Playwright, and executes your tests in the browser.
+### `defineConfig`
+The `defineConfig` method sets up the Lupa runner configuration object which the CLI dynamically resolves and executes. You must provide the `files` array (glob patterns pointing to your tests) and any required `testPlugins`.
 
 ## Writing your first test
 

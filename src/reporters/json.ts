@@ -82,7 +82,10 @@ export class JSONReporter extends BaseReporter {
   }
 
   protected onRunnerList(payload: RunnerListNode): void {
-    this.#listPayload = payload
+    if (!this.#listPayload) {
+      this.#listPayload = { suites: [] }
+    }
+    this.#listPayload.suites.push(...payload.suites)
   }
 
   protected async end() {

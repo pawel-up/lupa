@@ -1,8 +1,66 @@
 # Lupa CLI Reference
 
-Lupa provides a lightweight, interactive Command-Line Interface to help you quickly scaffold testing environments and import agent skills into your workspace. 
+Lupa provides a lightweight, interactive Command-Line Interface to help you run tests, scaffold environments, and import agent skills into your workspace. 
 
-Unlike other frameworks, Lupa's CLI is **only for scaffolding and setup**. You execute your tests directly via your custom configuration script (e.g., `npx lupa test`), keeping the execution flow entirely within your control.
+While the test execution is entirely driven by your `lupa.config.ts` file, the CLI provides convenient entry points to execute, filter, and discover your tests.
+
+---
+
+## `lupa test`
+
+The primary command for executing your Lupa test suite. By default, it automatically detects and loads `lupa.config.ts` from your current directory and runs the test runner.
+
+```bash
+npx lupa test
+```
+
+### Filtering & Options
+You can narrow down what gets executed using various filters:
+
+- `--files <files...>`: Filter tests by file name substring (e.g. `npx lupa test --files auth.spec.ts`)
+- `--tests <titles...>`: Filter tests by test title (e.g. `npx lupa test --tests "Login"`)
+- `--groups <titles...>`: Filter tests by group title
+- `--tags <tags...>`: Filter tests by tags (e.g. `npx lupa test --tags="@slow"`)
+- `--match-all`: Run tests that match all supplied tags instead of any of them.
+- `--failed`: Only run tests that failed during the last run.
+
+### Execution Control
+- `--watch`: Watch for file changes and intelligently re-run affected tests.
+- `--bail`: Exit early when a test fails.
+- `--timeout <duration>`: Define a default timeout for all tests.
+- `--retries <count>`: Define default retries for all tests.
+
+### Runner Options
+- `-c, --config <path>`: Path to a custom configuration file (defaults to `lupa.config.ts`).
+- `--reporters <names...>`: Activate one or more test reporters (e.g., `npx lupa test --reporters html`).
+- `--browser <browser>`: Specify the browser to run tests in (choices: `chromium`, `firefox`, `webkit`).
+- `--verbose`: Enable verbose logging.
+
+---
+
+## `lupa list`
+
+Discover and list available tests without running them. This is useful for introspecting your test architecture or for programmatic integrations (like AI agents).
+
+```bash
+npx lupa list
+```
+
+By default, it outputs a clean, human-readable table of your Suites, Groups, and Tests. 
+
+### Format Option
+You can output the test tree as structured JSON using the `--format` flag:
+
+```bash
+npx lupa list --format json
+```
+
+### Filtering
+The `list` command accepts the same filtering options as the `test` command. For example, to list all tests in a specific file:
+
+```bash
+npx lupa list --files auth.spec.ts
+```
 
 ---
 

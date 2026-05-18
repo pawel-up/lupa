@@ -152,7 +152,7 @@ const config = await loadLupaConfig('/path/to/root')
 Run the test suite.
 
 This is the primary entry point for running your tests. It uses the configuration
-provided by configure and the CLI arguments parsed by processCLIArgs.
+provided by configure.
 ```ts
 run(): Promise<void>
 ```

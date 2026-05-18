@@ -1,7 +1,7 @@
 import { isRunningInAIAgent } from '@poppinss/utils'
 import debug from './debug.js'
 import type { CLIArgs, Config, Filters, NormalizedBaseConfig, NormalizedConfig } from './types.js'
-import { dot, github, ndjson, progress } from '../reporters/index.js'
+import { dot, github, ndjson, progress, json } from '../reporters/index.js'
 import { Refiner } from '../refiner/main.js'
 
 export const NOOP = () => {
@@ -23,7 +23,7 @@ const DEFAULTS = {
       isRunningInAIAgent() || process.env.CI === 'true'
         ? ['dot'].concat(process.env.GITHUB_ACTIONS === 'true' ? ['github'] : [])
         : ['progress'],
-    list: [ndjson(), dot(), github(), progress()],
+    list: [ndjson(), dot(), github(), progress(), json()],
   },
   importer: (filePath) => import(filePath.href),
 } satisfies Config

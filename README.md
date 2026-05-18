@@ -105,6 +105,15 @@ For the ultimate developer experience, run it in **Watch Mode**:
 npx lupa test --watch
 ```
 
+### 4. Discovering Tests
+
+You can list all available test suites and tests without executing them. By default, it prints a clean table, but you can also output JSON for programmatic integrations:
+
+```bash
+npx lupa list
+npx lupa list --format json
+```
+
 ## AI Agent Integration (MCP)
 
 Lupa features a standalone Model Context Protocol (MCP) server package that empowers AI agents inside your IDE (like Cline, Roo, or Cursor) to programmatically discover, filter, and run your test suites. 

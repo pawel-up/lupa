@@ -106,7 +106,7 @@ export function configure(options: Config, args?: CLIArgs) {
  * Run the test suite.
  *
  * This is the primary entry point for running your tests. It uses the configuration
- * provided by {@link configure} and the CLI arguments parsed by {@link processCLIArgs}.
+ * provided by {@link configure}.
  *
  * @returns A Promise that resolves when the test run is complete,
  *          or rejects if the test run encounters an error (e.g., uncaught exceptions).
