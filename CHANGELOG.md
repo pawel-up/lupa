@@ -1,3 +1,10 @@
+## [0.1.3](https://github.com/pawel-up/lupa/compare/v0.1.2...v0.1.3) (2026-05-18)
+
+
+### Bug Fixes
+
+* decoupling the `--list` flag to the `list` command ([63c4cec](https://github.com/pawel-up/lupa/commit/63c4cecb03820324e3e8100df727c29cca7114a3))
+
 ## [0.1.2](https://github.com/pawel-up/lupa/compare/v0.1.1...v0.1.2) (2026-05-18)
 
 
