@@ -6,14 +6,12 @@
  */
 import type { Config, NormalizedConfig, CLIArgs } from './types.js'
 export type * from './types.js'
-
-import { CliParser } from './cli_parser.js'
 import { ConfigManager } from './config_manager.js'
 import debug from './debug.js'
 import { ensureIsConfigured } from './validator.js'
 import { Planner } from './planner.js'
 import { Orchestrator } from './orchestrator.js'
-
+import type { ProgrammaticReporterContract } from '../types.js'
 export { SummaryBuilder } from './summary_builder.js'
 export { loadLupaConfig } from './config_loader.js'
 export type { Config, NormalizedConfig, CLIArgs, JsonSerializable } from './types.js'
@@ -30,6 +28,16 @@ let cliArgs: CLIArgs = {}
  *
  * This is an identity function that provides TypeScript autocomplete and type-checking
  * for your `lupa.config.ts` file. It does not mutate state or hydrate the configuration.
+ *
+ * @example
+ * ```ts
+ * import { defineConfig } from '@pawel-up/lupa/runner'
+ *
+ * export default defineConfig({
+ *   files: ['tests/**\/*.spec.ts'],
+ *   testPlugins: ['@pawel-up/lupa/assert']
+ * })
+ * ```
  *
  * @param config Lupa configuration object
  * @returns Unmodified Lupa configuration object
@@ -55,6 +63,7 @@ export function defineConfig(config: Config): Config {
  *
  * @param options - The configuration object. You must provide either a top-level `files` array
  *                  or a `suites` array to define your test files.
+ * @param args - Optional CLI arguments to override configuration.
  *
  * @example
  * **Basic Configuration**
@@ -86,28 +95,11 @@ export function defineConfig(config: Config): Config {
  * run()
  * ```
  */
-export function configure(options: Config) {
+export function configure(options: Config, args?: CLIArgs) {
+  if (args) {
+    cliArgs = args
+  }
   runnerConfig = new ConfigManager(options, cliArgs).hydrate()
-}
-
-/**
- * Process command line arguments. Later the parsed output
- * will be used by Lupa to compute the configuration
- *
- * @param argv - The command line arguments to parse.
- *
- * @example
- * ```ts
- * import { processCLIArgs, configure, run } from '@pawel-up/lupa/runner'
- *
- * processCLIArgs(['--spec', 'tests/**\/*.spec.ts'])
- * configure({})
- *
- * run()
- * ```
- */
-export function processCLIArgs(argv: string[]) {
-  cliArgs = new CliParser().parse(argv)
 }
 
 /**
@@ -135,14 +127,12 @@ export function processCLIArgs(argv: string[]) {
  * run()
  * ```
  */
-import type { ProgrammaticReporterContract } from '../types.js'
-
 export async function run() {
   /**
    * Display help when help flag is used
    */
   if (cliArgs.help) {
-    console.log(new CliParser().getHelp())
+    // Help is now handled by commander, so this might not be reached, but just in case
     return
   }
 
@@ -182,6 +172,14 @@ export async function run() {
 /**
  * Run Lupa programmatically and return the typed output of the given programmatic reporter.
  * This execution path does not intercept standard process signals and avoids `process.exit()`.
+ *
+ * @example
+ * ```ts
+ * import { runProgrammatic } from '@pawel-up/lupa/runner'
+ * import { json } from '@pawel-up/lupa/reporters'
+ *
+ * const result = await runProgrammatic(json())
+ * ```
  */
 export async function runProgrammatic<T>(
   reporter: ProgrammaticReporterContract<T>,

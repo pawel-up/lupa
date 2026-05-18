@@ -59,29 +59,14 @@ defineConfig(config: Config): Config
 **Parameters:**
 - `config: Config` — Lupa configuration object
 **Returns:** `Config` — Unmodified Lupa configuration object
-
-### `processCLIArgs`
-Process command line arguments. Later the parsed output
-will be used by Lupa to compute the configuration
 ```ts
-processCLIArgs(argv: string[]): void
-```
-**Parameters:**
-- `argv: string[]` — The command line arguments to parse.
-```ts
-import { processCLIArgs, configure, run } from '@pawel-up/lupa/runner'
+import { defineConfig } from '@pawel-up/lupa/runner'
 
-processCLIArgs(['--spec', 'tests/**/*.spec.ts'])
-configure({})
-
-run()
+export default defineConfig({
+  files: ['tests/**/*.spec.ts'],
+  testPlugins: ['@pawel-up/lupa/assert']
+})
 ```
-
-### `run`
-```ts
-run(): Promise<void>
-```
-**Returns:** `Promise<void>`
 
 ### `runProgrammatic`
 Run Lupa programmatically and return the typed output of the given programmatic reporter.
@@ -93,16 +78,12 @@ runProgrammatic<T>(reporter: ProgrammaticReporterContract<T>, options: Partial<C
 - `reporter: ProgrammaticReporterContract<T>`
 - `options: Partial<Config>` — default: `{}`
 **Returns:** `Promise<T>`
-
-### `loadLupaConfig`
-Loads the Lupa configuration from a local file (e.g. lupa.config.ts)
 ```ts
-loadLupaConfig(root: string, configPath?: string): Promise<Config | null>
+import { runProgrammatic } from '@pawel-up/lupa/runner'
+import { json } from '@pawel-up/lupa/reporters'
+
+const result = await runProgrammatic(json())
 ```
-**Parameters:**
-- `root: string`
-- `configPath: string` (optional)
-**Returns:** `Promise<Config | null>`
 
 ## Configuration
 
@@ -117,11 +98,12 @@ This function is exposed primarily for advanced users building custom integratio
 
 You must call this function before calling run.
 ```ts
-configure(options: Config): void
+configure(options: Config, args?: CLIArgs): void
 ```
 **Parameters:**
 - `options: Config` — The configuration object. You must provide either a top-level `files` array
                  or a `suites` array to define your test files.
+- `args: CLIArgs` (optional) — Optional CLI arguments to override configuration.
 **Basic Configuration**
 ```ts
 import { configure, run } from '@pawel-up/lupa/runner'
@@ -143,6 +125,45 @@ configure({
     { name: 'e2e', files: ['tests/e2e/**/*.spec.ts'] }
   ],
   timeout: 5000,
+  forceExit: true
+})
+
+run()
+```
+
+### `loadLupaConfig`
+Loads the Lupa configuration from a local file (e.g. lupa.config.ts).
+```ts
+loadLupaConfig(root: string, configPath?: string): Promise<Config | null>
+```
+**Parameters:**
+- `root: string` — The root directory to search for the configuration file.
+- `configPath: string` (optional) — Optional path to the configuration file.
+**Returns:** `Promise<Config | null>` — A Promise that resolves to the loaded configuration object, or null if not found.
+```ts
+import { loadLupaConfig, Config } from '@pawel-up/lupa/runner'
+
+const config = await loadLupaConfig('/path/to/root')
+```
+
+## Execution
+
+### `run`
+Run the test suite.
+
+This is the primary entry point for running your tests. It uses the configuration
+provided by configure and the CLI arguments parsed by processCLIArgs.
+```ts
+run(): Promise<void>
+```
+**Returns:** `Promise<void>` — A Promise that resolves when the test run is complete,
+         or rejects if the test run encounters an error (e.g., uncaught exceptions).
+**Throws:** Throws if configuration is missing or invalid.
+```ts
+import { configure, run } from '@pawel-up/lupa/runner'
+
+configure({
+  files: ['tests/**/*.spec.ts'],
   forceExit: true
 })
 

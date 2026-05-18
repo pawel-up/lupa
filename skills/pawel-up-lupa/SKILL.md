@@ -22,13 +22,18 @@ A lightning-fast, Vite-powered browser testing framework for Web Components with
 
 **Use this skill when:**
 - Building a programmatic test runner or custom CLI integration. → use `configure`
+- You need to programmatically load and parse the Lupa configuration from a file. → use `loadLupaConfig`
 - Rendering templates and Custom Elements into the DOM for interaction → use `fixture`
 
 **Do NOT use when:**
 - You are already inside a running test or suite. (`configure`)
 - Testing pure logic or functions that do not require a DOM (`fixture`)
 
-API surface: 21 functions, 12 classes, 97 types, 8 constants
+API surface: 20 functions, 12 classes, 97 types, 8 constants
+
+## NEVER
+
+- NEVER call this inside a test suite or hook. Fix: Call it only once at the end of your execution script.
 
 ## Troubleshooting
 
@@ -42,9 +47,9 @@ API surface: 21 functions, 12 classes, 97 types, 8 constants
 ## Quick Reference
 
 **Key functions:** `assertIsAccessible` (Asserts that a given DOM element or NodeList has no accessibility violations
-according to axe-core), `configure` (Configure the Lupa test runner), `waitUntil` (Polls the condition function until it returns true or the timeout is reached), `fixture` (Renders a HTML string or a Lit template into a dedicated fixture container and mounts it to the DOM)
+according to axe-core), `configure` (Configure the Lupa test runner), `run` (Run the test suite), `loadLupaConfig` (Loads the Lupa configuration from a local file (e), `waitUntil` (Polls the condition function until it returns true or the timeout is reached), `fixture` (Renders a HTML string or a Lit template into a dedicated fixture container and mounts it to the DOM)
 
-*138 exports total — see references/ for full API.*
+*137 exports total — see references/ for full API.*
 
 ## Documentation
 

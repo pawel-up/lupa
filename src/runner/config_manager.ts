@@ -49,7 +49,9 @@ export class ConfigManager {
    * array of strings
    */
   #processAsArray(value: string | string[], splitByComma: boolean): string[] {
-    return Array.isArray(value) ? value : splitByComma ? value.split(',').map((item: string) => item.trim()) : [value]
+    const arr = Array.isArray(value) ? value : [value]
+    if (!splitByComma) return arr
+    return arr.flatMap((item) => item.split(',').map((i: string) => i.trim()))
   }
 
   /**
