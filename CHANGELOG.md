@@ -1,3 +1,11 @@
+## [0.1.1](https://github.com/pawel-up/lupa/compare/v0.1.0...v0.1.1) (2026-05-17)
+
+
+### Bug Fixes
+
+* fixing CI config ([23ec73d](https://github.com/pawel-up/lupa/commit/23ec73d42b6f09856e2289eb0b399e712fb6e83e))
+* removing ref to the old scope ([57184e4](https://github.com/pawel-up/lupa/commit/57184e4bbcb1e746c34e57c71bed0d692b0636c2))
+
 ## [1.7.3](https://github.com/jarrodek/lupa/compare/v1.7.2...v1.7.3) (2026-05-16)
 
 
