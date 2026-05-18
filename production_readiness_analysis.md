@@ -75,8 +75,8 @@ Most of the critical architectural and testing gaps have been resolved. The rema
 | Issue | Severity | Details |
 |-------|----------|---------|
 | Watch mode dead code | ✅ Addressed | Fully extracted and re-implemented cleanly in `src/runner/watch_manager.ts`. |
-| `printPinnedTests` commented out | 🟠 Low | `helpers.ts` lines 91-116 — entire function commented out. |
-| `timekeeper` dependency | 🟠 Low | `dateTimeDoubles` in `helpers.ts` imports `timekeeper` but it's unclear if this is ever used. Node-side time mocking in a browser test framework seems off. |
+| `printPinnedTests` commented out | ✅ Addressed | `helpers.ts` lines 91-116 — entire function commented out. |
+| `timekeeper` dependency | ✅ Addressed | Removed `dateTimeDoubles` and uninstalled `timekeeper` dependency. Node-side time mocking wasn't necessary. |
 | `isRunningInAIAgent` import | 🟠 Low | `config_manager.ts` imports from `@poppinss/utils` to detect AI agents for reporter selection. Niche dependency for a minor feature. |
 
 ### 6. Feature Completeness (vs. Spec) 🟡 Medium

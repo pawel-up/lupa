@@ -78,7 +78,6 @@
     "serialize-error": "^13.0.1",
     "string-width": "^8.2.1",
     "supports-color": "^10.2.2",
-    "timekeeper": "^2.3.1",
     "vite": "^8.0.13",
     "vite-plugin-istanbul": "^9.0.0"
   },

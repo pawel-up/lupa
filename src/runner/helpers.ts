@@ -7,7 +7,6 @@
  * file that was distributed with this source code.
  */
 
-import timekeeper from 'timekeeper'
 import string from '@poppinss/string'
 import useColors from '@poppinss/colors'
 import supportsColor from 'supports-color'
@@ -90,22 +89,4 @@ export function printPinnedTests(pinnedTests: string[]) {
     pinnedTests.forEach((row) => console.log(row))
     console.log('')
   }
-}
-
-export const dateTimeDoubles = {
-  reset() {
-    timekeeper.reset()
-  },
-  travelTo(durationOrDate: string | number | Date) {
-    if (durationOrDate instanceof Date) {
-      timekeeper.travel(durationOrDate)
-    } else {
-      const travelToDate = new Date()
-      travelToDate.setMilliseconds(travelToDate.getMilliseconds() + string.milliseconds.parse(durationOrDate))
-      timekeeper.travel(travelToDate)
-    }
-  },
-  freeze(date?: Date) {
-    timekeeper.freeze(date)
-  },
 }
