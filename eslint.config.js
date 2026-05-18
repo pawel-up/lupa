@@ -4,7 +4,6 @@ import tseslint from 'typescript-eslint'
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended'
 import noOnlyTests from 'eslint-plugin-no-only-tests'
 import { includeIgnoreFile } from '@eslint/compat'
-// import { includeIgnoreFile } from '@eslint/config-helpers'
 import { fileURLToPath } from 'node:url'
 
 const gitignorePath = fileURLToPath(new URL(".gitignore", import.meta.url));
