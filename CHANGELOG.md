@@ -1,3 +1,10 @@
+## [0.1.2](https://github.com/pawel-up/lupa/compare/v0.1.1...v0.1.2) (2026-05-18)
+
+
+### Bug Fixes
+
+* fixing the CLI usage ([136f4ba](https://github.com/pawel-up/lupa/commit/136f4ba00d4dc95070f31989d38eb5748f72ca15))
+
 ## [0.1.1](https://github.com/pawel-up/lupa/compare/v0.1.0...v0.1.1) (2026-05-17)
 
 
