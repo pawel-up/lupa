@@ -37,7 +37,7 @@ export function nextFrame(): Promise<void> {
  * ```
  */
 export function oneEvent<T = any, E extends Event = CustomEvent<T>>(
-  element: Element | Window,
+  element: EventTarget,
   eventName: string
 ): Promise<E> {
   return new Promise((resolve) => {
@@ -121,7 +121,7 @@ export async function waitUntil(
  * @returns Promise to await until the event has been fired
  */
 export function oneDefaultPreventedEvent<T = any, E extends Event = CustomEvent<T>>(
-  eventTarget: Element | Window,
+  eventTarget: EventTarget,
   eventName: string
 ): Promise<E> {
   return new Promise((resolve) => {
