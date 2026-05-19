@@ -1,3 +1,11 @@
+## [0.1.6](https://github.com/pawel-up/lupa/compare/v0.1.5...v0.1.6) (2026-05-19)
+
+
+### Bug Fixes
+
+* fixes [#16](https://github.com/pawel-up/lupa/issues/16) add network interception API ([b710737](https://github.com/pawel-up/lupa/commit/b710737fcdfeaa4c784d4cdc9fee63a315441f1a))
+* fixing the mocking architecture ([d08ca55](https://github.com/pawel-up/lupa/commit/d08ca557a8387cbbf6a6d0a06b45687b49948a4f))
+
 ## [0.1.5](https://github.com/pawel-up/lupa/compare/v0.1.4...v0.1.5) (2026-05-18)
 
 
