@@ -1,3 +1,10 @@
+## [0.1.7](https://github.com/pawel-up/lupa/compare/v0.1.6...v0.1.7) (2026-05-19)
+
+
+### Bug Fixes
+
+* oneEvent accepts EventTarget ([5423b0f](https://github.com/pawel-up/lupa/commit/5423b0fd44e762d6fee20dc7d31ccee694c93cb7))
+
 ## [0.1.6](https://github.com/pawel-up/lupa/compare/v0.1.5...v0.1.6) (2026-05-19)
 
 
