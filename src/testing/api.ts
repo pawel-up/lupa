@@ -18,6 +18,26 @@ export let activeEmitter: Emitter | undefined
 export let activeRefiner: Refiner | undefined
 
 /**
+ * Retrieves the currently active test runner instance.
+ * Useful for inspecting the runner state, such as checking if any tests have failed.
+ *
+ * @returns The active WebRunner instance, or undefined if no runner is currently active.
+ */
+export function getActiveRunner() {
+  return activeRunner
+}
+
+/**
+ * Retrieves the currently active event emitter instance.
+ * Useful for listening to or emitting custom framework events programmatically.
+ *
+ * @returns The active Emitter instance, or undefined if no emitter is currently active.
+ */
+export function getActiveEmitter() {
+  return activeEmitter
+}
+
+/**
  * Utility type that removes the first argument from a function's parameter list.
  */
 export type OmitFirstArg<F> = F extends [_: any, ...args: infer R] ? R : never

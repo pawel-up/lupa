@@ -44,6 +44,7 @@ export class EventManager {
     this.#emitter.on('uncaught:exception', this.#handleUncaughtException.bind(this))
     this.#emitter.on('runner:pinned_tests', (data) => this.#passThrough('runner:pinned_tests', data))
     this.#emitter.on('runner:list', (data) => this.#passThrough('runner:list', data))
+    this.#emitter.on('runner:import_error', this.#handleImportError.bind(this))
   }
 
   #serializeError(error: TestError): TestError {
@@ -109,5 +110,13 @@ export class EventManager {
     }
     data.error = this.#serializeError(data.error)
     this.#passThrough('uncaught:exception', data)
+  }
+
+  #handleImportError(data: any): void {
+    if (!this.#ctx || !data) {
+      return
+    }
+    data.error = this.#serializeError(data.error)
+    this.#passThrough('runner:import_error', data)
   }
 }

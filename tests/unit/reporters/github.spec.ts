@@ -66,6 +66,7 @@ test('GithubReporter', async (t) => {
       duration: 0,
       hasError: true,
       failedTestsTitles: [],
+      importErrors: [],
       failureTree: [
         {
           name: 'Suite 1',

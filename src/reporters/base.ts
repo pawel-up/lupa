@@ -198,6 +198,28 @@ export abstract class BaseReporter {
   }
 
   /**
+   * Pretty print import errors
+   */
+  protected async printImportErrors(summary: RunnerSummary) {
+    if (!summary.importErrors?.length) {
+      return
+    }
+
+    const errorPrinter = new ErrorsPrinter({
+      framesMaxLimit: this.options.framesMaxLimit,
+    })
+
+    errorPrinter.printSectionHeader('TEST FILE IMPORT ERRORS')
+    await errorPrinter.printErrors(
+      summary.importErrors.map((ie) => ({
+        title: `Cannot load test file: ${ie.file}`,
+        phase: 'import',
+        error: ie.error,
+      }))
+    )
+  }
+
+  /**
    * Invoked when an individual test begins execution.
    *
    * @example
@@ -314,6 +336,7 @@ export abstract class BaseReporter {
    * Print tests summary
    */
   protected async printSummary(summary: RunnerSummary) {
+    await this.printImportErrors(summary)
     await this.printErrors(summary)
 
     console.log('')

@@ -299,6 +299,12 @@ Data shared with "runner:end" event
 **Properties:**
 - `hasError: boolean` — Whether the runner has any errors
 
+### `RunnerImportErrorNode`
+Runner import error
+**Properties:**
+- `file: string` — The file that failed to import
+- `error: TestError` — The error that occurred
+
 ### `UncaughtExceptionNode`
 Uncaught exception
 **Properties:**
@@ -354,6 +360,7 @@ Events emitted natively by the test framework without correlation IDs
 - `runner:list: RunnerListNode` — Emitted when the runner is in list mode and dumps the test tree
 - `runner:start: RunnerStartNode` — Emitted when the runner starts.
 - `runner:end: RunnerEndNode` — Emitted when the runner ends.
+- `runner:import_error: RunnerImportErrorNode` — Emitted when a test file fails to import
 
 ### `BrowserTelemetryEvents`
 Events emitted by the browser telemetry over WebSocket
@@ -369,6 +376,7 @@ Events emitted by the browser telemetry over WebSocket
 - `runner:list: RunnerListNode & Partial<CorrelationIds>` — Emitted when the runner is in list mode and dumps the test tree
 - `runner:start: RunnerStartNode & Partial<CorrelationIds>` — Emitted when the runner starts.
 - `runner:end: RunnerEndNode & Partial<CorrelationIds>` — Emitted when the runner ends.
+- `runner:import_error: RunnerImportErrorNode & Partial<CorrelationIds>` — Emitted when a test file fails to import
 
 ### `RunnerEvents`
 Events emitted by the Node runner orchestrator.
@@ -386,6 +394,7 @@ Includes hydrated browser events and pool lifecycle events.
 - `runner:list: RunnerListNode & Partial<CorrelationIds>` — Emitted when the runner is in list mode and dumps the test tree
 - `runner:start: RunnerStartNode & Partial<CorrelationIds>` — Emitted when the runner starts.
 - `runner:end: RunnerEndNode & Partial<CorrelationIds>` — Emitted when the runner ends.
+- `runner:import_error: RunnerImportErrorNode & Partial<CorrelationIds>` — Emitted when a test file fails to import
 
 ### `ReporterHandlerContract`
 Type for the reporter handler function
@@ -398,14 +407,5 @@ Type for a named reporter object.
 **Properties:**
 - `name: string` — Reporter name
 - `usesCLI: boolean` (optional) — Whether the reporter takes exclusive control of the CLI output.
-If true, only one such reporter can be active at a time to prevent interleaved output.
-- `handler: ReporterHandlerContract` — Reporter handler
-
-### `ProgrammaticReporterContract`
-An extension of NamedReporterContract that allows the reporter to be used programmatically
-to return a typed result instead of just printing to stdout.
-**Properties:**
-- `isProgrammatic: boolean` (optional) — Set to true by the framework when executing programmatically to suppress stdout.
-- `name: string` — Reporter name
 
 <!-- truncated -->

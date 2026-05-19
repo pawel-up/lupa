@@ -9,7 +9,7 @@ Available in browser tests via the `network` fixture on the `TestContext`.
 constructor(): Network
 ```
 **Methods:**
-- `mock(options: NetworkMockOptions): Promise<NetworkInterceptor>` — Registers a new network mock to intercept requests matching the provided criteria.
+- `mock(match: NetworkMatch, respond: NetworkRespondPayload | NetworkRespondDynamic): Promise<NetworkInterceptor>` — Registers a new network mock to intercept requests matching the provided criteria.
 Intercepted requests can be bypassed, stubbed with static payloads, or handled by dynamic closures.
 
 Note: All mocks created during a test are automatically restored when the test finishes.

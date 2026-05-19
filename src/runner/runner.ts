@@ -65,6 +65,10 @@ export class Runner extends Macroable {
 
     trackerEmitter.on('runner:start', (payload) => this.#tracker?.processEvent('runner:start', payload))
     trackerEmitter.on('runner:end', (payload) => this.#tracker?.processEvent('runner:end', payload))
+    trackerEmitter.on('runner:import_error', (payload) => {
+      this.#failed = true
+      this.#tracker?.processEvent('runner:import_error', payload)
+    })
     trackerEmitter.on('suite:start', (payload) => this.#tracker?.processEvent('suite:start', payload))
     trackerEmitter.on('suite:end', (payload) => {
       if (payload.hasError) {

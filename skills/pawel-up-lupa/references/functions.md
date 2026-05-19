@@ -215,10 +215,10 @@ await nextFrame()
 ### `oneEvent`
 Returns a promise that resolves when the specified event is dispatched on the element.
 ```ts
-oneEvent<T, E>(element: Element | Window, eventName: string): Promise<E>
+oneEvent<T, E>(element: EventTarget, eventName: string): Promise<E>
 ```
 **Parameters:**
-- `element: Element | Window`
+- `element: EventTarget`
 - `eventName: string` — Name of the event to wait for
 **Returns:** `Promise<E>` — Promise that resolves when the specified event is dispatched on the element
 ```typescript

@@ -65,6 +65,7 @@ test('BaseReporter', async (t) => {
       hasError: true,
       failureTree: [],
       failedTestsTitles: [],
+      importErrors: [],
     }
 
     reporter.testPrintAggregates(summary)
@@ -88,6 +89,7 @@ test('BaseReporter', async (t) => {
       duration: 0,
       hasError: true,
       failedTestsTitles: [],
+      importErrors: [],
       failureTree: [
         {
           name: 'Suite 1',
@@ -136,6 +138,7 @@ test('BaseReporter', async (t) => {
       duration: 0,
       hasError: false,
       failedTestsTitles: [],
+      importErrors: [],
       failureTree: [],
     }
 

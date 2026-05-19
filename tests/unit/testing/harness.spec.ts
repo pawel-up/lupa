@@ -2,6 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert'
 import path from 'node:path'
 import { boot } from '../../../src/testing/harness.js'
+import { getActiveRunner, getActiveEmitter } from '../../../src/testing/api.js'
 
 test('Browser Harness', async (t) => {
   let runnerEnded = false
@@ -70,5 +71,32 @@ test('Browser Harness', async (t) => {
 
     // Cleanup
     delete (globalThis as any).MOCK_TEST_EXECUTED
+  })
+
+  await t.test('boot() emits runner:import_error when test file fails to load', async () => {
+    global.window.__lupa__.suites = [
+      {
+        name: 'test-suite-failure',
+        timeout: 500,
+        retries: 1,
+        files: ['/non-existent-test-file.js'],
+      },
+    ]
+
+    const bootPromise = boot()
+
+    // setActiveInstances is called synchronously, so we can attach our listener before imports resolve
+    let importErrorEvent: any = null
+    getActiveEmitter()?.on('runner:import_error', (data) => {
+      importErrorEvent = data
+    })
+
+    await bootPromise
+
+    const runner = getActiveRunner()
+    assert.strictEqual(runnerEnded, true)
+    assert.strictEqual(runner?.failed, true)
+    assert.strictEqual(runner?.suites[0].stack.length, 0)
+    assert.strictEqual(importErrorEvent?.file, '/non-existent-test-file.js')
   })
 })

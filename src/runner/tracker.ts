@@ -48,6 +48,7 @@ export class Tracker {
    */
   #failureTree: FailureTreeSuiteNode[] = []
   #failedTestsTitles: string[] = []
+  #importErrors: { file: string; error: Error }[] = []
 
   #getSuiteKey(payload: { browserId: string; file: string; name: string }) {
     return `${payload.browserId}:${payload.file}:${payload.name}`
@@ -218,6 +219,9 @@ export class Tracker {
    */
   processEvent<Event extends keyof RunnerEvents>(event: keyof RunnerEvents, payload: RunnerEvents[Event]) {
     switch (event) {
+      case 'runner:import_error':
+        this.#importErrors.push(payload as RunnerEvents['runner:import_error'])
+        break
       case 'suite:start':
         this.#onSuiteStart(payload as RunnerEvents['suite:start'])
         break
@@ -248,10 +252,11 @@ export class Tracker {
   getSummary(): RunnerSummary {
     return {
       aggregates: this.#aggregates,
-      hasError: this.#aggregates.failed > 0 || this.#failureTree.length > 0,
+      hasError: this.#aggregates.failed > 0 || this.#failureTree.length > 0 || this.#importErrors.length > 0,
       duration: this.#duration,
       failureTree: this.#failureTree,
       failedTestsTitles: this.#failedTestsTitles,
+      importErrors: this.#importErrors,
     }
   }
 }

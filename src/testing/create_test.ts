@@ -64,7 +64,7 @@ export function createTestGroup(
   }
 ): Group {
   if (options.group) {
-    throw new Error('Nested groups are not supported by Japa')
+    throw new Error('Nested groups are not supported by Lupa')
   }
 
   const group = new Group(title, emitter, refiner)

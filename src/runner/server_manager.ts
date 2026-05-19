@@ -105,44 +105,69 @@ export class ServerManager {
           if (!errPayload || typeof errPayload !== 'object' || !errPayload.message || errPayload instanceof Error) {
             return errPayload
           }
-          const err = new Error(errPayload.message)
+
+          const cleanViteStr = (str: string) => {
+            if (typeof str !== 'string') return str
+            return str
+              .replace(/https?:\/\/[^/]+\/@fs\//g, '/')
+              .replace(/https?:\/\/[^/]+\//g, '/')
+              .replace(/\?import(?::undefined:undefined)?/g, '')
+          }
+
+          const err = new Error(cleanViteStr(errPayload.message))
           Object.assign(err, errPayload)
           err.name = errPayload.name || 'Error'
+          err.message = cleanViteStr(err.message)
+
           if (errPayload.stack && this.#vite) {
             err.stack = await transformBrowserStack(this.#vite, cwd, errPayload.stack)
+            err.stack = cleanViteStr(err.stack)
+            // Rewrite the redundant import error stack frame to omit the duplicate message
+            // and inject dummy line:col to prevent Japa printing ":undefined:undefined"
+            err.stack = err.stack
+              .replace(/at TypeError: Failed to fetch dynamically imported module: \/ \(([^)]+)\)/g, 'at ($1:1:1)')
+              .replace(/\(fstests\//g, '(tests/')
           } else {
-            err.stack = errPayload.stack
+            err.stack = cleanViteStr(errPayload.stack)
           }
           return err
         }
 
-        if (event === 'group:end' || event === 'suite:end' || event === 'test:end') {
-          if ((data as any).errors && (data as any).errors.length) {
-            for (const e of (data as any).errors) {
-              e.error = await deserializeError(e.error)
+        try {
+          if (event === 'group:end' || event === 'suite:end' || event === 'test:end') {
+            if (data.errors && data.errors.length) {
+              for (const e of data.errors) {
+                e.error = await deserializeError(e.error)
+              }
+            }
+          } else if (event === 'uncaught:exception') {
+            if (data && data.error) {
+              data.error = await deserializeError(data.error)
+              exceptionsManager.handleBrowserException(data.error as Error, data.type || 'error')
+              return
+            }
+          } else if (event === 'runner:import_error') {
+            if (data && data.error) {
+              data.error = await deserializeError(data.error)
+            }
+          } else if (event === 'runner:pinned_tests') {
+            if (data && data.tests) {
+              const formatted = await Promise.all(
+                data.tests.map(async (t) => {
+                  const transformed = this.#vite ? await transformBrowserStack(this.#vite, cwd, t.stack) : t.stack
+                  return formatPinnedTest(t.title, transformed)
+                })
+              )
+              printPinnedTests(formatted)
+              return
             }
           }
-        } else if (event === 'uncaught:exception') {
-          if (data && (data as any).error) {
-            ;(data as any).error = await deserializeError((data as any).error)
-            exceptionsManager.handleBrowserException((data as any).error as Error, (data as any).type || 'error')
-            return
-          }
-        } else if (event === 'runner:pinned_tests') {
-          if (data && (data as any).tests) {
-            const formatted = await Promise.all(
-              (data as any).tests.map(async (t: any) => {
-                const transformed = this.#vite ? await transformBrowserStack(this.#vite, cwd, t.stack) : t.stack
-                return formatPinnedTest(t.title, transformed)
-              })
-            )
-            printPinnedTests(formatted)
-            return
-          }
-        }
 
-        // Delegate remaining events to the orchestrator callback
-        await onTelemetry(event, data)
+          // Delegate remaining events to the orchestrator callback
+          await onTelemetry(event, data)
+        } catch (queueErr) {
+          console.error('Lupa Telemetry parsing error:', queueErr)
+        }
       })
     })
 

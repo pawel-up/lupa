@@ -105,8 +105,9 @@ export async function boot() {
       } catch (error) {
         const importError = error instanceof Error ? error : new Error(String(error))
         importError.message = `Failed to load test file: ${file}\n${importError.message}`
-        console.error(importError.message, importError)
-        emitter.emit('uncaught:exception', { error: importError, type: 'error' })
+        emitter.emit('runner:import_error', { file, error: importError })
+        // Mark runner as failed so the process will eventually exit with an error
+        Object.defineProperty(runner, 'failed', { get: () => true })
       } finally {
         setActiveFile(undefined)
       }
@@ -116,6 +117,9 @@ export async function boot() {
   await runner.start()
   await runner.exec()
   await runner.end()
+
+  // Give Vite's WebSocket a moment to flush any final telemetry (like import errors or runner:end)
+  await new Promise((resolve) => setTimeout(resolve, 50))
 
   // Notify Node.js that we are done
   if (window.__lupa_runner_end__ && !isDebug) {

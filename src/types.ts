@@ -480,6 +480,20 @@ export interface FilteringOptions {
 }
 
 /**
+ * Runner import error
+ */
+export interface RunnerImportErrorNode {
+  /**
+   * The file that failed to import
+   */
+  file: string
+  /**
+   * The error that occurred
+   */
+  error: TestError
+}
+
+/**
  * Uncaught exception
  */
 export interface UncaughtExceptionNode {
@@ -612,6 +626,10 @@ export interface FrameworkEvents {
    * Emitted when the runner ends.
    */
   'runner:end': RunnerEndNode
+  /**
+   * Emitted when a test file fails to import
+   */
+  'runner:import_error': RunnerImportErrorNode
 }
 
 /**
@@ -662,6 +680,10 @@ export interface BrowserTelemetryEvents {
    * Emitted when the runner ends.
    */
   'runner:end': RunnerEndNode & Partial<CorrelationIds>
+  /**
+   * Emitted when a test file fails to import
+   */
+  'runner:import_error': RunnerImportErrorNode & Partial<CorrelationIds>
 }
 
 /**
@@ -835,6 +857,10 @@ export interface RunnerSummary {
    * Failed tests titles
    */
   failedTestsTitles: string[]
+  /**
+   * Import errors that occurred when loading test files
+   */
+  importErrors: RunnerImportErrorNode[]
 }
 
 /**
