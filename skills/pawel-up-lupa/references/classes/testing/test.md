@@ -55,6 +55,7 @@ for all the items inside the dataset array
 - `teardown(handler: TestHooksHandler): this` — Register a test teardown function
 - `cleanup(handler: TestHooksCleanupHandler): this` — Register a cleanup hook from within the test
 - `exec(): Promise<void>` — Execute test
+- `toJSON(): RunnerListTestNode` — Return JSON representation of the test
 ```ts
 const test = new Test('2 + 2 = 4', emitter, refiner)
 

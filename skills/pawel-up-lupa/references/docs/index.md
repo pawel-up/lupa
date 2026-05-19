@@ -11,6 +11,7 @@
 - [installation](installation.md)
 - [introduction](introduction.md)
 - [lifecycle-hooks](lifecycle-hooks.md)
+- [network-mocking](network-mocking.md)
 - [skipping-tests](skipping-tests.md)
 - [test-macros](test-macros.md)
 - [test-reporters](test-reporters.md)

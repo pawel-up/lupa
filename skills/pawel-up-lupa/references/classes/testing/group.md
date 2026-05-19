@@ -34,6 +34,7 @@ mutates the test properties
 - `setup(handler: GroupHooksHandler): this` — Define setup hook for the group
 - `teardown(handler: GroupHooksHandler): this` — Define teardown hook for the group
 - `exec(): Promise<void>` — Execute group hooks and tests
+- `toJSON(): RunnerListGroupNode` — Return JSON representation of the group
 ```ts
 const group = new Group('addition', emitter, refiner)
 const test = new Test('2 + 2 = 4', emitter, refiner)

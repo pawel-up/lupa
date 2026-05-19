@@ -15,7 +15,9 @@
     "src/reporters/index.ts",
     "src/commands/index.ts",
     "src/commands/locator.ts",
-    "src/commands/types.ts"
+    "src/commands/types.ts",
+    "src/network/index.ts",
+    "src/network/types.ts"
   ],
   "out": "docs",
   "name": "Lupa",

@@ -17,7 +17,7 @@
     "skills"
   ],
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=24.0.0"
   },
   "bin": {
     "lupa": "./dist/bin/lupa.js"
@@ -44,6 +44,7 @@
   "exports": {
     "./package.json": "./package.json",
     "./assert": "./dist/src/assert/index.js",
+    "./network": "./dist/src/network/index.js",
     "./runner": "./dist/src/runner/index.js",
     "./refiner": "./dist/src/refiner/main.js",
     "./testing": "./dist/src/testing/index.js",

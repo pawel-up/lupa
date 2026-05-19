@@ -35,6 +35,7 @@ import type {
   UncheckOptions,
 } from './locator.js'
 import debuglog from '../runner/debug.js'
+import { NetworkCommand } from '../network/network_command.js'
 
 function isTypePayload(payload: SendKeysPayload): payload is TypePayload {
   return 'type' in payload
@@ -58,9 +59,11 @@ function isUpPayload(payload: SendKeysPayload): payload is UpPayload {
 export class CommandsHandler {
   protected page: Page
   private closeHandler?: Disposable
+  private network: NetworkCommand
 
   constructor(page: Page) {
     this.page = page
+    this.network = new NetworkCommand(page)
   }
 
   /**
@@ -98,6 +101,18 @@ export class CommandsHandler {
           case 'locator':
             await this.handleLocator(payload)
             break
+          case 'network:mock:enable':
+            await this.handleNetworkEnable()
+            break
+          case 'network:mock:disable':
+            await this.handleNetworkDisable()
+            break
+          case 'network:mock:register':
+            await this.network.register(payload)
+            break
+          case 'network:mock:unregister':
+            await this.network.unregister(payload)
+            break
           default:
             throw new Error(`Unknown lupa command: ${command}`)
         }
@@ -111,6 +126,21 @@ export class CommandsHandler {
       await this.closeHandler.dispose()
       this.closeHandler = undefined
     }
+    this.network.reset()
+  }
+
+  /**
+   * Handle network:mock:enable command
+   */
+  protected async handleNetworkEnable() {
+    await this.page.route('**/*', this.network.onRoute)
+  }
+
+  /**
+   * Handle network:mock:disable command
+   */
+  protected async handleNetworkDisable() {
+    await this.page.unroute('**/*', this.network.onRoute)
   }
 
   /**

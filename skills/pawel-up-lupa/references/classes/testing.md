@@ -13,6 +13,7 @@ constructor(test: Test): TestContext
 - `cleanup: (cleanupCallback: TestHooksCleanupHandler) => void`
 - `test: Test`
 - `assert: Assert`
+- `network: Network`
 **Methods:**
 - `macro<T, K>(this: T, name: K, value: InstanceType<T>[K]): void` — Adds a macro (property or method) to the class prototype.
 Macros are standard properties that get added to the class prototype,

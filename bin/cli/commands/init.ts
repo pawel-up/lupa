@@ -26,12 +26,15 @@ function getTemplateWithSuites(reportersList: string[], suitesList: string[], is
 
   const imports =
     `import { defineConfig } from '@pawel-up/lupa/runner'\nimport reporters from '@pawel-up/lupa/reporters'` +
-    (isTS ? `\nimport type { Assert } from '@pawel-up/lupa/assert'` : '')
+    (isTS
+      ? `\nimport type { Assert } from '@pawel-up/lupa/assert'\nimport type { Network } from '@pawel-up/lupa/network'`
+      : '')
 
   const declarations = isTS
     ? `\n\ndeclare module '@pawel-up/lupa/testing' {
   interface TestContext {
     assert: Assert
+    network: Network
   }
 }`
     : ''
@@ -39,7 +42,7 @@ function getTemplateWithSuites(reportersList: string[], suitesList: string[], is
   return `${imports}
 
 export default defineConfig({
-  testPlugins: ['@pawel-up/lupa/assert'],
+  testPlugins: ['@pawel-up/lupa/assert', '@pawel-up/lupa/network'],
   reporters: {
     activated: [${repsArr}],
     list: [${reps}],
@@ -57,12 +60,15 @@ function getTemplateWithoutSuites(reportersList: string[], isTS: boolean) {
 
   const imports =
     `import { defineConfig } from '@pawel-up/lupa/runner'\nimport reporters from '@pawel-up/lupa/reporters'` +
-    (isTS ? `\nimport type { Assert } from '@pawel-up/lupa/assert'` : '')
+    (isTS
+      ? `\nimport type { Assert } from '@pawel-up/lupa/assert'\nimport type { Network } from '@pawel-up/lupa/network'`
+      : '')
 
   const declarations = isTS
     ? `\n\ndeclare module '@pawel-up/lupa/testing' {
   interface TestContext {
     assert: Assert
+    network: Network
   }
 }`
     : ''
@@ -71,7 +77,7 @@ function getTemplateWithoutSuites(reportersList: string[], isTS: boolean) {
 
 export default defineConfig({
   files: ['{TESTS_LOCATION}/**/*.test.${ext}', '{TESTS_LOCATION}/**/*.spec.${ext}'],
-  testPlugins: ['@pawel-up/lupa/assert'],
+  testPlugins: ['@pawel-up/lupa/assert', '@pawel-up/lupa/network'],
   reporters: {
     activated: [${repsArr}],
     list: [${reps}],

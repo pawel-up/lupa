@@ -36,6 +36,7 @@ test fails
 - `setup(handler: SuiteHooksHandler): this` — Register a test setup function
 - `teardown(handler: SuiteHooksHandler): this` — Register a test teardown function
 - `exec(): Promise<void>` — Execute suite groups, tests and hooks
+- `toJSON(): RunnerListSuiteNode` — Return JSON representation of the suite
 ```ts
 const suite = new Suite('unit', emitter)
 const group = new Group('addition', emitter, refiner)
