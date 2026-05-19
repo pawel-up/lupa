@@ -130,6 +130,29 @@ export class TestPoolManager {
   }
 
   /**
+   * Finds the chunk ID that contains a given file path for the specified browser.
+   * Falls back to `<browserName>-0` when no chunk contains the file.
+   *
+   * @param browserName - The name of the browser (e.g., "chromium").
+   * @param filePath - An absolute path or path suffix to look for.
+   * @returns The matching chunk ID, or the default first chunk for that browser.
+   */
+  getChunkIdForFile(browserName: string, filePath: string): string {
+    const defaultChunkId = `${browserName}-0`
+    return (
+      this.getChunkIdsForBrowser(browserName).find((id) => {
+        const chunk = this.#chunks.get(id)
+        return chunk?.suites.some((s) =>
+          s.filesURLs.some((u) => {
+            const p = u.pathname
+            return p === filePath || p.endsWith(filePath) || filePath.endsWith(p)
+          })
+        )
+      }) ?? defaultChunkId
+    )
+  }
+
+  /**
    * Returns the total number of test files across all chunks and browsers.
    * This represents the exact number of files that will be processed.
    *

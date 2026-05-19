@@ -243,7 +243,14 @@ export class Cli {
       vite.resolvedUrls?.local[0] || `http://localhost:${vite.config.server.port}`
     )
 
-    url.searchParams.append('chunkId', `${this.#orchestrator.defaultBrowserType}-0`)
+    const focusedPath = this.#orchestrator.config.filters?.files?.[0]
+    const browserName = this.#orchestrator.defaultBrowserType
+    // we need to find the chunk that corresponds to the focused file to pass it to the debug page,
+    // so it can load the correct test files and config
+    const chunkId = focusedPath
+      ? (this.#orchestrator.testPoolManager?.getChunkIdForFile(browserName, focusedPath) ?? `${browserName}-0`)
+      : `${browserName}-0`
+    url.searchParams.append('chunkId', chunkId)
     url.searchParams.append('debug', '1')
 
     await debugPage.goto(url.toString())

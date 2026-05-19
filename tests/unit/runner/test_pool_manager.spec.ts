@@ -95,4 +95,24 @@ test('TestPoolManager', async (t) => {
     const manager = new TestPoolManager(configWithFilter, browsers, suites)
     assert.equal(manager.getFilesCount(), 0)
   })
+
+  await t.test('getChunkIdForFile returns the chunk that owns the file', () => {
+    const manager = new TestPoolManager(mockConfig, browsers, suites)
+
+    // concurrency=2, round-robin: test1->0, test2->1, test3->0, test4->1
+    // test2 lives in chromium-1, not chromium-0 (the regression case)
+    assert.equal(manager.getChunkIdForFile('chromium', '/absolute/path/to/test2.spec.ts'), 'chromium-1')
+  })
+
+  await t.test('getChunkIdForFile matches by path suffix', () => {
+    const manager = new TestPoolManager(mockConfig, browsers, suites)
+
+    assert.equal(manager.getChunkIdForFile('chromium', 'test3.spec.ts'), 'chromium-0')
+  })
+
+  await t.test('getChunkIdForFile falls back to <browser>-0 when file not found', () => {
+    const manager = new TestPoolManager(mockConfig, browsers, suites)
+
+    assert.equal(manager.getChunkIdForFile('chromium', 'unknown.spec.ts'), 'chromium-0')
+  })
 })
