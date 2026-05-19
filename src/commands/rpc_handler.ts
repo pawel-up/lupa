@@ -1,5 +1,4 @@
-import type { Locator, Page, Disposable, Route } from 'playwright'
-import type { CapturedRequest, NetworkEvaluateResult } from '../network/types.js'
+import type { Locator, Page, Disposable } from 'playwright'
 import type {
   CommandNames,
   DownPayload,
@@ -36,6 +35,7 @@ import type {
   UncheckOptions,
 } from './locator.js'
 import debuglog from '../runner/debug.js'
+import { NetworkCommand } from '../network/network_command.js'
 
 function isTypePayload(payload: SendKeysPayload): payload is TypePayload {
   return 'type' in payload
@@ -59,9 +59,11 @@ function isUpPayload(payload: SendKeysPayload): payload is UpPayload {
 export class CommandsHandler {
   protected page: Page
   private closeHandler?: Disposable
+  private network: NetworkCommand
 
   constructor(page: Page) {
     this.page = page
+    this.network = new NetworkCommand(page)
   }
 
   /**
@@ -105,6 +107,12 @@ export class CommandsHandler {
           case 'network:mock:disable':
             await this.handleNetworkDisable()
             break
+          case 'network:mock:register':
+            await this.network.register(payload)
+            break
+          case 'network:mock:unregister':
+            await this.network.unregister(payload)
+            break
           default:
             throw new Error(`Unknown lupa command: ${command}`)
         }
@@ -118,96 +126,21 @@ export class CommandsHandler {
       await this.closeHandler.dispose()
       this.closeHandler = undefined
     }
+    this.network.reset()
   }
 
   /**
    * Handle network:mock:enable command
    */
   protected async handleNetworkEnable() {
-    await this.page.route('**/*', this.networkRouteHandler)
+    await this.page.route('**/*', this.network.onRoute)
   }
 
   /**
    * Handle network:mock:disable command
    */
   protected async handleNetworkDisable() {
-    await this.page.unroute('**/*', this.networkRouteHandler)
-  }
-
-  /**
-   * The actual interceptor that bounces the request down to the browser context
-   * for evaluation of any active mocks.
-   */
-  private networkRouteHandler = async (route: Route) => {
-    const request = route.request()
-    // We only want to intercept fetch/XHR requests from the tests
-    if (request.resourceType() !== 'fetch' && request.resourceType() !== 'xhr') {
-      await route.continue()
-      return
-    }
-
-    // Convert postData buffer to base64 if it exists
-    const postDataBuffer = request.postDataBuffer()
-    const postData = postDataBuffer ? postDataBuffer.toString('base64') : null
-
-    const urlObj = new URL(request.url())
-    const query: Record<string, string> = {}
-    urlObj.searchParams.forEach((val, key) => {
-      query[key] = val
-    })
-
-    const reqPayload: CapturedRequest = {
-      url: request.url(),
-      method: request.method(),
-      headers: request.headers(),
-      query,
-      body: null,
-      postData,
-    }
-
-    try {
-      const response: NetworkEvaluateResult = await this.page.evaluate((req) => {
-        return window.__lupa_evaluate_network_mock(req)
-      }, reqPayload)
-
-      if (!response || response.action === 'continue') {
-        await route.continue()
-        return
-      }
-
-      if (response.action === 'fulfill') {
-        if (response.delay) {
-          await new Promise((r) => setTimeout(r, response.delay))
-        }
-
-        if (response.error) {
-          await route.abort(response.error)
-          return
-        }
-
-        const fulfillPayload: any = {
-          status: response.status || 200,
-          headers: response.headers || {},
-        }
-
-        if (response.body !== undefined && response.body !== null) {
-          if (response.isBase64) {
-            fulfillPayload.body = Buffer.from(response.body, 'base64')
-          } else {
-            fulfillPayload.body = response.body
-          }
-        }
-
-        await route.fulfill(fulfillPayload)
-      }
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error('Network Intercept Evaluate Error:', err)
-      // If evaluation fails (e.g. page navigated away or closed), just continue
-      await route.continue().catch(() => {
-        // ...
-      })
-    }
+    await this.page.unroute('**/*', this.network.onRoute)
   }
 
   /**

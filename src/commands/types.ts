@@ -136,3 +136,5 @@ export type CommandNames =
   | 'locator'
   | 'network:mock:enable'
   | 'network:mock:disable'
+  | 'network:mock:register'
+  | 'network:mock:unregister'

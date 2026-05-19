@@ -15,11 +15,11 @@ export interface CapturedRequest {
   /** A dictionary of all HTTP headers sent with the request. */
   headers: Record<string, string>
   /** A dictionary of the parsed query string parameters. */
-  query: Record<string, string>
-  /** The parsed request body (decoded from base64 if it was postData). */
-  body: string | ArrayBuffer | null
-  /** The raw base64-encoded postData directly from Playwright (if applicable). */
-  postData?: string | null
+  query: Record<string, string | string[]>
+  /** A dictionary of the path parameters (if matched via URLPattern). */
+  params?: Record<string, string>
+  /** The request body. */
+  body?: string | null
 }
 
 /**
@@ -34,9 +34,9 @@ export interface RequestMatchOptions {
 
 /**
  * Criteria used to determine if a mock should intercept a given request.
- * Can be a plain string (substring match or pattern), a RegExp, or strict RequestMatchOptions.
+ * Can be a plain string (substring match or pattern) or strict RequestMatchOptions.
  */
-export type NetworkMatch = string | RegExp | RequestMatchOptions
+export type NetworkMatch = string | RequestMatchOptions
 
 /**
  * The static payload definition used to fulfill an intercepted request.
@@ -107,3 +107,108 @@ export type NetworkEvaluateResult =
       delay?: number
       error?: string
     }
+
+/**
+ * Represents a serialized route matcher sent from the browser/client.
+ */
+export interface SerializedMatch {
+  /**
+   * Type of the matcher definition.
+   */
+  type: 'string' | 'options'
+
+  /**
+   * The URI or URL pattern to match against.
+   */
+  uri?: string
+
+  /**
+   * HTTP methods to match (e.g., ['GET', 'POST']).
+   */
+  methods?: string[]
+
+  /**
+   * HTTP headers required for a successful match.
+   */
+  headers?: Record<string, string>
+}
+
+/**
+ * Internal representation of an active mock route within the RouteStore.
+ */
+export interface RouteDefinition {
+  /**
+   * Unique identifier of the registered mock.
+   */
+  id: number
+
+  /**
+   * Compiled URLPattern for matching request URLs.
+   */
+  pattern?: URLPattern
+
+  /**
+   * Normalized HTTP methods to match.
+   */
+  methods?: string[]
+
+  /**
+   * Normalized headers required for a successful match.
+   */
+  headers?: Record<string, string>
+
+  /**
+   * Maximum number of times this mock should be applied.
+   */
+  lifetime?: number
+
+  /**
+   * Number of times this mock has been successfully matched.
+   */
+  usageCount: number
+}
+
+/**
+ * Container for a matched route alongside its evaluated pattern result.
+ */
+export interface MatchedRoute {
+  /**
+   * The route definition that successfully matched.
+   */
+  route: RouteDefinition
+
+  /**
+   * The result of URLPattern.exec(), containing extracted path parameters.
+   */
+  urlMatch?: URLPatternResult
+}
+
+/**
+ * Payload sent to register a new network mock.
+ */
+export interface NetworkRegisterPayload {
+  /**
+   * Unique identifier for the new mock.
+   */
+  id: number
+
+  /**
+   * Serialized matching criteria.
+   */
+  matcher: SerializedMatch
+
+  /**
+   * Optional maximum number of times to apply the mock.
+   */
+  times?: number
+}
+
+/**
+ * Payload sent to unregister/remove an existing network mock.
+ */
+export interface NetworkUnregisterPayload {
+  /**
+   * Unique identifier of the mock to remove.
+   */
+  id: number
+}

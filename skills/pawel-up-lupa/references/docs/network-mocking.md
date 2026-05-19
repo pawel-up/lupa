@@ -57,7 +57,7 @@ To handle this, Lupa's network assertions automatically **poll** the browser unt
 
 ### The Golden Rule: Action ➔ Await Assert ➔ Read Snapshot
 
-Once you verify the request happened, you often want to inspect *what* was sent (the body, headers, or query parameters). You can do this using synchronous getters like `mock.lastRequest()`. 
+Once you verify the request happened, you often want to inspect *what* was sent (the body, headers, or query parameters). You can do this using synchronous getters like `mock.lastRequest()`.
 
 However, because these getters return an immediate, synchronous snapshot of the current state, **you must always `await` an assertion before reading the request**. If you try to read it immediately after mounting a component, the request likely hasn't finished crossing the browser-to-Node RPC boundary yet, resulting in missing or stale data.
 
@@ -66,15 +66,15 @@ However, because these getters return an immediate, synchronous snapshot of the 
 ```ts
 test('submits form', async ({ assert, network }) => {
   const mock = await network.mock('/api/submit', { status: 200 })
-  
+
   // 1. Action
   await fixture(html`<my-form></my-form>`)
-  
+
   // 2. Read (DANGER! The request might not have settled yet)
   const req = mock.lastRequest() // Likely returns undefined!
-  
+
   // 3. Assert
-  assert.equal(req?.body, '{"name":"Alice"}') 
+  assert.equal(req?.body, '{"name":"Alice"}')
 })
 ```
 
@@ -83,16 +83,16 @@ test('submits form', async ({ assert, network }) => {
 ```ts
 test('submits form', async ({ assert, network }) => {
   const mock = await network.mock('/api/submit', { status: 200 })
-  
+
   // 1. Action
   await fixture(html`<my-form></my-form>`)
-  
+
   // 2. Await Assert (Guarantees the network layer has settled)
   await mock.assert.calledOnce()
-  
+
   // 3. Read Snapshot (Now 100% safe to read)
   const req = mock.lastRequest()
-  
+
   assert.equal(req?.method, 'POST')
   assert.deepEqual(JSON.parse(req?.body as string), { name: 'Alice' })
 })
@@ -135,9 +135,9 @@ For dynamic endpoints, Lupa uses standard `URLPattern` matching under the hood. 
 ```ts
 // Matches /api/users/123, /api/users/999
 await network.mock('/api/users/:id', async (req) => {
-  return { 
-    status: 200, 
-    body: JSON.stringify({ userId: req.params?.id }) 
+  return {
+    status: 200,
+    body: JSON.stringify({ userId: req.params?.id })
   }
 })
 ```
@@ -155,9 +155,9 @@ If you need to test a complex scenario—such as an API endpoint suddenly becomi
 ```ts
 test('handles intermittent API failure', async ({ network }) => {
   const mock = await network.mock('/api/data', { status: 200 })
-  
+
   // Triggers successful fetch
-  await fixture(html`<data-loader></data-loader>`) 
+  await fixture(html`<data-loader></data-loader>`)
 
   // Restore the original network behavior (removes the mock)
   await mock.restore()
@@ -185,7 +185,7 @@ await network.mock('/api/users', async (req) => {
   if (req.query?.role === 'admin') {
     return { status: 200, body: '{"name":"Admin"}' }
   }
-  
+
   // Let everything else fall through to the real network
   return 'bypass'
 })

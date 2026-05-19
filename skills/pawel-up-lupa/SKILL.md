@@ -14,6 +14,7 @@ A lightning-fast, Vite-powered browser testing framework for Web Components with
 - **Lightning Fast:** Uses Vite as the dev server. No bundling required, resulting in instant boot times.
 - **Intelligent Watch Mode:** A dependency-aware incremental test watcher. Change a component, and Lupa instantly re-runs *only* the tests that import it.
 - **Interactive Debugging:** Focus on a single test file and press `d` to pop open a headed browser with Chrome DevTools already open and attached.
+- **Network Interception:** Full control over network traffic via a lightweight, typed API to mock, route, and assert on HTTP requests made from the browser.
 - **Test Grouping & Suites:** Organize your testing architecture intuitively with structured groups, tags, and execution suites.
 - **Data-Driven Datasets:** Avoid boilerplate by feeding dynamic datasets into parameterized tests.
 - **Browser-Specific Macros:** Create extensible test setups and custom assertions that run flawlessly inside the browser sandbox.
@@ -29,7 +30,7 @@ A lightning-fast, Vite-powered browser testing framework for Web Components with
 - You are already inside a running test or suite. (`configure`)
 - Testing pure logic or functions that do not require a DOM (`fixture`)
 
-API surface: 20 functions, 12 classes, 97 types, 8 constants
+API surface: 20 functions, 13 classes, 109 types, 10 constants
 
 ## NEVER
 
@@ -42,14 +43,14 @@ API surface: 20 functions, 12 classes, 97 types, 8 constants
 
 ## Configuration
 
-23 configuration interfaces — see references/config.md for details.
+25 configuration interfaces — see references/config.md for details.
 
 ## Quick Reference
 
 **Key functions:** `assertIsAccessible` (Asserts that a given DOM element or NodeList has no accessibility violations
 according to axe-core), `configure` (Configure the Lupa test runner), `run` (Run the test suite), `loadLupaConfig` (Loads the Lupa configuration from a local file (e), `waitUntil` (Polls the condition function until it returns true or the timeout is reached), `fixture` (Renders a HTML string or a Lit template into a dedicated fixture container and mounts it to the DOM)
 
-*137 exports total — see references/ for full API.*
+*152 exports total — see references/ for full API.*
 
 ## Documentation
 
@@ -86,6 +87,9 @@ Lupa comes with everything you need to test your modern frontend applications an
 - **lifecycle-hooks** — # Lifecycle Hooks
 
 Lifecycle hooks are functions you can run before or after a test or a group of tests.
+- **network-mocking** — # Network Mocking
+
+Lupa provides powerful, native network interception out of the box.
 - **skipping-tests** — # Skipping Tests
 
 Sometimes, you might run into situations where you want to skip specific tests temporarily.
@@ -102,7 +106,7 @@ Test suites allow you to organize your tests logically by their type or domain.
 
 Lupa runs your tests inside a headless browser using [Vite](https://vitejs.
 
-See `references/docs/` for full guides (16 total).
+See `references/docs/` for full guides (17 total).
 
 ## References
 

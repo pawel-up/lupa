@@ -44,7 +44,7 @@ export class NetworkInterceptor {
   /**
    * Retrieves a shallow copy of all tracked requests captured by this interceptor.
    *
-   * @warning This is a strictly synchronous method. If called immediately after a UI interaction
+   * @remarks This is a strictly synchronous method. If called immediately after a UI interaction
    *          that triggers a background network request, it may return an incomplete array.
    *          Always `await` a network assertion (e.g. `mock.assert.called()`) to allow the network
    *          to settle before calling this method.
@@ -69,7 +69,7 @@ export class NetworkInterceptor {
   /**
    * Retrieves the most recently captured request.
    *
-   * @warning This is a strictly synchronous method. If called immediately after a UI interaction,
+   * @remarks This is a strictly synchronous method. If called immediately after a UI interaction,
    *          it may return `undefined` because the background request hasn't been processed yet.
    *          Always `await` a network assertion first.
    *
@@ -93,7 +93,7 @@ export class NetworkInterceptor {
   /**
    * Retrieves the very first captured request.
    *
-   * @warning This is a strictly synchronous method. Make sure to `await` a network assertion
+   * @remarks This is a strictly synchronous method. Make sure to `await` a network assertion
    *          first to ensure the network state has settled before reading this value.
    *
    * @returns The first `CapturedRequest`, or `undefined` if no requests have been intercepted.

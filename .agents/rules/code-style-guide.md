@@ -22,3 +22,13 @@ Coding standards:
 - ALWAYS define a type for complex objects (ESLint)
 - Always add a function's return type, even if it's void.
 - Auto-format JS/TS files after edit
+
+Null-assertions handling:
+
+- DO NOT create null-assertions (object!.value)
+- Always check if value exists or use the `?` operator if applicable.
+
+Error handling:
+
+- Throw errors so that the library consumer understand what is happening.
+- Do not add the `catch(e)` with `e` is you don't use `e`. The catch clock don't need error instance.
