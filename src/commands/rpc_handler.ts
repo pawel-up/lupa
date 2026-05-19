@@ -1,4 +1,5 @@
-import type { Locator, Page, Disposable } from 'playwright'
+import type { Locator, Page, Disposable, Route } from 'playwright'
+import type { CapturedRequest, NetworkEvaluateResult } from '../network/types.js'
 import type {
   CommandNames,
   DownPayload,
@@ -98,6 +99,12 @@ export class CommandsHandler {
           case 'locator':
             await this.handleLocator(payload)
             break
+          case 'network:mock:enable':
+            await this.handleNetworkEnable()
+            break
+          case 'network:mock:disable':
+            await this.handleNetworkDisable()
+            break
           default:
             throw new Error(`Unknown lupa command: ${command}`)
         }
@@ -110,6 +117,96 @@ export class CommandsHandler {
     if (this.closeHandler) {
       await this.closeHandler.dispose()
       this.closeHandler = undefined
+    }
+  }
+
+  /**
+   * Handle network:mock:enable command
+   */
+  protected async handleNetworkEnable() {
+    await this.page.route('**/*', this.networkRouteHandler)
+  }
+
+  /**
+   * Handle network:mock:disable command
+   */
+  protected async handleNetworkDisable() {
+    await this.page.unroute('**/*', this.networkRouteHandler)
+  }
+
+  /**
+   * The actual interceptor that bounces the request down to the browser context
+   * for evaluation of any active mocks.
+   */
+  private networkRouteHandler = async (route: Route) => {
+    const request = route.request()
+    // We only want to intercept fetch/XHR requests from the tests
+    if (request.resourceType() !== 'fetch' && request.resourceType() !== 'xhr') {
+      await route.continue()
+      return
+    }
+
+    // Convert postData buffer to base64 if it exists
+    const postDataBuffer = request.postDataBuffer()
+    const postData = postDataBuffer ? postDataBuffer.toString('base64') : null
+
+    const urlObj = new URL(request.url())
+    const query: Record<string, string> = {}
+    urlObj.searchParams.forEach((val, key) => {
+      query[key] = val
+    })
+
+    const reqPayload: CapturedRequest = {
+      url: request.url(),
+      method: request.method(),
+      headers: request.headers(),
+      query,
+      body: null,
+      postData,
+    }
+
+    try {
+      const response: NetworkEvaluateResult = await this.page.evaluate((req) => {
+        return window.__lupa_evaluate_network_mock(req)
+      }, reqPayload)
+
+      if (!response || response.action === 'continue') {
+        await route.continue()
+        return
+      }
+
+      if (response.action === 'fulfill') {
+        if (response.delay) {
+          await new Promise((r) => setTimeout(r, response.delay))
+        }
+
+        if (response.error) {
+          await route.abort(response.error)
+          return
+        }
+
+        const fulfillPayload: any = {
+          status: response.status || 200,
+          headers: response.headers || {},
+        }
+
+        if (response.body !== undefined && response.body !== null) {
+          if (response.isBase64) {
+            fulfillPayload.body = Buffer.from(response.body, 'base64')
+          } else {
+            fulfillPayload.body = response.body
+          }
+        }
+
+        await route.fulfill(fulfillPayload)
+      }
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('Network Intercept Evaluate Error:', err)
+      // If evaluation fails (e.g. page navigated away or closed), just continue
+      await route.continue().catch(() => {
+        // ...
+      })
     }
   }
 

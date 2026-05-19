@@ -46,10 +46,10 @@ test('Integration: Lupa Framework End-to-End', async (t) => {
       // Verify exit code
       assert.strictEqual(exitCode, 0, `Expected runner to exit with code 0. Output:\n${output}`)
 
-      // Assert that exactly 50 passed
+      // Assert that exactly 55 passed
       assert.ok(
-        output.includes('Tests  50 passed, 1 skipped (51)'),
-        `Summary should report 50 passed and 1 skipped. Actual output: ${output}`
+        output.includes('Tests  55 passed, 1 skipped (56)'),
+        `Summary should report 55 passed and 1 skipped. Actual output: ${output}`
       )
     }
   )
@@ -88,7 +88,7 @@ test('Integration: Lupa Framework End-to-End', async (t) => {
     const output = stdout + '\n' + stderr
 
     assert.strictEqual(exitCode, 0, `Expected runner to exit with code 0. Output:\n${output}`)
-    assert.ok(output.includes('Total tests: 48'), `Expected list output to show 48 tests. Actual output: ${output}`)
+    assert.ok(output.includes('Total tests: 53'), `Expected list output to show 53 tests. Actual output: ${output}`)
     assert.ok(output.includes('Suite'), 'Expected list output to contain a table with Suite column.')
   })
 

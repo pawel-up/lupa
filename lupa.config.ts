@@ -2,10 +2,11 @@ import path from 'node:path'
 import { defineConfig } from './src/runner/index.js'
 import { progress, json } from './src/reporters/index.js'
 import type { Assert } from './src/assert/index.js'
+import type { Network } from './src/network/index.js'
 
 export default defineConfig({
   files: ['tests/fixtures/integration/**/*.spec.ts'],
-  testPlugins: [path.join(process.cwd(), 'src/assert/index.ts')],
+  testPlugins: [path.join(process.cwd(), 'src/assert/index.ts'), path.join(process.cwd(), 'src/network/index.ts')],
   reporters: {
     activated: ['progress'],
     list: [progress(), json()],
@@ -35,5 +36,6 @@ export default defineConfig({
 declare module './src/testing/index.js' {
   interface TestContext {
     assert: Assert
+    network: Network
   }
 }

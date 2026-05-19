@@ -134,3 +134,5 @@ export type CommandNames =
   | 'resetMouse'
   | 'selectOption'
   | 'locator'
+  | 'network:mock:enable'
+  | 'network:mock:disable'

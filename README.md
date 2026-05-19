@@ -20,6 +20,7 @@ Lupa was built to be the spiritual successor for modern, Vite-based workflows.
 - **Lightning Fast:** Uses Vite as the dev server. No bundling required, resulting in instant boot times.
 - **Intelligent Watch Mode:** A dependency-aware incremental test watcher. Change a component, and Lupa instantly re-runs *only* the tests that import it.
 - **Interactive Debugging:** Focus on a single test file and press `d` to pop open a headed browser with Chrome DevTools already open and attached.
+- **Network Interception:** Full control over network traffic via a lightweight, typed API to mock, route, and assert on HTTP requests made from the browser.
 - **Test Grouping & Suites:** Organize your testing architecture intuitively with structured groups, tags, and execution suites.
 - **Data-Driven Datasets:** Avoid boilerplate by feeding dynamic datasets into parameterized tests.
 - **Browser-Specific Macros:** Create extensible test setups and custom assertions that run flawlessly inside the browser sandbox.
@@ -91,7 +92,34 @@ test.group('My Button Component', () => {
 })
 ```
 
-### 3. Running the Tests
+### 3. Network Mocking
+
+Lupa ships with powerful network interception, allowing you to seamlessly mock requests and assert on network traffic without modifying your application code.
+
+```typescript
+// tests/api.spec.ts
+import { test, fixture, html } from '@pawel-up/lupa/testing'
+
+test('mocks a network request', async ({ assert, network }) => {
+  // 1. Setup the mock
+  const mock = await network.mock('https://api.example.com/data', {
+    status: 200,
+    body: JSON.stringify({ success: true })
+  })
+  
+  // 2. Trigger the network call from your component
+  await fixture(html`<data-fetcher></data-fetcher>`)
+
+  // 3. Ensure the request has settled before asserting
+  await mock.assert.calledOnce()
+  
+  // 4. Safely read the snapshot of the captured request
+  const req = mock.lastRequest()
+  assert.equal(req?.method, 'GET')
+})
+```
+
+### 4. Running the Tests
 
 Execute your test script using a transpiler like `tsx`:
 

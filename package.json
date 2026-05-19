@@ -44,6 +44,7 @@
   "exports": {
     "./package.json": "./package.json",
     "./assert": "./dist/src/assert/index.js",
+    "./network": "./dist/src/network/index.js",
     "./runner": "./dist/src/runner/index.js",
     "./refiner": "./dist/src/refiner/main.js",
     "./testing": "./dist/src/testing/index.js",
