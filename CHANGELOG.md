@@ -1,3 +1,10 @@
+## [0.2.1](https://github.com/pawel-up/lupa/compare/v0.2.0...v0.2.1) (2026-05-19)
+
+
+### Bug Fixes
+
+* adding support for test import error ([a523e75](https://github.com/pawel-up/lupa/commit/a523e75f9874a0e7cd83363c09fe36dc41a0eafd))
+
 # [0.2.0](https://github.com/pawel-up/lupa/compare/v0.1.8...v0.2.0) (2026-05-19)
 
 
