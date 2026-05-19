@@ -125,4 +125,30 @@ test.group('Network Interception', () => {
     assert.equal(req.body, '{"a":1}')
     assert.equal(req.headers['x-custom'], 'test')
   })
+
+  test('supports simplified two-argument signature', async ({ network, assert }) => {
+    const mockString = await network.mock('/api/dual/string', {
+      status: 201,
+      body: 'string match',
+    })
+
+    const mockObject = await network.mock(
+      { uri: '/api/dual/object', method: 'POST' },
+      {
+        status: 202,
+        body: 'object match',
+      }
+    )
+
+    const res1 = await fetch('/api/dual/string')
+    assert.equal(res1.status, 201)
+    assert.equal(await res1.text(), 'string match')
+
+    const res2 = await fetch('/api/dual/object', { method: 'POST' })
+    assert.equal(res2.status, 202)
+    assert.equal(await res2.text(), 'object match')
+
+    await mockString.assert.calledOnce()
+    await mockObject.assert.calledOnce()
+  })
 })
