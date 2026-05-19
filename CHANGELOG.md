@@ -1,3 +1,10 @@
+## [0.1.8](https://github.com/pawel-up/lupa/compare/v0.1.7...v0.1.8) (2026-05-19)
+
+
+### Bug Fixes
+
+* the mock method now accepts different arguments ([c4f11ed](https://github.com/pawel-up/lupa/commit/c4f11ededc2808f89262b284d7ec51b9edf5eb36))
+
 ## [0.1.7](https://github.com/pawel-up/lupa/compare/v0.1.6...v0.1.7) (2026-05-19)
 
 
