@@ -1,3 +1,10 @@
+# [0.2.0](https://github.com/pawel-up/lupa/compare/v0.1.8...v0.2.0) (2026-05-19)
+
+
+### Features
+
+* add glob-like path matching convenience support for URLPattern in network interceptor ([996ed66](https://github.com/pawel-up/lupa/commit/996ed66daddab07f3afff43f665e5016ed5c3fbd))
+
 ## [0.1.8](https://github.com/pawel-up/lupa/compare/v0.1.7...v0.1.8) (2026-05-19)
 
 
