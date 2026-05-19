@@ -1,3 +1,10 @@
+## [0.2.2](https://github.com/pawel-up/lupa/compare/v0.2.1...v0.2.2) (2026-05-19)
+
+
+### Bug Fixes
+
+* fixes [#23](https://github.com/pawel-up/lupa/issues/23) no files in the debug mode ([911aa4f](https://github.com/pawel-up/lupa/commit/911aa4f7b26f6373c8b456e7ccf0eef3f17667e0))
+
 ## [0.2.1](https://github.com/pawel-up/lupa/compare/v0.2.0...v0.2.1) (2026-05-19)
 
 
