@@ -23,6 +23,25 @@ describe('RouteMatcher', () => {
       assert.ok(def.pattern.test('https://example.com/api/users'))
     })
 
+    test('creates pattern for glob paths starting with */', () => {
+      const def = createRouteDefinition(1, { type: 'string', uri: '*/api/users' }, {})
+      assert.ok(def.pattern)
+      assert.ok(def.pattern.test('https://example.com/api/users'))
+      assert.ok(def.pattern.test('http://localhost/api/users'))
+      // It acts as an absolute path, so it shouldn't match if it's deeper in the path
+      assert.strictEqual(def.pattern.test('http://localhost/other/api/users'), false)
+    })
+
+    test('creates pattern for glob paths like ** or *', () => {
+      const def1 = createRouteDefinition(1, { type: 'string', uri: '**' }, {})
+      assert.ok(def1.pattern)
+      assert.ok(def1.pattern.test('https://example.com/api/users'))
+
+      const def2 = createRouteDefinition(1, { type: 'string', uri: '*' }, {})
+      assert.ok(def2.pattern)
+      assert.ok(def2.pattern.test('http://localhost/something'))
+    })
+
     test('ignores pattern if uri is not provided', () => {
       const def = createRouteDefinition(1, { type: 'options', headers: { Auth: 'token' } }, {})
       assert.strictEqual(def.pattern, undefined)

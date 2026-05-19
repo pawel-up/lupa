@@ -2,6 +2,12 @@ import type { RouteDefinition, SerializedMatch } from './types.js'
 
 /**
  * Creates a RouteDefinition from a serialized matcher and options.
+ *
+ * Note: Lupa includes convenience handling for glob-like URIs starting with `*\/` or `**`.
+ * In standard URLPattern, a prefix like `*\/foo` expects at least one character before `/foo`.
+ * To mimic traditional glob matching (e.g. matching any domain), Lupa strips the leading `*`
+ * from `*\/foo` and evaluates it as the pathname `/foo`, which correctly matches requests
+ * regardless of their origin.
  */
 export function createRouteDefinition(
   id: number,
@@ -18,12 +24,16 @@ export function createRouteDefinition(
         pattern = new URLPattern({ pathname: uri })
       } else if (uri.startsWith('http')) {
         pattern = new URLPattern(uri)
+      } else if (uri.startsWith('*/')) {
+        pattern = new URLPattern({ pathname: uri.substring(1) })
+      } else if (uri === '**' || uri === '*') {
+        pattern = new URLPattern({ pathname: '/*' })
       } else {
         pattern = new URLPattern({ pathname: '/' + uri })
       }
     } catch {
       // Provide a generic fallback URLPattern if invalid
-      pattern = new URLPattern({ pathname: uri })
+      pattern = new URLPattern({ pathname: uri.startsWith('*/') ? uri.substring(1) : uri })
     }
   }
 

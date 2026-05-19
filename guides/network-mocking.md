@@ -114,6 +114,9 @@ Lupa gives you flexible ways to define which network requests your mock should i
 ### Substring & Glob Matching
 By default, passing a string will match any request URL that contains that substring. It also supports standard Playwright glob wildcards (like `*` for single path segments or `**` for deep globbing). Note that wildcard captures cannot be extracted as variables later; they simply allow the request to match.
 
+> [!NOTE]
+> **URI Matching Caveat**: Lupa uses the standard `URLPattern` API under the hood. In `URLPattern`, a wildcard prefix like `/*/foo` expects *at least one character* before `/foo`. For convenience and to mimic traditional glob behavior (e.g. ignoring the domain), Lupa will automatically strip a leading `*` from paths that start with `*/`. Thus, `match: '*/api/users/:id'` behaves identically to `match: '/api/users/:id'`, effectively intercepting requests to that path regardless of the domain or origin. Furthermore, `**` or `*` alone are automatically translated to `/*` to match any path.
+
 ```ts
 // Matches /api/v1/users, /api/v2/users, etc.
 await network.mock('/api/*/users', { status: 200 })

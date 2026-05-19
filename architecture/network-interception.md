@@ -47,6 +47,8 @@ test('should mock a network request', async ({ network }) => {
 })
 ```
 
+**URI Matching Caveat**: Lupa uses the standard `URLPattern` API under the hood. In `URLPattern`, a wildcard prefix like `/*/foo` expects *at least one character* before `/foo`. For convenience and to mimic traditional glob behavior (e.g. ignoring the domain), Lupa will automatically strip a leading `*` from paths that start with `*/`. Thus, `match: '*/api/users/:id'` behaves identically to `match: '/api/users/:id'`, effectively intercepting requests to that path regardless of the domain or origin. Furthermore, `**` or `*` alone are automatically translated to `/*` to match any path.
+
 ### Dynamic Responses & Closures
 
 All response properties can be functions that resolve dynamically. Because of the bridge architecture, these functions have full access to your test's closure scope:
