@@ -107,9 +107,6 @@ Test filters to apply
 
 A hook to configure suites. The callback will be called for each
 suite before it gets executed.
-A collection of registered reporters. Reporters are not activated by
-default. Either you have to activate them using the commandline,
-or using the `activated` property.
 
 **Type:** `{ activated: string[]; list?: NamedReporterContract[] }`
 
@@ -124,10 +121,10 @@ and config.
 
 #### runnerPlugins
 
-Node-side runner plugins. Functions executed in the Node.js
-orchestrator. Receive the Node Runner, Emitter, and config.
+Node-side runner plugins. Can hook into the orchestrator lifecycle
+to start proxy servers, perform planning, or collect metrics.
 
-**Type:** `RunnerPluginFn[]`
+**Type:** `LupaPlugin[]`
 
 #### importer
 
@@ -175,6 +172,8 @@ project, you might want to exclude "node_modules"
 
 Path to the Vite configuration file.
 Do not use together with 'vite'.
+@todo: check if we validate the viteConfig and inline vite at runtime,
+we should throw an error if both are provided
 
 **Type:** `string`
 
@@ -709,5 +708,8 @@ current modifiers back. If not specified, currently pressed modifiers are used. 
 **Type:** `("Alt" | "Control" | "ControlOrMeta" | "Meta" | "Shift")[]`
 
 #### position
+
+A point to use relative to the top-left corner of element padding box. If not specified, uses some visible point of
+the element.
 
 <!-- truncated -->

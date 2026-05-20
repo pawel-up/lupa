@@ -66,6 +66,9 @@ export class Orchestrator {
   /** The interactive CLI interface for watch mode. */
   public cli: Cli
 
+  /** Teardowns collected from plan and boot plugin phases */
+  #pluginTeardowns: (() => void | Promise<void>)[] = []
+
   /**
    * Constructs a new Orchestrator instance.
    *
@@ -87,6 +90,13 @@ export class Orchestrator {
     this.exceptionsManager = new ExceptionsManager()
 
     this.cli = new Cli(this)
+  }
+
+  /**
+   * Register teardown functions from plugins (e.g. from the plan phase)
+   */
+  registerTeardowns(teardowns: (() => void | Promise<void>)[]) {
+    this.#pluginTeardowns.push(...teardowns)
   }
 
   /**
@@ -127,6 +137,17 @@ export class Orchestrator {
    */
   async boot() {
     this.exceptionsManager.monitor()
+
+    if (this.config.runnerPlugins) {
+      for (const plugin of this.config.runnerPlugins) {
+        if (plugin.boot) {
+          const teardown = await plugin.boot({ config: this.config, cliArgs: this.cliArgs })
+          if (typeof teardown === 'function') {
+            this.#pluginTeardowns.push(teardown)
+          }
+        }
+      }
+    }
 
     this.testPoolManager = new TestPoolManager(this.config, this.browserNames, this.suites)
 
@@ -192,6 +213,26 @@ export class Orchestrator {
     if (this.isShuttingDown) return
     this.isShuttingDown = true
     debug('shutting down (exit code: %d)', exitCode)
+
+    if (this.config.runnerPlugins) {
+      for (const plugin of this.config.runnerPlugins) {
+        if (plugin.shutdown) {
+          try {
+            await plugin.shutdown({ config: this.config, cliArgs: this.cliArgs, exitCode })
+          } catch (error) {
+            debug('error executing plugin shutdown hook: %O', error)
+          }
+        }
+      }
+    }
+
+    for (const teardown of this.#pluginTeardowns) {
+      try {
+        await teardown()
+      } catch (error) {
+        debug('error executing plugin teardown hook: %O', error)
+      }
+    }
 
     if (this.globalTimeout) {
       clearTimeout(this.globalTimeout)
@@ -273,6 +314,36 @@ export class Orchestrator {
 
     this.activeNodeEmitter = new Emitter<RunnerEvents>()
     this.activeNodeRunner = new Runner(this.activeNodeEmitter, this.config)
+
+    const executeTeardowns: (() => void | Promise<void>)[] = []
+
+    if (this.config.runnerPlugins) {
+      for (const plugin of this.config.runnerPlugins) {
+        if (plugin.execute) {
+          const teardown = await plugin.execute({
+            config: this.config,
+            cliArgs: this.cliArgs,
+            runner: this.activeNodeRunner,
+            emitter: this.activeNodeEmitter,
+          })
+          if (typeof teardown === 'function') {
+            executeTeardowns.push(teardown)
+          }
+        }
+      }
+    }
+
+    if (executeTeardowns.length > 0) {
+      this.activeNodeEmitter.on('runner:end', async () => {
+        for (const teardown of executeTeardowns) {
+          try {
+            await teardown()
+          } catch (error) {
+            debug('error executing plugin run teardown: %O', error)
+          }
+        }
+      })
+    }
 
     // Set reporterEmitter to filtered output so reporters don't see non-focused events
     this.activeNodeRunner.reporterEmitter = this.cli.createFilteredEmitter(this.activeNodeEmitter)

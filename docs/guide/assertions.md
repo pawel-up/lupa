@@ -24,7 +24,6 @@ export default defineConfig({
   testPlugins: ['@pawel-up/lupa/assert'], // Register the assert plugin
   reporters: {
     activated: ['progress'],
-    list: [spec()],
   },
 })
 ```

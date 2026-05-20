@@ -62,7 +62,6 @@ export default defineConfig({
   testPlugins: ['@pawel-up/lupa/assert'],
   reporters: {
     activated: ['progress'],
-    list: [spec()],
   },
 })
 

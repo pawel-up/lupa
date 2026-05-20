@@ -138,9 +138,24 @@ export async function run() {
 
   ensureIsConfigured(runnerConfig)
 
+  const pluginTeardowns: (() => void | Promise<void>)[] = []
+
+  if (runnerConfig.runnerPlugins) {
+    for (const plugin of runnerConfig.runnerPlugins) {
+      if (plugin.plan) {
+        const teardown = await plugin.plan({ config: runnerConfig, cliArgs })
+        if (typeof teardown === 'function') {
+          pluginTeardowns.push(teardown)
+        }
+      }
+    }
+  }
+
   const { config, reporters, suites, refinerFilters } = await new Planner(runnerConfig).plan()
 
   const orchestrator = new Orchestrator(config, cliArgs, reporters, suites, refinerFilters)
+  // We need to give orchestrator the plan teardowns so it can run them during shutdown
+  orchestrator.registerTeardowns(pluginTeardowns)
 
   /**
    * Signal handlers for clean shutdown on Ctrl+C / kill
@@ -201,9 +216,23 @@ export async function runProgrammatic<T>(
     },
   }
 
+  const pluginTeardowns: (() => void | Promise<void>)[] = []
+
+  if (programmaticConfig.runnerPlugins) {
+    for (const plugin of programmaticConfig.runnerPlugins) {
+      if (plugin.plan) {
+        const teardown = await plugin.plan({ config: programmaticConfig, cliArgs })
+        if (typeof teardown === 'function') {
+          pluginTeardowns.push(teardown)
+        }
+      }
+    }
+  }
+
   const { config, reporters, suites, refinerFilters } = await new Planner(programmaticConfig).plan()
 
   const orchestrator = new Orchestrator(config, cliArgs, reporters, suites, refinerFilters)
+  orchestrator.registerTeardowns(pluginTeardowns)
 
   try {
     // We explicitly call waitForCompletion to set up the promise before booting

@@ -2,7 +2,7 @@ import type { HookHandler } from '../hooks/types.js'
 import type { Refiner } from '../refiner/main.js'
 import type { Emitter } from '../testing/emitter.js'
 import { Runner } from './runner.js'
-import type { FilteringOptions, NamedReporterContract } from '../types.js'
+import type { FilteringOptions, NamedReporterContract, RunnerEvents } from '../types.js'
 import type { InlineConfig } from 'vite'
 
 /**
@@ -165,27 +165,103 @@ export type JsonSerializable =
 export type TestPluginEntry = string | [specifier: string, options: JsonSerializable]
 
 /**
- * Runner plugin function. Receives the Node runner, emitter, and config.
- * Executed in the Node.js orchestrator process.
+ * Return type for lifecycle hooks that might return a teardown function.
  */
-export type RunnerPluginFn = (context: {
-  /**
-   * Normalized runner configuration
-   */
+export type PluginLifecycleResult =
+  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+  void | Promise<void> | (() => void | Promise<void>) | Promise<() => void | Promise<void>>
+
+/**
+ * Context provided to plugins during the planning phase
+ */
+export interface PluginPlanContext {
   config: NormalizedConfig
-  /**
-   * Parsed command-line arguments
-   */
   cliArgs: CLIArgs
-  /**
-   * Runner instance
-   */
+}
+
+/**
+ * Context provided to plugins during the boot phase
+ */
+export interface PluginBootContext {
+  config: NormalizedConfig
+  cliArgs: CLIArgs
+}
+
+/**
+ * Context provided to plugins during the execution phase
+ */
+export interface PluginExecuteContext {
+  config: NormalizedConfig
+  cliArgs: CLIArgs
   runner: Runner
+  emitter: Emitter<RunnerEvents>
+}
+
+/**
+ * Context provided to plugins during the shutdown phase
+ */
+export interface PluginShutdownContext {
+  config: NormalizedConfig
+  cliArgs: CLIArgs
+  exitCode: number
+}
+
+/**
+ * Lupa runner plugin. Hooks into the test orchestrator lifecycle.
+ */
+export interface LupaPlugin {
   /**
-   * Event emitter
+   * Name of the plugin
    */
-  emitter: Emitter
-}) => void | Promise<void>
+  name: string
+
+  /**
+   * Executed before suites are resolved and the orchestrator boots.
+   * Useful for modifying the configuration dynamically or resolving dynamic test files.
+   * Returns an optional teardown function executed during shutdown.
+   *
+   * @useWhen
+   * - Dynamically injecting test files or suites based on external conditions.
+   * - Overriding CLI arguments or configuration defaults (e.g., forcing `--bail` on CI).
+   * @never Use this hook to start services that should be available during test execution.
+   */
+  plan?: (context: PluginPlanContext) => PluginLifecycleResult
+
+  /**
+   * Executed once when the Orchestrator boots.
+   * Useful for starting global services (like a database or proxy).
+   * Returns an optional teardown function executed during shutdown.
+   *
+   * @useWhen
+   * - One-time global setup tasks (e.g., starting an external database daemon).
+   * - Starting an external proxy server that must persist across watch-mode reruns.
+   *
+   * @never Use this hook to reset state between test runs (use `execute` instead).
+   */
+  boot?: (context: PluginBootContext) => PluginLifecycleResult
+
+  /**
+   * Executed before every test run. In watch mode, this runs multiple times.
+   * Useful for per-run telemetry or state resets.
+   * Returns an optional teardown function executed at the end of the run (runner:end).
+   *
+   * @useWhen
+   * - Attaching custom reporters or telemetry loggers to the `emitter`.
+   * - Resetting external state (e.g., clearing a database) before a specific run starts.
+   *
+   * @never Use this hook to start services that persist across watch-mode runs (use `boot` instead).
+   */
+  execute?: (context: PluginExecuteContext) => PluginLifecycleResult
+
+  /**
+   * Executed once when the Orchestrator shuts down.
+   *
+   * @useWhen
+   * - Tearing down the global database daemon or proxy server started in `boot()`.
+   * - Finalizing custom reports (e.g., sending test run metadata to a dashboard).
+   */
+  shutdown?: (context: PluginShutdownContext) => void | Promise<void>
+}
 
 /**
  * Configuration options for the browser test harness HTML
@@ -238,9 +314,6 @@ export interface BaseConfig {
   /**
    * A hook to configure suites. The callback will be called for each
    * suite before it gets executed.
-   * A collection of registered reporters. Reporters are not activated by
-   * default. Either you have to activate them using the commandline,
-   * or using the `activated` property.
    */
   reporters?: {
     activated: string[]
@@ -260,13 +333,14 @@ export interface BaseConfig {
   testPlugins?: TestPluginEntry[]
 
   /**
-   * Node-side runner plugins. Functions executed in the Node.js
-   * orchestrator. Receive the Node Runner, Emitter, and config.
+   * Node-side runner plugins. Can hook into the orchestrator lifecycle
+   * to start proxy servers, perform planning, or collect metrics.
    */
-  runnerPlugins?: RunnerPluginFn[]
+  runnerPlugins?: LupaPlugin[]
 
   /**
    * A custom implementation to import test files.
+   * @deprecated This is not used.
    */
   importer?: (filePath: URL) => void | Promise<void>
 
@@ -304,6 +378,8 @@ export interface BaseConfig {
   /**
    * Path to the Vite configuration file.
    * Do not use together with 'vite'.
+   * @todo: check if we validate the viteConfig and inline vite at runtime,
+   * we should throw an error if both are provided
    */
   viteConfig?: string
 

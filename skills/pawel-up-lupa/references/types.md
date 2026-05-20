@@ -79,12 +79,53 @@ A test plugin entry for browser-side plugins. Can be:
 string | [specifier: string, options: JsonSerializable]
 ```
 
-### `RunnerPluginFn`
-Runner plugin function. Receives the Node runner, emitter, and config.
-Executed in the Node.js orchestrator process.
+### `PluginLifecycleResult`
+Return type for lifecycle hooks that might return a teardown function.
 ```ts
-(context: { config: NormalizedConfig; cliArgs: CLIArgs; runner: Runner; emitter: Emitter }) => void | Promise<void>
+void | Promise<void> | (() => void | Promise<void>) | Promise<() => void | Promise<void>>
 ```
+
+### `PluginPlanContext`
+Context provided to plugins during the planning phase
+**Properties:**
+- `config: NormalizedConfig`
+- `cliArgs: CLIArgs`
+
+### `PluginBootContext`
+Context provided to plugins during the boot phase
+**Properties:**
+- `config: NormalizedConfig`
+- `cliArgs: CLIArgs`
+
+### `PluginExecuteContext`
+Context provided to plugins during the execution phase
+**Properties:**
+- `config: NormalizedConfig`
+- `cliArgs: CLIArgs`
+- `runner: Runner`
+- `emitter: Emitter<RunnerEvents>`
+
+### `PluginShutdownContext`
+Context provided to plugins during the shutdown phase
+**Properties:**
+- `config: NormalizedConfig`
+- `cliArgs: CLIArgs`
+- `exitCode: number`
+
+### `LupaPlugin`
+Lupa runner plugin. Hooks into the test orchestrator lifecycle.
+**Properties:**
+- `name: string` — Name of the plugin
+- `plan: (context: PluginPlanContext) => PluginLifecycleResult` (optional) — Executed before suites are resolved and the orchestrator boots.
+Useful for modifying the configuration dynamically or resolving dynamic test files.
+Returns an optional teardown function executed during shutdown.
+- `boot: (context: PluginBootContext) => PluginLifecycleResult` (optional) — Executed once when the Orchestrator boots.
+Useful for starting global services (like a database or proxy).
+Returns an optional teardown function executed during shutdown.
+- `execute: (context: PluginExecuteContext) => PluginLifecycleResult` (optional) — Executed before every test run. In watch mode, this runs multiple times.
+Useful for per-run telemetry or state resets.
+Returns an optional teardown function executed at the end of the run (runner:end).
+- `shutdown: (context: PluginShutdownContext) => void | Promise<void>` (optional) — Executed once when the Orchestrator shuts down.
 
 ### `TestFiles`
 A collection of test files defined as a glob or a callback
@@ -379,33 +420,5 @@ Events emitted by the browser telemetry over WebSocket
 - `runner:import_error: RunnerImportErrorNode & Partial<CorrelationIds>` — Emitted when a test file fails to import
 
 ### `RunnerEvents`
-Events emitted by the Node runner orchestrator.
-Includes hydrated browser events and pool lifecycle events.
-**Properties:**
-- `browser:log: { file: string; type: string; messages: any[] }` — Browser console log
-- `test:start: WithCorrelation<TestStartNode>` — Emitted when a test starts.
-- `test:end: WithCorrelation<TestEndNode>` — Emitted when a test ends.
-- `group:start: WithCorrelation<GroupOptions>` — Emitted when a group starts.
-- `group:end: WithCorrelation<GroupEndNode>` — Emitted when a group ends.
-- `suite:start: WithCorrelation<SuiteStartNode>` — Emitted when a suite starts.
-- `suite:end: WithCorrelation<SuiteEndNode>` — Emitted when a suite ends.
-- `uncaught:exception: UncaughtExceptionNode & Partial<CorrelationIds>` — Emitted when an uncaught exception occurs.
-- `runner:pinned_tests: RunnerPinnedTestsNode & Partial<CorrelationIds>` — Emitted when the runner finds pinned tests.
-- `runner:list: RunnerListNode & Partial<CorrelationIds>` — Emitted when the runner is in list mode and dumps the test tree
-- `runner:start: RunnerStartNode & Partial<CorrelationIds>` — Emitted when the runner starts.
-- `runner:end: RunnerEndNode & Partial<CorrelationIds>` — Emitted when the runner ends.
-- `runner:import_error: RunnerImportErrorNode & Partial<CorrelationIds>` — Emitted when a test file fails to import
-
-### `ReporterHandlerContract`
-Type for the reporter handler function
-```ts
-(runner: Runner, emitter: Emitter<RunnerEvents>, config: NormalizedConfig) => void | Promise<void>
-```
-
-### `NamedReporterContract`
-Type for a named reporter object.
-**Properties:**
-- `name: string` — Reporter name
-- `usesCLI: boolean` (optional) — Whether the reporter takes exclusive control of the CLI output.
 
 <!-- truncated -->

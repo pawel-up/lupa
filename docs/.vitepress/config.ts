@@ -57,6 +57,7 @@ export default defineConfig({
           { text: 'Datasets', link: '/guide/datasets' },
           { text: 'Test Macros', link: '/guide/test-macros' },
           { text: 'Lifecycle Hooks', link: '/guide/lifecycle-hooks' },
+          { text: 'Plugins', link: '/guide/plugins' },
           { text: 'Skipping Tests', link: '/guide/skipping-tests' },
           { text: 'Filtering Tests', link: '/guide/filtering-tests' },
         ],
