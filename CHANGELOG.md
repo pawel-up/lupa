@@ -1,3 +1,11 @@
+## [0.3.4](https://github.com/pawel-up/lupa/compare/v0.3.3...v0.3.4) (2026-05-20)
+
+
+### Bug Fixes
+
+* fixing Lupa plugins ([a4f368a](https://github.com/pawel-up/lupa/commit/a4f368a5511b8ddb05e090b7e811c4c7de34268b))
+* removing unused config options ([650769e](https://github.com/pawel-up/lupa/commit/650769e1c1006c65b00694b8292b5e0750df68be))
+
 ## [0.3.3](https://github.com/pawel-up/lupa/compare/v0.3.2...v0.3.3) (2026-05-20)
 
 
