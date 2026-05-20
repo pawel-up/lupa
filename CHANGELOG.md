@@ -1,3 +1,20 @@
+# [0.3.0](https://github.com/pawel-up/lupa/compare/v0.2.3...v0.3.0) (2026-05-20)
+
+
+### Bug Fixes
+
+* fixes [#20](https://github.com/pawel-up/lupa/issues/20) invalid init templates ([8211fac](https://github.com/pawel-up/lupa/commit/8211faca71ed73c4c922133cc75dedd19fc41db5))
+* fixes [#21](https://github.com/pawel-up/lupa/issues/21) overriding reporters through the CLI ([55e3c24](https://github.com/pawel-up/lupa/commit/55e3c249a2ed2f73e5bb25e4b9106988cf14db5f))
+* fixes [#22](https://github.com/pawel-up/lupa/issues/22) add browser reporter ([943e387](https://github.com/pawel-up/lupa/commit/943e3875da55315e8ba6a4dcc8936be183f700c8))
+* fixing PR reported errors ([65bd238](https://github.com/pawel-up/lupa/commit/65bd2384b1e8f284c4c70c2d5990c8b1cdb55f04))
+* json reporter returns all errors ([474cd65](https://github.com/pawel-up/lupa/commit/474cd65469c0f0e784abfa363540d5985231f64a))
+* no nav errors when closing in debug mode ([4e67b68](https://github.com/pawel-up/lupa/commit/4e67b688cd9be2a41381e5b2ec52eab330ebb0ad))
+
+
+### Features
+
+* trigger minor release for version 0.3 ([89d7ae7](https://github.com/pawel-up/lupa/commit/89d7ae726fd2f4e58fdad63710d5f54fabd21b2a))
+
 ## [0.2.3](https://github.com/pawel-up/lupa/compare/v0.2.2...v0.2.3) (2026-05-20)
 
 
