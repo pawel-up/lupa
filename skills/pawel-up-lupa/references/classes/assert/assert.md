@@ -199,7 +199,7 @@ value. Useful for testing API responses.
 - `notContainsSubset(haystack: any, needle: any, message?: string): void` — Assert an array or an object to not contain a subset of the expected
 value.
 - `oneOf<T>(inList: T, list: T[], message?: string): void` — Assert the value is available in the provided list.
-- `rejects(fn: () => unknown, message?: string): Promise<void>` — Assert the function to reject the promise or reject with a specific
+- `rejects(fn: () => unknown, errMessage?: string): Promise<void>` — Assert the function to reject the promise or reject with a specific
 error class/message
 
 The method returns a promise

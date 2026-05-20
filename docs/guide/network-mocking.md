@@ -29,7 +29,7 @@ test('loads and displays user data', async ({ assert, network }) => {
 
 ### Mocking Network Errors
 
-Because Lupa controls the underlying browser network layer, you can simulate hard network failures by passing the `error` property. This property accepts standard Playwright error strings (e.g., `'internetdisconnected'`, `'connectionrefused'`, `'timedout'`, `'aborted'`). This is invaluable for testing your application's offline or error-boundary states:
+Because Lupa controls the underlying browser network layer, you can simulate hard network failures by passing the `error` property. This property accepts standard Playwright error strings (e.g., `'internetdisconnected'`, `'connectionrefused'`, `'timedout'`, `'aborted'`). The `network.error` enum provides a convenient way to access these error strings. This is invaluable for testing your application's offline or error-boundary states:
 
 ```ts
 import { test, fixture, html } from '@pawel-up/lupa/testing'
@@ -37,7 +37,7 @@ import { test, fixture, html } from '@pawel-up/lupa/testing'
 test('displays offline fallback when network drops', async ({ assert, network }) => {
   // Mock a hard network failure
   await network.mock('/api/users/1', {
-    error: 'internetdisconnected'
+    error: network.error.ConnectionFailed
   })
 
   await fixture(html`<user-profile user-id="1"></user-profile>`)
@@ -180,16 +180,18 @@ await network.mock('/api/data', { status: 200 }, { times: 1 })
 ```
 
 ### Explicit Bypass
-If your mock handler needs to dynamically decide whether to mock a request or let it fall through to the next available mock (or the real network), you can explicitly return `'bypass'` from your handler function. This is especially useful for selectively mocking requests based on headers, body content, or query parameters:
+If your mock handler needs to dynamically decide whether to mock a request or let it fall through to the next available mock (or the real network), you can explicitly return `network.bypass` from your handler function. This is especially useful for selectively mocking requests based on headers, body content, or query parameters:
 
 ```ts
-await network.mock('/api/users', async (req) => {
-  // Only mock requests that ask for the admin user
-  if (req.query?.role === 'admin') {
-    return { status: 200, body: '{"name":"Admin"}' }
-  }
-  
-  // Let everything else fall through to the real network
-  return 'bypass'
+test('handles intermittent API failure', async ({ network }) => {
+  await network.mock('/api/users', async ({ query }) => {
+    // Only mock requests that ask for the admin user
+    if (query?.role === 'admin') {
+      return { status: 200, body: '{"name":"Admin"}' }
+    }
+    
+    // Let everything else fall through to the real network
+    return network.bypass
+  })
 })
 ```

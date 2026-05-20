@@ -89,7 +89,6 @@ export function defineConfig(config: Config): Config {
  *     { name: 'e2e', files: ['tests/e2e/**\/*.spec.ts'] }
  *   ],
  *   timeout: 5000,
- *   forceExit: true
  * })
  *
  * run()
@@ -121,7 +120,6 @@ export function configure(options: Config, args?: CLIArgs) {
  *
  * configure({
  *   files: ['tests/**\/*.spec.ts'],
- *   forceExit: true
  * })
  *
  * run()

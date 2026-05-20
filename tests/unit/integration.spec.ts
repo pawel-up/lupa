@@ -3,6 +3,10 @@ import assert from 'node:assert'
 import { fork } from 'node:child_process'
 import path from 'node:path'
 
+const BROWSER_TESTS_COUNT = 71
+const BROWSER_PASSED_TESTS_COUNT = 70
+const BROWSER_SKIPPED_TESTS_COUNT = 1
+
 test('Integration: Lupa Framework End-to-End', async (t) => {
   // Give it a longer timeout since it boots Vite and Playwright
   const TIMEOUT = 30000
@@ -46,10 +50,11 @@ test('Integration: Lupa Framework End-to-End', async (t) => {
       // Verify exit code
       assert.strictEqual(exitCode, 0, `Expected runner to exit with code 0. Output:\n${output}`)
 
-      // Assert that exactly 56 passed
       assert.ok(
-        output.includes('Tests  56 passed, 1 skipped (57)'),
-        `Summary should report 56 passed and 1 skipped. Actual output: ${output}`
+        output.includes(
+          `Tests  ${BROWSER_PASSED_TESTS_COUNT} passed, ${BROWSER_SKIPPED_TESTS_COUNT} skipped (${BROWSER_TESTS_COUNT})`
+        ),
+        `Summary should report ${BROWSER_PASSED_TESTS_COUNT} passed and ${BROWSER_SKIPPED_TESTS_COUNT} skipped. Actual output: ${output}`
       )
     }
   )
@@ -88,7 +93,7 @@ test('Integration: Lupa Framework End-to-End', async (t) => {
     const output = stdout + '\n' + stderr
 
     assert.strictEqual(exitCode, 0, `Expected runner to exit with code 0. Output:\n${output}`)
-    assert.ok(output.includes('Total tests: 54'), `Expected list output to show 54 tests. Actual output: ${output}`)
+    assert.ok(output.includes('Total tests: 55'), `Expected list output to show 55 tests. Actual output: ${output}`)
     assert.ok(output.includes('Suite'), 'Expected list output to contain a table with Suite column.')
   })
 

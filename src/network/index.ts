@@ -5,14 +5,114 @@ import type { NetworkMockOptions, NetworkMatch, NetworkRespondPayload, NetworkRe
 import type { NetworkInterceptor } from './network_interceptor.js'
 
 export type { NetworkMockOptions, CapturedRequest, NetworkRespondPayload } from './types.js'
-export { bypass } from './constants.js'
+import { bypass } from './constants.js'
 export type { NetworkInterceptor }
+
+/**
+ * Network-level error types which can be thrown when fulfilling network request.
+ * Based on Playwright's NetworkError enum.
+ */
+export enum NetworkError {
+  /**
+   * An operation was aborted (due to user action).
+   */
+  Aborted = 'aborted',
+  /**
+   * Permission to access a resource, other than the network, was denied.
+   */
+  AccessDenied = 'accessdenied',
+  /**
+   * The IP address is unreachable. This usually means that there is no route to the specified host or network.
+   */
+  AddressUnreachable = 'addressunreachable',
+  /**
+   * The client chose to block the request.
+   */
+  BlockedByClient = 'blockedbyclient',
+  /**
+   * The request failed because the response was delivered along with requirements which are not met
+   * (e.g., 'X-Frame-Options' or 'Content-Security-Policy').
+   */
+  BlockedByResponse = 'blockedbyresponse',
+  /**
+   * A connection timed out as a result of not receiving an ACK for data sent.
+   */
+  ConnectionAborted = 'connectionaborted',
+  /**
+   * A connection was closed (corresponding to a TCP FIN).
+   */
+  ConnectionClosed = 'connectionclosed',
+  /**
+   * A connection attempt failed.
+   */
+  ConnectionFailed = 'connectionfailed',
+  /**
+   * A connection attempt was refused.
+   */
+  ConnectionRefused = 'connectionrefused',
+  /**
+   * A connection was reset (corresponding to a TCP RST).
+   */
+  ConnectionReset = 'connectionreset',
+  /**
+   * The Internet connection has been lost.
+   */
+  InternetDisconnected = 'internetdisconnected',
+  /**
+   * The host name could not be resolved.
+   */
+  NameNotResolved = 'namenotresolved',
+  /**
+   * An operation timed out.
+   */
+  TimedOut = 'timedout',
+  /**
+   * A generic failure occurred.
+   */
+  Failed = 'failed',
+}
 
 /**
  * The developer-facing API for network interception and mocking.
  * Available in browser tests via the `network` fixture on the `TestContext`.
  */
 export class Network {
+  /**
+   * A sentinel value to indicate that a request should not be intercepted and should be allowed to proceed normally.
+   *
+   * You can use this value in dynamic response handlers to selectively bypass the mock and let the request
+   * go through to the actual network.
+   *
+   * @example
+   * ```ts
+   * test('bypasses network', async ({ network }) => {
+   *   const mock = await network.mock('/api/data', () => {
+   *     // your logic to decide whether to bypass the mock
+   *     return network.bypass
+   *   })
+   * })
+   * ```
+   */
+  get bypass(): typeof bypass {
+    return bypass
+  }
+
+  /**
+   * Collection of network error types which can be used to simulate network errors.
+   *
+   * @example
+   * ```ts
+   * test('simulates a network connection failure', async ({ network }) => {
+   *   const mock = await network.mock('/api/data', () => {
+   *     return { error: network.error.ConnectionFailed }
+   *   })
+   * })
+   * ```
+   */
+  get error(): typeof NetworkError {
+    return NetworkError
+  }
+
   /**
    * Registers a new network mock to intercept requests matching the provided criteria.
    * Intercepted requests can be bypassed, stubbed with static payloads, or handled by dynamic closures.

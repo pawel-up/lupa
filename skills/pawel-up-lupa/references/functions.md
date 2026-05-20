@@ -125,7 +125,6 @@ configure({
     { name: 'e2e', files: ['tests/e2e/**/*.spec.ts'] }
   ],
   timeout: 5000,
-  forceExit: true
 })
 
 run()
@@ -164,7 +163,6 @@ import { configure, run } from '@pawel-up/lupa/runner'
 
 configure({
   files: ['tests/**/*.spec.ts'],
-  forceExit: true
 })
 
 run()

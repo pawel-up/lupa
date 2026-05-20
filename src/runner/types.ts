@@ -1,41 +1,8 @@
-import type { HookHandler } from '../hooks/types.js'
 import type { Refiner } from '../refiner/main.js'
 import type { Emitter } from '../testing/emitter.js'
 import { Runner } from './runner.js'
 import type { FilteringOptions, NamedReporterContract, RunnerEvents } from '../types.js'
 import type { InlineConfig } from 'vite'
-
-/**
- * Global setup hook state
- */
-export type SetupHookState = [[runner: Runner], [error: Error | null, runner: Runner]]
-/**
- * Global setup hook handler
- */
-export type SetupHookHandler = HookHandler<SetupHookState[0], SetupHookState[1]>
-
-/**
- * Global teardown hook state
- */
-export type TeardownHookState = [[runner: Runner], [error: Error | null, runner: Runner]]
-/**
- * Global teardown hook handler
- */
-export type TeardownHookHandler = HookHandler<TeardownHookState[0], TeardownHookState[1]>
-
-/**
- * Global set of available hooks
- */
-export interface HooksEvents {
-  /**
-   * Global setup hook
-   */
-  setup: SetupHookState
-  /**
-   * Global teardown hook
-   */
-  teardown: TeardownHookState
-}
 
 /**
  * Parsed command-line arguments
@@ -73,10 +40,6 @@ export type CLIArgs = {
    * Reporters to use
    */
   reporters?: string | string[]
-  /**
-   * Whether to force exit
-   */
-  forceExit?: boolean
   /**
    * Whether to run only failed tests
    */
@@ -339,32 +302,10 @@ export interface BaseConfig {
   runnerPlugins?: LupaPlugin[]
 
   /**
-   * A custom implementation to import test files.
-   * @deprecated This is not used.
-   */
-  importer?: (filePath: URL) => void | Promise<void>
-
-  /**
    * Overwrite tests refiner. Check documentation for refiner
    * usage
    */
   refiner?: Refiner
-
-  /**
-   * Enable/disable force exiting.
-   */
-  forceExit?: boolean
-
-  /**
-   * Global hooks to execute before importing
-   * the test files
-   */
-  setup?: SetupHookHandler[]
-
-  /**
-   * Global hooks to execute on teardown
-   */
-  teardown?: TeardownHookHandler[]
 
   /**
    * An array of directories to exclude when searching
@@ -378,8 +319,6 @@ export interface BaseConfig {
   /**
    * Path to the Vite configuration file.
    * Do not use together with 'vite'.
-   * @todo: check if we validate the viteConfig and inline vite at runtime,
-   * we should throw an error if both are provided
    */
   viteConfig?: string
 

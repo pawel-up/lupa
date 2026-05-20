@@ -9,6 +9,7 @@ Usually, you might wrap these function calls inside a `try/catch` statement and 
 ```ts
 import { test } from '@pawel-up/lupa/testing'
 
+// ❌ The Wrong Way
 test('validate property', ({ assert }) => {
   try {
     validateProperty(undefined)

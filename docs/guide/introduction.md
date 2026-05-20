@@ -28,7 +28,7 @@ Lupa ticks almost every checkbox to provide a world-class frontend testing exper
 - **Template Support:** First-class support for rendering `lit-html` templates and standard HTML strings via the `fixture()` helper.
 - **Automatic Cleanup:** DOM fixtures are automatically unmounted and cleaned up between test runs.
 - **Datasets:** Write data-driven tests seamlessly with `test.with()`.
-- **Advanced Hook System:** Global and group-level `setup`, `teardown`, and inline `cleanup` hooks.
+- **Advanced Hook System:** Suite, group, and test-level `setup`, `teardown`, and inline `cleanup` hooks, alongside a powerful Plugin API for global services.
 - **Headless & Interactive Modes:** Run headless in CI using Playwright, or in "watch" mode locally with a visual UI.
 - **Built-in Assertions:** Ships with a robust assertion library built on top of Chai, ready to use immediately.
 

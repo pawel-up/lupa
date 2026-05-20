@@ -62,13 +62,6 @@ const json: (options?: BaseReporterOptions) => ProgrammaticReporterContract<JSON
 
 ## network
 
-### `bypass`
-Return this symbol from a dynamic response closure to explicitly bypass the current mock.
-This instructs Lupa to fall through to the next registered mock, or defer to the real network.
-```ts
-const bypass: unique symbol
-```
-
 ### `default`
 Browser test plugin for network mocking support.
 

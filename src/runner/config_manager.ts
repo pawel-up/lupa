@@ -14,7 +14,6 @@ const DEFAULTS = {
   files: [],
   timeout: 2000,
   retries: 0,
-  forceExit: false,
   testPlugins: [],
   runnerPlugins: [],
   get reporters() {
@@ -26,7 +25,6 @@ const DEFAULTS = {
       list: [ndjson(), dot(), github(), progress(), json()],
     }
   },
-  importer: (filePath) => import(filePath.href),
 } satisfies Config
 
 /**
@@ -106,15 +104,6 @@ export class ConfigManager {
   }
 
   /**
-   * Returns the forceExit property from the CLI args
-   */
-  #getCLIForceExit(): boolean | undefined {
-    if (this.#cliArgs.forceExit) {
-      return true
-    }
-  }
-
-  /**
    * Returns reporters selected using the commandline
    * --reporter flag
    */
@@ -133,7 +122,6 @@ export class ConfigManager {
     const cliRetries = this.#getCLIRetries()
     const cliTimeout = this.#getCLITimeout()
     const cliReporters = this.#getCLIReporters()
-    const cliForceExit = this.#getCLIForceExit()
 
     const cliViteConfig = typeof this.#cliArgs.viteConfig === 'string' ? this.#cliArgs.viteConfig : undefined
     const finalViteConfig = cliViteConfig ?? this.#config.viteConfig
@@ -172,21 +160,17 @@ export class ConfigManager {
       cwd: this.#config.cwd ?? process.cwd(),
       exclude: this.#config.exclude || ['node_modules/**', '.git/**', 'coverage/**'],
       filters: Object.assign({}, this.#config.filters ?? {}, cliFilters),
-      importer: this.#config.importer ?? DEFAULTS.importer,
       refiner: this.#config.refiner ?? new Refiner(),
       retries: cliRetries ?? this.#config.retries ?? DEFAULTS.retries,
       timeout: cliTimeout ?? this.#config.timeout ?? DEFAULTS.timeout,
       testPlugins: this.#config.testPlugins ?? DEFAULTS.testPlugins,
       runnerPlugins: this.#config.runnerPlugins ?? DEFAULTS.runnerPlugins,
-      forceExit: cliForceExit ?? this.#config.forceExit ?? DEFAULTS.forceExit,
       reporters: this.#config.reporters
         ? {
             activated: this.#config.reporters.activated,
             list: this.#config.reporters.list || DEFAULTS.reporters.list,
           }
         : DEFAULTS.reporters,
-      setup: this.#config.setup || [],
-      teardown: this.#config.teardown || [],
       viteConfig: finalViteConfig,
       vite: this.#config.vite,
       coverage: resolvedCoverage,

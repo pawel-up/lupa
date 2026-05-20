@@ -1,3 +1,5 @@
+import type { NetworkError } from './index.js'
+
 /**
  * Supported HTTP methods for network request matching.
  */
@@ -51,21 +53,7 @@ export interface NetworkRespondPayload {
   /** Milliseconds to delay the response fulfillment. Useful for simulating latency. */
   delay?: number
   /** Triggers a network-level error matching the specified Playwright error string. */
-  error?:
-    | 'aborted'
-    | 'accessdenied'
-    | 'addressunreachable'
-    | 'blockedbyclient'
-    | 'blockedbyresponse'
-    | 'connectionaborted'
-    | 'connectionclosed'
-    | 'connectionfailed'
-    | 'connectionrefused'
-    | 'connectionreset'
-    | 'internetdisconnected'
-    | 'namenotresolved'
-    | 'timedout'
-    | 'failed'
+  error?: NetworkError
 }
 
 /**

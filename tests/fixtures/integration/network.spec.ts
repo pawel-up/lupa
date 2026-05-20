@@ -1,5 +1,5 @@
+import { NetworkError } from '../../../src/network/index.js'
 import { test } from '../../../src/testing/index.js'
-import { bypass } from '../../../src/network/index.js'
 
 test.group('Network Interception', () => {
   test('mocks a simple JSON response', async ({ network, assert }) => {
@@ -88,7 +88,7 @@ test.group('Network Interception', () => {
 
     const bypassMock = await network.mock({
       match: '/api/bypass',
-      respond: () => bypass,
+      respond: () => network.bypass,
     })
 
     const res = await fetch('/api/bypass')
@@ -151,4 +151,12 @@ test.group('Network Interception', () => {
     await mockString.assert.calledOnce()
     await mockObject.assert.calledOnce()
   })
+
+  test('simulates network error: {$self}')
+    .with(Object.values(NetworkError))
+    .run(async ({ network, assert }, error) => {
+      const mock = await network.mock('/api/error', { error })
+      await assert.rejects(async () => await fetch('/api/error'), TypeError, 'Failed to fetch')
+      await mock.assert.calledOnce()
+    })
 })

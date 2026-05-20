@@ -126,37 +126,12 @@ to start proxy servers, perform planning, or collect metrics.
 
 **Type:** `LupaPlugin[]`
 
-#### importer
-
-A custom implementation to import test files.
-
-**Type:** `(filePath: URL) => void | Promise<void>`
-
 #### refiner
 
 Overwrite tests refiner. Check documentation for refiner
 usage
 
 **Type:** `Refiner`
-
-#### forceExit
-
-Enable/disable force exiting.
-
-**Type:** `boolean`
-
-#### setup
-
-Global hooks to execute before importing
-the test files
-
-**Type:** `SetupHookHandler[]`
-
-#### teardown
-
-Global hooks to execute on teardown
-
-**Type:** `TeardownHookHandler[]`
 
 #### exclude
 
@@ -172,8 +147,6 @@ project, you might want to exclude "node_modules"
 
 Path to the Vite configuration file.
 Do not use together with 'vite'.
-@todo: check if we validate the viteConfig and inline vite at runtime,
-we should throw an error if both are provided
 
 **Type:** `string`
 
@@ -711,5 +684,19 @@ current modifiers back. If not specified, currently pressed modifiers are used. 
 
 A point to use relative to the top-left corner of element padding box. If not specified, uses some visible point of
 the element.
+
+**Type:** `{ x: number; y: number }`
+
+## HoverOptions
+
+Options for the hover action.
+
+### Properties
+
+#### timeout
+
+Maximum time in milliseconds. Defaults to `0` - no timeout. The default value can be changed via `actionTimeout`
+option in the config, or by using the
+[browserContext.setDefaultTimeout(timeout)](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
 
 <!-- truncated -->

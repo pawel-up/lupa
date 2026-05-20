@@ -35,36 +35,6 @@ Only the combination of tag and attribute names will be used to match the attrib
 
 ## runner
 
-### `SetupHookState`
-Global setup hook state
-```ts
-[[runner: Runner], [error: Error | null, runner: Runner]]
-```
-
-### `SetupHookHandler`
-Global setup hook handler
-```ts
-HookHandler<SetupHookState[0], SetupHookState[1]>
-```
-
-### `TeardownHookState`
-Global teardown hook state
-```ts
-[[runner: Runner], [error: Error | null, runner: Runner]]
-```
-
-### `TeardownHookHandler`
-Global teardown hook handler
-```ts
-HookHandler<TeardownHookState[0], TeardownHookState[1]>
-```
-
-### `HooksEvents`
-Global set of available hooks
-**Properties:**
-- `setup: SetupHookState` — Global setup hook
-- `teardown: TeardownHookState` — Global teardown hook
-
 ### `Filters`
 Set of filters you can apply to run only specific tests
 ```ts
@@ -152,7 +122,7 @@ BaseConfig & ({ files: TestFiles } | { suites: TestSuite[] })
 ### `CLIArgs`
 Parsed command-line arguments
 ```ts
-{ _?: string[]; tags?: string | string[]; files?: string | string[]; tests?: string | string[]; groups?: string | string[]; timeout?: string; retries?: string; reporters?: string | string[]; forceExit?: boolean; failed?: boolean; help?: boolean; matchAll?: boolean; listPinned?: boolean; bail?: boolean; bailLayer?: string; verbose?: boolean; browser?: string | string[]; viteConfig?: string; coverage?: boolean; parallel?: boolean; concurrency?: string | number; list?: boolean } & Record<string, string | string[] | boolean | number>
+{ _?: string[]; tags?: string | string[]; files?: string | string[]; tests?: string | string[]; groups?: string | string[]; timeout?: string; retries?: string; reporters?: string | string[]; failed?: boolean; help?: boolean; matchAll?: boolean; listPinned?: boolean; bail?: boolean; bailLayer?: string; verbose?: boolean; browser?: string | string[]; viteConfig?: string; coverage?: boolean; parallel?: boolean; concurrency?: string | number; list?: boolean } & Record<string, string | string[] | boolean | number>
 ```
 
 ### `JsonSerializable`
@@ -420,5 +390,15 @@ Events emitted by the browser telemetry over WebSocket
 - `runner:import_error: RunnerImportErrorNode & Partial<CorrelationIds>` — Emitted when a test file fails to import
 
 ### `RunnerEvents`
+Events emitted by the Node runner orchestrator.
+Includes hydrated browser events and pool lifecycle events.
+**Properties:**
+- `browser:log: { file: string; type: string; messages: any[] }` — Browser console log
+- `test:start: WithCorrelation<TestStartNode>` — Emitted when a test starts.
+- `test:end: WithCorrelation<TestEndNode>` — Emitted when a test ends.
+- `group:start: WithCorrelation<GroupOptions>` — Emitted when a group starts.
+- `group:end: WithCorrelation<GroupEndNode>` — Emitted when a group ends.
+- `suite:start: WithCorrelation<SuiteStartNode>` — Emitted when a suite starts.
+- `suite:end: WithCorrelation<SuiteEndNode>` — Emitted when a suite ends.
 
 <!-- truncated -->

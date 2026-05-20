@@ -59,7 +59,6 @@ export const listCommand = new Command('list')
       }
     } catch (err) {
       renderCriticalError('E_TEST_LIST_FAILED', 'Failed to list tests.', err)
-      process.exit(1)
     }
   })
 

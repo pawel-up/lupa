@@ -12,7 +12,6 @@ test('ConfigManager', async (t) => {
 
     assert.strictEqual(hydrated.timeout, 2000)
     assert.strictEqual(hydrated.retries, 0)
-    assert.strictEqual(hydrated.forceExit, false)
     assert.ok(hydrated.reporters.list.length > 0)
     assert.deepStrictEqual(hydrated.filters, {})
     assert.ok('files' in hydrated)
@@ -39,15 +38,14 @@ test('ConfigManager', async (t) => {
   })
 
   await t.test('overwrites config with CLI args', () => {
-    const config: Config = { files: [], timeout: 5000, retries: 2, forceExit: false }
-    const cliArgs: CLIArgs = { _: [], timeout: '1000', retries: '5', forceExit: true }
+    const config: Config = { files: [], timeout: 5000, retries: 2 }
+    const cliArgs: CLIArgs = { _: [], timeout: '1000', retries: '5' }
 
     const manager = new ConfigManager(config, cliArgs)
     const hydrated = manager.hydrate()
 
     assert.strictEqual(hydrated.timeout, 1000)
     assert.strictEqual(hydrated.retries, 5)
-    assert.strictEqual(hydrated.forceExit, true)
   })
 
   await t.test('preserves suites configuration', () => {

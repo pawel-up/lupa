@@ -2565,9 +2565,9 @@ export class Assert extends Macroable implements AssertContract {
    * await assert.reject(() => throw new Error(''))
    *
    * @param fn - The function to reject
-   * @param message - The error message to use if the function does not reject
+   * @param errMessage - The error message to use if the function does not reject
    */
-  async rejects(fn: () => unknown, message?: string): Promise<void>
+  async rejects(fn: () => unknown, errMessage?: string): Promise<void>
   /**
    * Assert the function to reject the promise or reject with a specific
    * error class/message
@@ -2579,12 +2579,12 @@ export class Assert extends Macroable implements AssertContract {
    *
    * @param fn - The function to reject
    * @param errType - The error type to reject with
-   * @param message - The error message to use if the function does not reject
+   * @param errMessage - The error message to use if the function does not reject
    */
   async rejects(
     fn: () => unknown | Promise<unknown>,
     errType: RegExp | AnyErrorConstructor,
-    message?: string
+    errMessage?: string
   ): Promise<void>
   /**
    * Assert the function to reject the promise or reject with a specific
@@ -2598,13 +2598,13 @@ export class Assert extends Macroable implements AssertContract {
    * @param fn - The function to reject
    * @param constructor - The error constructor to reject with
    * @param regExp - The error message to reject with
-   * @param message - The error message to use if the function does not reject
+   * @param errMessage - The error message to use if the function does not reject
    */
   async rejects(
     fn: () => unknown | Promise<unknown>,
     constructor: AnyErrorConstructor,
     regExp: RegExp | string,
-    message?: string
+    errMessage?: string
   ): Promise<void>
   /**
    * Assert the function to reject the promise or reject with a specific
@@ -2618,13 +2618,13 @@ export class Assert extends Macroable implements AssertContract {
    * @param fn - The function to reject
    * @param errType - The error type to reject with
    * @param regExp - The error message to reject with
-   * @param message - The error message to use if the function does not reject
+   * @param errMessage - The error message to use if the function does not reject
    */
   async rejects(
     fn: () => unknown | Promise<unknown>,
     errType?: RegExp | AnyErrorConstructor | string,
     regExp?: RegExp | string,
-    message?: string
+    errMessage?: string
   ): Promise<void> {
     let raisedException: any = null
     this.incrementAssertionsCount()
@@ -2637,7 +2637,7 @@ export class Assert extends Macroable implements AssertContract {
         thisObject: fn,
         expected: '',
         actual: '',
-        prefix: message,
+        prefix: errMessage,
         operator: 'rejects',
       })
     }
@@ -2673,7 +2673,7 @@ export class Assert extends Macroable implements AssertContract {
         thisObject: fn,
         expected: '',
         actual: '',
-        prefix: message,
+        prefix: errMessage,
         operator: 'rejects',
       })
     }
@@ -2686,7 +2686,7 @@ export class Assert extends Macroable implements AssertContract {
         thisObject: fn,
         expected: expectedExceptionClass,
         actual: raisedException,
-        prefix: message,
+        prefix: errMessage,
         operator: 'rejects',
       })
     }
@@ -2699,7 +2699,7 @@ export class Assert extends Macroable implements AssertContract {
         thisObject: fn,
         expected: expectedErrorMessageRegex,
         actual: raisedException.message,
-        prefix: message,
+        prefix: errMessage,
         operator: 'rejects',
       })
     }
@@ -2712,7 +2712,7 @@ export class Assert extends Macroable implements AssertContract {
         thisObject: fn,
         expected: expectedErrorMessage,
         actual: raisedException.message,
-        prefix: message,
+        prefix: errMessage,
         operator: 'rejects',
       })
     }

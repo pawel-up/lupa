@@ -1,6 +1,6 @@
 # Installation and Usage
 
-Lupa requires Node.js >= 22.0.0 and works seamlessly with the ES module system.
+Lupa requires **Node.js >= 24.0.0** (due to its reliance on the native `URLPattern` API for network mocking) and works seamlessly with the ES module system.
 
 ## Installation
 
