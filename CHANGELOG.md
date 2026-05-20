@@ -1,3 +1,10 @@
+## [0.2.3](https://github.com/pawel-up/lupa/compare/v0.2.2...v0.2.3) (2026-05-20)
+
+
+### Bug Fixes
+
+* add required optimizeDeps configuration ([#18](https://github.com/pawel-up/lupa/issues/18)) ([28fcebd](https://github.com/pawel-up/lupa/commit/28fcebd784e4c88fef44cce51e9663a5ec03f069))
+
 ## [0.2.2](https://github.com/pawel-up/lupa/compare/v0.2.1...v0.2.2) (2026-05-19)
 
 
