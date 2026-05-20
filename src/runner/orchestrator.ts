@@ -198,6 +198,10 @@ export class Orchestrator {
       this.globalTimeout = undefined
     }
 
+    if (this.activeNodeRunner && this.isRunning) {
+      await this.activeNodeRunner.end()
+    }
+
     await this.exceptionsManager.report()
 
     try {
