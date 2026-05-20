@@ -1,3 +1,10 @@
+## [0.3.2](https://github.com/pawel-up/lupa/compare/v0.3.1...v0.3.2) (2026-05-20)
+
+
+### Bug Fixes
+
+* docs under getlupa.dev ([c877ac2](https://github.com/pawel-up/lupa/commit/c877ac22557010492ab6eba8ce6e070f9c145b4c))
+
 ## [0.3.1](https://github.com/pawel-up/lupa/compare/v0.3.0...v0.3.1) (2026-05-20)
 
 
