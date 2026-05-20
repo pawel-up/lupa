@@ -55,7 +55,7 @@ export class Planner {
         return registered as NamedReporterContract
       }
 
-      if (activated in DEFAULT_REPORTERS) {
+      if (Object.hasOwn(DEFAULT_REPORTERS, activated)) {
         return DEFAULT_REPORTERS[activated]()
       }
 

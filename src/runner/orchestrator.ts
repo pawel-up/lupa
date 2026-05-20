@@ -199,7 +199,13 @@ export class Orchestrator {
     }
 
     if (this.activeNodeRunner && this.isRunning) {
-      await this.activeNodeRunner.end()
+      try {
+        await this.activeNodeRunner.end()
+      } catch (error) {
+        debug('error ending runner: %O', error)
+      } finally {
+        this.isRunning = false
+      }
     }
 
     await this.exceptionsManager.report()
