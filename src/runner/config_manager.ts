@@ -17,12 +17,14 @@ const DEFAULTS = {
   forceExit: false,
   testPlugins: [],
   runnerPlugins: [],
-  reporters: {
-    activated:
-      !process.stdout.isTTY || process.env.CI === 'true'
-        ? ['dot'].concat(process.env.GITHUB_ACTIONS === 'true' ? ['github'] : [])
-        : ['progress'],
-    list: [ndjson(), dot(), github(), progress(), json()],
+  get reporters() {
+    return {
+      activated:
+        !process.stdout.isTTY || process.env.CI === 'true'
+          ? ['dot'].concat(process.env.GITHUB_ACTIONS === 'true' ? ['github'] : [])
+          : ['progress'],
+      list: [ndjson(), dot(), github(), progress(), json()],
+    }
   },
   importer: (filePath) => import(filePath.href),
 } satisfies Config

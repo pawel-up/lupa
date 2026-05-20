@@ -1,92 +1,235 @@
 import { test } from 'node:test'
+import path from 'node:path'
 import assert from 'node:assert'
 import { Planner } from '../../src/runner/planner.js'
-import type { NormalizedConfig } from '../../src/runner/types.js'
 import { progress, dot } from '../../src/reporters/index.js'
-import { fileURLToPath } from 'node:url'
-import path from 'node:path'
+import { ConfigManager } from '../../src/runner/config_manager.js'
+import { wrapAssertions, listAllTestFiles } from './helpers.js'
 
-test('Planner', async (t) => {
-  await t.test('plans tests with default files', async () => {
-    const config: NormalizedConfig = {
-      cwd: process.cwd(),
-      files: ['tests/unit/planner.spec.ts'],
-      exclude: [],
-      filters: {},
-      importer: (p: URL) => import(p.href),
-      timeout: 2000,
-      retries: 0,
-      forceExit: false,
-      reporters: { activated: ['progress'], list: [progress(), dot()] },
-      testPlugins: [],
-      runnerPlugins: [],
-      setup: [],
-      teardown: [],
-    } as any
+test.describe('Planner | suites', () => {
+  test('returns multiple suites when defined', async () => {
+    const config = new ConfigManager(
+      {
+        suites: [
+          { name: 'unit', files: ['tests/unit/**/*.spec.ts'] },
+          { name: 'integration', files: ['tests/integration/**/*.spec.ts'] },
+        ],
+      },
+      {}
+    ).hydrate()
+    const { suites } = await new Planner(config).plan()
 
-    const planner = new Planner(config)
-    const plan = await planner.plan()
-
-    assert.strictEqual(plan.suites.length, 1)
-    assert.strictEqual(plan.suites[0].name, 'default')
-    assert.strictEqual(plan.suites[0].filesURLs.length, 1)
-
-    const resolvedFile = fileURLToPath(plan.suites[0].filesURLs[0])
-    assert.ok(resolvedFile.endsWith(path.normalize('tests/unit/planner.spec.ts')))
-
-    assert.strictEqual(plan.reporters.length, 1)
-    assert.strictEqual(plan.reporters[0].name, 'progress')
+    await wrapAssertions(() => {
+      assert.strictEqual(suites.length, 2)
+      assert.strictEqual(suites[0].name, 'unit')
+      assert.strictEqual(suites[1].name, 'integration')
+    })
   })
 
-  await t.test('filters suites', async () => {
-    const config: NormalizedConfig = {
-      cwd: process.cwd(),
-      suites: [
-        { name: 'unit', files: ['tests/unit/planner.spec.ts'], timeout: 2000, retries: 0 },
-        { name: 'e2e', files: ['tests/browser/*.ts'], timeout: 2000, retries: 0 },
-      ],
-      exclude: [],
-      filters: { suites: ['unit'] },
-      importer: (p: URL) => import(p.href),
-      timeout: 2000,
-      retries: 0,
-      forceExit: false,
-      reporters: { activated: ['progress'], list: [progress()] },
-      testPlugins: [],
-      runnerPlugins: [],
-      setup: [],
-      teardown: [],
-    } as any
+  test('filters suites by name', async () => {
+    const config = new ConfigManager(
+      {
+        suites: [
+          { name: 'unit', files: ['tests/unit/**/*.spec.ts'] },
+          { name: 'integration', files: ['tests/integration/**/*.spec.ts'] },
+        ],
+        filters: { suites: ['unit'] },
+      },
+      {}
+    ).hydrate()
+    const { suites } = await new Planner(config).plan()
 
-    const planner = new Planner(config)
-    const plan = await planner.plan()
+    await wrapAssertions(() => {
+      assert.strictEqual(suites.length, 1)
+      assert.strictEqual(suites[0].name, 'unit')
+    })
+  })
+})
 
-    assert.strictEqual(plan.suites.length, 1)
-    assert.strictEqual(plan.suites[0].name, 'unit')
+test.describe('Planner | reporters', () => {
+  test('activates dot and github reporters in GitHub Actions', async () => {
+    // Store original env
+    const originalCI = process.env.CI
+    const originalGH = process.env.GITHUB_ACTIONS
+
+    try {
+      process.env.CI = 'true'
+      process.env.GITHUB_ACTIONS = 'true'
+
+      const config = new ConfigManager({ files: ['tests/**/*.spec.ts'] }, {}).hydrate()
+      const { reporters } = await new Planner(config).plan()
+      await wrapAssertions(() => {
+        assert.strictEqual(reporters.length, 2)
+        assert.strictEqual(reporters[0].name, 'dot')
+        assert.strictEqual(reporters[1].name, 'github')
+      })
+    } finally {
+      // Restore env
+      process.env.CI = originalCI
+      process.env.GITHUB_ACTIONS = originalGH
+    }
   })
 
-  await t.test('collects refiner filters correctly', async () => {
-    const config: NormalizedConfig = {
-      cwd: process.cwd(),
-      files: [],
-      exclude: [],
-      filters: { tags: ['@slow'], tests: ['Math works'] },
-      importer: (p: URL) => import(p.href),
-      timeout: 2000,
-      retries: 0,
-      forceExit: false,
-      reporters: { activated: ['progress'], list: [progress()] },
-      testPlugins: [],
-      runnerPlugins: [],
-      setup: [],
-      teardown: [],
-    } as any
+  test('get collection of manually activated reporters', async () => {
+    const config = new ConfigManager(
+      { files: [], reporters: { activated: ['progress'], list: [progress(), dot()] } },
+      {}
+    ).hydrate()
+    const { reporters } = await new Planner(config).plan()
 
-    const planner = new Planner(config)
-    const plan = await planner.plan()
+    await wrapAssertions(() => {
+      assert.strictEqual(reporters.length, 1)
+      assert.strictEqual(reporters[0].name, 'progress')
+    })
+  })
 
-    assert.strictEqual(plan.refinerFilters.length, 2)
-    const tagsFilter = plan.refinerFilters.find((f) => f.layer === 'tags')
-    assert.deepStrictEqual(tagsFilter?.filters, ['@slow'])
+  test('get collection of reporters activated via CLI flag', async () => {
+    const config = new ConfigManager(
+      { files: [], reporters: { activated: ['progress'], list: [progress(), dot()] } },
+      { reporters: ['dot'] }
+    ).hydrate()
+    const { reporters } = await new Planner(config).plan()
+
+    await wrapAssertions(() => {
+      assert.strictEqual(reporters.length, 1)
+      assert.strictEqual(reporters[0].name, 'dot')
+    })
+  })
+
+  test('report error when activated reporter is not in the list', async () => {
+    const config = new ConfigManager(
+      { files: [], reporters: { activated: ['unknown'], list: [progress()] } },
+      {}
+    ).hydrate()
+
+    await wrapAssertions(() => {
+      assert.throws(
+        () => new Planner(config),
+        /Invalid reporter "unknown". Make sure to register it first inside the "reporters.list" array/
+      )
+    })
+  })
+
+  test('report error when CLI activated reporter is not in the list', async () => {
+    const config = new ConfigManager(
+      { files: [], reporters: { activated: ['progress'], list: [progress()] } },
+      { reporters: ['unknown'] }
+    ).hydrate()
+
+    await wrapAssertions(() => {
+      assert.throws(
+        () => new Planner(config),
+        /Invalid reporter "unknown". Make sure to register it first inside the "reporters.list" array/
+      )
+    })
+  })
+})
+
+test.describe('Planner | refinerFilters', () => {
+  test('collects tags, tests, and groups filters', async () => {
+    const config = new ConfigManager(
+      { files: [], filters: { tags: ['@slow'], tests: ['Math works'], groups: ['Math'] } },
+      {}
+    ).hydrate()
+    const { refinerFilters } = await new Planner(config).plan()
+
+    await wrapAssertions(() => {
+      assert.strictEqual(refinerFilters.length, 3)
+      assert.deepStrictEqual(refinerFilters.find((f) => f.layer === 'tags')?.filters, ['@slow'])
+      assert.deepStrictEqual(refinerFilters.find((f) => f.layer === 'tests')?.filters, ['Math works'])
+      assert.deepStrictEqual(refinerFilters.find((f) => f.layer === 'groups')?.filters, ['Math'])
+    })
+  })
+
+  test('ignores suites and files filters in refiner', async () => {
+    const config = new ConfigManager(
+      {
+        suites: [{ name: 'unit', files: ['tests/unit/**/*.spec.ts'] }],
+        filters: { suites: ['unit'], files: ['math.spec.ts'] },
+      },
+      {}
+    ).hydrate()
+    const { refinerFilters } = await new Planner(config).plan()
+
+    await wrapAssertions(() => {
+      assert.strictEqual(refinerFilters.length, 0)
+    })
+  })
+})
+
+test.describe('Planner | files', () => {
+  test('get suites for files', async () => {
+    const config = new ConfigManager({ files: ['tests/**/*.spec.ts'] }, {}).hydrate()
+    const { suites } = await new Planner(config).plan()
+    const allFiles = await listAllTestFiles()
+    const testFiles = allFiles.map((file) => new URL(path.join('..', file), import.meta.url))
+
+    await wrapAssertions(() => {
+      assert.deepStrictEqual(suites, [
+        {
+          name: 'default',
+          files: ['tests/**/*.spec.ts'],
+          filesURLs: testFiles,
+          retries: 0,
+          timeout: 2000,
+        },
+      ])
+    })
+  })
+
+  test('apply files filter to the list', async () => {
+    const config = new ConfigManager(
+      { files: ['tests/**/*.spec.ts'], filters: { files: ['summary_builder'] } },
+      {}
+    ).hydrate()
+    const { suites } = await new Planner(config).plan()
+
+    await wrapAssertions(() => {
+      assert.deepStrictEqual(suites, [
+        {
+          name: 'default',
+          files: ['tests/**/*.spec.ts'],
+          filesURLs: [new URL('./summary_builder.spec.ts', import.meta.url)],
+          retries: 0,
+          timeout: 2000,
+        },
+      ])
+    })
+  })
+
+  test('use inline global timeout', async () => {
+    const config = new ConfigManager({ files: ['tests/**/*.spec.ts'], timeout: 1000 }, {}).hydrate()
+    const { suites } = await new Planner(config).plan()
+
+    await wrapAssertions(() => {
+      assert.equal(suites[0].timeout, 1000)
+    })
+  })
+
+  test('use cli timeout', async () => {
+    const config = new ConfigManager({ files: ['tests/**/*.spec.ts'] }, { timeout: '3000' }).hydrate()
+    const { suites } = await new Planner(config).plan()
+
+    await wrapAssertions(() => {
+      assert.equal(suites[0].timeout, 3000)
+    })
+  })
+
+  test('use inline global retries', async () => {
+    const config = new ConfigManager({ files: ['tests/**/*.spec.ts'], retries: 1 }, {}).hydrate()
+    const { suites } = await new Planner(config).plan()
+
+    await wrapAssertions(() => {
+      assert.equal(suites[0].retries, 1)
+    })
+  })
+
+  test('use cli retries', async () => {
+    const config = new ConfigManager({ files: ['tests/**/*.spec.ts'] }, { retries: '5' }).hydrate()
+    const { suites } = await new Planner(config).plan()
+
+    await wrapAssertions(() => {
+      assert.equal(suites[0].retries, 5)
+    })
   })
 })
