@@ -48,8 +48,8 @@ export interface JSONReporterExecutionResult {
     file: string
     /** The expanded title of the failed test. */
     title: string
-    /** The serialized error object describing the failure. */
-    error: ErrorObject
+    /** The serialized error objects describing the failure. */
+    errors: { phase: string; error: ErrorObject }[]
   }[]
 }
 
@@ -59,7 +59,7 @@ export interface JSONReporterExecutionResult {
 export type JSONReporterResult = JSONReporterListResult | JSONReporterExecutionResult
 
 export class JSONReporter extends BaseReporter {
-  #failures: { file: string; title: string; error: ErrorObject }[] = []
+  #failures: { file: string; title: string; errors: { phase: string; error: ErrorObject }[] }[] = []
   #listPayload?: RunnerListNode
 
   public isProgrammatic = false
@@ -72,11 +72,14 @@ export class JSONReporter extends BaseReporter {
   protected onTestEnd(payload: TestEndNode): void {
     if (payload.hasError) {
       const file = this.currentFileName ? this.#getRelativeFilename(this.currentFileName) : 'unknown'
-      const errors = payload.errors.map((error) => serializeError(error.error))
+      const errors = payload.errors.map((err) => ({
+        phase: err.phase,
+        error: serializeError(err.error),
+      }))
       this.#failures.push({
         file,
         title: payload.title.expanded,
-        error: errors[0], // Simplified to first error for MCP
+        errors,
       })
     }
   }
