@@ -19,18 +19,15 @@
     "src/network/index.ts",
     "src/network/types.ts"
   ],
-  "out": "docs",
-  "name": "Lupa",
+  "out": "docs/api",
+  "name": "Lupa API Reference",
   "includeVersion": true,
-  "readme": "README.md",
+  "readme": "none",
   "disableSources": false,
   "excludePrivate": true,
   "excludeProtected": true,
   "excludeInternal": true,
-  "projectDocuments": ["guides/**/*.md"],
-  "customCss": "assets/docs.css",
-  "lightHighlightTheme": "dark-plus",
-  "plugin": ["@to-skills/typedoc"],
+  "plugin": ["@to-skills/typedoc", "typedoc-plugin-markdown", "typedoc-vitepress-theme"],
   "externalSymbolLinkMappings": {
     "typescript": {
       "AbortSignal": "https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal",

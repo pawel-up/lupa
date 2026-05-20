@@ -23,8 +23,8 @@
     "lupa": "./dist/bin/lupa.js"
   },
   "scripts": {
-    "docs": "typedoc",
-    "docs:serve": "npx --yes serve docs",
+    "docs": "typedoc && node scripts/patch-docs.js && vitepress build docs",
+    "docs:serve": "vitepress dev docs",
     "test": "npm run test:unit",
     "test:unit": "tsx --test \"tests/unit/**/*.spec.ts\"",
     "coverage": "npx --yes c8 npm test",
@@ -102,8 +102,11 @@
     "semantic-release": "^25.0.3",
     "tsx": "^4.21.0",
     "typedoc": "^0.28.19",
+    "typedoc-plugin-markdown": "^4.11.0",
+    "typedoc-vitepress-theme": "^1.1.2",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.48.0"
+    "typescript-eslint": "^8.48.0",
+    "vitepress": "^1.6.4"
   },
   "keywords": [
     "testing",

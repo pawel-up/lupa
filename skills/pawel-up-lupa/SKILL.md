@@ -52,62 +52,6 @@ according to axe-core), `configure` (Configure the Lupa test runner), `run` (Run
 
 *153 exports total — see references/ for full API.*
 
-## Documentation
-
-- **assertions** — # Assertions
-
-Lupa doesn't force a specific assertion library onto you.
-- **cli** — # Lupa CLI Reference
-
-Lupa provides a lightweight, interactive Command-Line Interface to help you run tests, scaffold environments, and import agent skills into your workspace.
-- **commands** — # Browser Commands
-
-Lupa provides a powerful set of commands to interact with the browser and DOM elements natively during your tests.
-- **customizing-harness** — # Customizing the HTML Test Harness
-
-Sometimes you need to inject global stylesheets (like a CSS reset or design system variables) into the browser environment, or you might need a very specific HTML structure surrounding your tests.
-- **datasets** — # Datasets
-
-Datasets allow you to run a specific test multiple times with different data every time.
-- **exceptions** — # Exceptions
-
-We all write tests that deal with exceptions and promise rejections.
-- **filtering-tests** — # Filtering Tests
-
-Lupa offers several filtering layers to find and run an individual or group of tests.
-- **grouping-tests** — # Grouping Tests
-
-You may group a collection of related tests using the `test.
-- **installation** — # Installation and Usage
-
-Lupa requires Node.
-- **introduction** — # Introduction
-
-Lupa comes with everything you need to test your modern frontend applications and Web Components natively in the browser.
-- **lifecycle-hooks** — # Lifecycle Hooks
-
-Lifecycle hooks are functions you can run before or after a test or a group of tests.
-- **network-mocking** — # Network Mocking
-
-Lupa provides powerful, native network interception out of the box.
-- **skipping-tests** — # Skipping Tests
-
-Sometimes, you might run into situations where you want to skip specific tests temporarily.
-- **test-macros** — # Test Macros
-
-Test macros are reusable functions that are natively bound to the lifecycle of the currently executing test.
-- **test-reporters** — # Test Reporters
-
-Test reporters are used to collect test progress and display a summary after the tests have been executed.
-- **test-suites** — # Test Suites
-
-Test suites allow you to organize your tests logically by their type or domain.
-- **vite-configuration** — # Configuring Vite
-
-Lupa runs your tests inside a headless browser using [Vite](https://vitejs.
-
-See `references/docs/` for full guides (17 total).
-
 ## References
 
 Load these on demand — do NOT read all at once:
@@ -117,7 +61,6 @@ Load these on demand — do NOT read all at once:
 - When defining typed variables or function parameters → read `references/types.md`
 - When using exported constants → read `references/variables.md`
 - When configuring options → read `references/config.md` for all settings and defaults
-- When learning concepts or workflows → browse `references/docs/` by category
 
 ## Links
 
