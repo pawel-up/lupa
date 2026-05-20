@@ -1,7 +1,6 @@
 import { defineConfig } from 'vitepress'
 
 export default defineConfig({
-  base: '/lupa/',
   title: 'Lupa',
   description: 'The modern browser testing framework',
   head: [['link', { rel: 'icon', type: 'image/svg+xml', href: '/lupa-icon.svg' }]],
