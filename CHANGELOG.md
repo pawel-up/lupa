@@ -1,3 +1,10 @@
+## [0.3.1](https://github.com/pawel-up/lupa/compare/v0.3.0...v0.3.1) (2026-05-20)
+
+
+### Bug Fixes
+
+* fixes [#25](https://github.com/pawel-up/lupa/issues/25)  reporters concurrency leak ([166d65c](https://github.com/pawel-up/lupa/commit/166d65c2ba931fafb5e1e15ee9322b03e6f8a515))
+
 # [0.3.0](https://github.com/pawel-up/lupa/compare/v0.2.3...v0.3.0) (2026-05-20)
 
 
