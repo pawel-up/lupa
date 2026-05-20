@@ -164,7 +164,9 @@ export async function run() {
     // Initial execution
     await orchestrator.executeTests()
   } catch (error) {
-    orchestrator.exceptionsManager.notifyException(error)
+    if (!orchestrator.isShuttingDown) {
+      orchestrator.exceptionsManager.notifyException(error)
+    }
     await orchestrator.shutdown(1)
   }
 }

@@ -1,4 +1,5 @@
 import { type NormalizedConfig } from './types.js'
+import { reporterNames } from '../reporters/index.js'
 
 /**
  * Ensures the lupa is configured. Otherwise raises an exception
@@ -70,11 +71,13 @@ export function validateSuitesForUniqueness(config: NormalizedConfig) {
 
 /**
  * Ensure the activated reporters are in the list of defined
- * reporters
+ * reporters or are one of the core default reporters
  */
 export function validateActivatedReporters(config: NormalizedConfig) {
   const reportersList = config.reporters.list.map(({ name }) => name)
-  const unknownReporters = config.reporters.activated.filter((name) => !reportersList.includes(name))
+  const unknownReporters = config.reporters.activated.filter(
+    (name) => !reportersList.includes(name) && !reporterNames.includes(name as (typeof reporterNames)[number])
+  )
 
   if (unknownReporters.length) {
     throw new Error(

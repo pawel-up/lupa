@@ -8,6 +8,7 @@ import { setActiveInstances, setActiveFile } from './api.js'
 import { BrowserExceptionsManager } from './exceptions_manager.js'
 import type { WebPluginContext } from './web_plugin.js'
 import { EventManager } from './event_manager.js'
+import { BrowserReporter } from './browser_reporter.js'
 
 // We expect window.__lupa__ to be injected by the Node.js runner
 declare global {
@@ -46,7 +47,10 @@ export async function boot() {
 
   const isDebug = new URLSearchParams(window.location.search).get('debug') === '1'
 
-  if (!isDebug) {
+  if (isDebug) {
+    const reporter = new BrowserReporter()
+    reporter.boot(emitter as any)
+  } else {
     const eventManager = new EventManager(emitter, import.meta.hot)
     eventManager.boot()
   }

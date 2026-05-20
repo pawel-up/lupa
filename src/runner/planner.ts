@@ -3,6 +3,16 @@ import { FilesManager } from './files_manager.js'
 import type { NormalizedConfig, TestFiles } from './types.js'
 import type { NamedReporterContract, PlannedTestSuite } from '../types.js'
 
+import { dot, github, ndjson, progress, json } from '../reporters/index.js'
+
+const DEFAULT_REPORTERS: Record<string, () => NamedReporterContract> = {
+  dot,
+  github,
+  ndjson,
+  progress,
+  json,
+}
+
 /**
  * The tests planner is used to plan the tests by doing all
  * the heavy lifting of executing plugins, registering
@@ -40,7 +50,16 @@ export class Planner {
    */
   #getActivatedReporters(): NamedReporterContract[] {
     return this.#config.reporters.activated.map((activated) => {
-      return this.#config.reporters.list.find(({ name }) => activated === name) as NamedReporterContract
+      const registered = this.#config.reporters.list.find(({ name }) => activated === name)
+      if (registered) {
+        return registered as NamedReporterContract
+      }
+
+      if (Object.hasOwn(DEFAULT_REPORTERS, activated)) {
+        return DEFAULT_REPORTERS[activated]()
+      }
+
+      throw new Error(`Reporter not found: ${activated}`)
     })
   }
 

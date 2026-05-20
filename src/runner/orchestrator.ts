@@ -198,6 +198,16 @@ export class Orchestrator {
       this.globalTimeout = undefined
     }
 
+    if (this.activeNodeRunner && this.isRunning) {
+      try {
+        await this.activeNodeRunner.end()
+      } catch (error) {
+        debug('error ending runner: %O', error)
+      } finally {
+        this.isRunning = false
+      }
+    }
+
     await this.exceptionsManager.report()
 
     try {
