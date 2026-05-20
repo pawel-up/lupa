@@ -65,7 +65,7 @@ test('BrowserReporter', async (t) => {
 
     assert.strictEqual(logs.length, 2)
     assert.strictEqual(logs[0].method, 'group')
-    assert.strictEqual(logs[0].args[0], '%c▶ Suite 1')
+    assert.strictEqual(logs[0].args[0], '%cSuite: Suite 1')
     assert.strictEqual(logs[1].method, 'groupEnd')
   })
 
@@ -93,7 +93,7 @@ test('BrowserReporter', async (t) => {
 
     assert.strictEqual(logs.length, 2)
     assert.strictEqual(logs[0].method, 'group')
-    assert.strictEqual(logs[0].args[0], '%c▼ Group 1')
+    assert.strictEqual(logs[0].args[0], '%cGroup: Group 1')
     assert.strictEqual(logs[1].method, 'groupEnd')
   })
 
