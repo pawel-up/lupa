@@ -3,8 +3,13 @@ import { TestContext } from '../testing/test_context.js'
 import { registry } from './registry.js'
 import type { NetworkMockOptions, NetworkMatch, NetworkRespondPayload, NetworkRespondDynamic } from './types.js'
 import type { NetworkInterceptor } from './network_interceptor.js'
-
-export type { NetworkMockOptions, CapturedRequest, NetworkRespondPayload } from './types.js'
+export type {
+  NetworkMockOptions,
+  NetworkMatch,
+  CapturedRequest,
+  NetworkRespondPayload,
+  NetworkRespondDynamic,
+} from './types.js'
 import { bypass } from './constants.js'
 export type { NetworkInterceptor }
 

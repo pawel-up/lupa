@@ -31,7 +31,7 @@ export interface RequestMatchOptions {
   /** The URI to match. Supports plain strings or patterns with `:` and `*` wildcards. */
   uri: string
   /** Optional HTTP method to strictly enforce when matching. */
-  method?: HttpMethod
+  methods?: HttpMethod[]
 }
 
 /**

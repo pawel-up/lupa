@@ -133,7 +133,7 @@ test.group('Network Interception', () => {
     })
 
     const mockObject = await network.mock(
-      { uri: '/api/dual/object', method: 'POST' },
+      { uri: '/api/dual/object', methods: ['POST'] },
       {
         status: 202,
         body: 'object match',

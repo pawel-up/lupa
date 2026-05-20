@@ -1,5 +1,11 @@
 import { bypass } from './constants.js'
-import type { CapturedRequest, NetworkMockOptions, NetworkRespondPayload, NetworkEvaluateResult } from './types.js'
+import type {
+  CapturedRequest,
+  NetworkMockOptions,
+  NetworkRespondPayload,
+  NetworkEvaluateResult,
+  SerializedMatch,
+} from './types.js'
 import { NetworkInterceptor } from './network_interceptor.js'
 
 let mockIdCounter = 0
@@ -36,14 +42,14 @@ class NetworkRegistry {
     }
 
     // Serialize matcher for Node RouteStore
-    let serializedMatch: any = { type: 'string', uri: '' }
+    let serializedMatch: SerializedMatch = { type: 'string', uri: '' }
     if (typeof options.match === 'string') {
       serializedMatch = { type: 'string', uri: options.match }
     } else if (typeof options.match === 'object') {
       serializedMatch = {
         type: 'options',
         uri: options.match.uri,
-        methods: options.match.method ? [options.match.method] : [],
+        methods: options.match.methods ?? [],
       }
     }
 
