@@ -92,6 +92,9 @@ export const testCommand = new Command('test')
       }
 
       // 3. Configure and execute tests
+      console.log(
+        `\n  🔎 ${colors.magenta(colors.bold('LUPA'))} ${colors.dim('The modern browser testing framework')}\n`
+      )
       configure(config, cliArgs)
       await run()
     } catch (err) {

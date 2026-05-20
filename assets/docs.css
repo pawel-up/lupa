@@ -138,3 +138,20 @@ a:hover {
 .hl-6 {
   color: #8e8c99;
 }
+
+/* Lupa Logo in Header */
+.tsd-page-toolbar .title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tsd-page-toolbar .title::before {
+  content: "";
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  background-image: url('./lupa-icon.svg');
+  background-size: contain;
+  background-repeat: no-repeat;
+}

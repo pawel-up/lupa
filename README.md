@@ -1,5 +1,8 @@
-# Lupa 🔎
+<p align="center">
+  <img src="./assets/lupa-icon.svg" width="128" alt="Lupa Logo">
+</p>
 
+# Lupa 🔎
 **Lupa** is a lightning-fast, Vite-powered browser testing framework specifically designed for testing Web Components and modern web interfaces. 
 
 It runs your tests natively in real browsers (via Playwright) while leveraging Vite's incredibly fast module graph, Hot Module Replacement (HMR), and build pipeline. It completely bridges the gap between modern Node.js testing ergonomics and genuine browser DOM execution.
