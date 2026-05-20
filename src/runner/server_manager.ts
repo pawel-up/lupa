@@ -82,6 +82,10 @@ export class ServerManager {
           allow: [process.cwd(), join(__dirname, '../')],
         },
       },
+      optimizeDeps: {
+        include: ['axe-core'],
+        exclude: ['@pawel-up/lupa'],
+      },
       plugins: [lupaHarnessPlugin(testPoolManager, resolvedPlugins, config, harnessPath)],
     }
 
