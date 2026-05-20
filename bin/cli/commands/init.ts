@@ -11,7 +11,6 @@ import { renderCancelled, renderCriticalError } from '../errors.js'
 const colors = supportsColor.stdout ? useColors.ansi() : useColors.silent()
 
 function getTemplateWithSuites(reportersList: string[], suitesList: string[], isTS: boolean) {
-  const reps = reportersList.map((r) => `reporters.${r}()`).join(', ')
   const repsArr = reportersList.map((r) => `'${r}'`).join(', ')
   const ext = isTS ? 'ts' : 'js'
 
@@ -25,7 +24,7 @@ function getTemplateWithSuites(reportersList: string[], suitesList: string[], is
     .join(',\n')
 
   const imports =
-    `import { defineConfig } from '@pawel-up/lupa/runner'\nimport reporters from '@pawel-up/lupa/reporters'` +
+    `import { defineConfig } from '@pawel-up/lupa/runner'` +
     (isTS
       ? `\nimport type { Assert } from '@pawel-up/lupa/assert'\nimport type { Network } from '@pawel-up/lupa/network'`
       : '')
@@ -45,7 +44,6 @@ export default defineConfig({
   testPlugins: ['@pawel-up/lupa/assert', '@pawel-up/lupa/network'],
   reporters: {
     activated: [${repsArr}],
-    list: [${reps}],
   },
   suites: [
 ${suitesStr}
@@ -54,12 +52,11 @@ ${suitesStr}
 }
 
 function getTemplateWithoutSuites(reportersList: string[], isTS: boolean) {
-  const reps = reportersList.map((r) => `reporters.${r}()`).join(', ')
   const repsArr = reportersList.map((r) => `'${r}'`).join(', ')
   const ext = isTS ? 'ts' : 'js'
 
   const imports =
-    `import { defineConfig } from '@pawel-up/lupa/runner'\nimport reporters from '@pawel-up/lupa/reporters'` +
+    `import { defineConfig } from '@pawel-up/lupa/runner'` +
     (isTS
       ? `\nimport type { Assert } from '@pawel-up/lupa/assert'\nimport type { Network } from '@pawel-up/lupa/network'`
       : '')
@@ -80,7 +77,6 @@ export default defineConfig({
   testPlugins: ['@pawel-up/lupa/assert', '@pawel-up/lupa/network'],
   reporters: {
     activated: [${repsArr}],
-    list: [${reps}],
   },
 })${declarations}`
 }
