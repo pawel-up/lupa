@@ -62,6 +62,28 @@ test('do not fetch invalid user', async ({ assert }) => {
 })
 ```
 
+## Asserting Custom Properties
+
+If your application throws custom error classes with additional properties, you can verify them by awaiting `assert.rejects()` or assigning `assert.throws()` to a variable.
+
+Both methods **return the caught error**, allowing you to run standard assertions against its properties. You can also pass a generic type to strongly type the returned error.
+
+```ts
+import { test } from '@pawel-up/lupa/testing'
+
+test('assert custom error properties', async ({ assert }) => {
+  // Strongly type the returned error by passing the generic
+  const err = await assert.rejects<ValidationException>(
+    async () => validateConfig({}),
+    ValidationException
+  )
+
+  // Now you can assert on custom properties effortlessly!
+  assert.equal(err.code, 'E_MISSING_PROP')
+  assert.deepEqual(err.missingKeys, ['timeout', 'retries'])
+})
+```
+
 ## High order assertion
 
 An elegant alternative API that is completely independent of the assertion library is to expect a test to throw an exception directly on the test instance using the `test.throws` method.

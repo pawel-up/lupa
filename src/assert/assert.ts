@@ -1602,8 +1602,9 @@ export class Assert extends Macroable implements AssertContract {
    * assert.throws(foo) // passes
    *
    * @param fn - The function to throw
+   * @returns The caught error object for further assertions
    */
-  throws(fn: () => unknown): void
+  throws<T = any>(fn: () => unknown): T
   /**
    * Expect the function to throw an exception. Optionally, you can assert
    * for the exception class or message.
@@ -1621,9 +1622,10 @@ export class Assert extends Macroable implements AssertContract {
    * @param fn - The function to throw
    * @param errType - The error constructor, error message, or regular expression to match
    * @param message - The error message to use if the function does not throw
+   * @returns The caught error object for further assertions
    */
   // eslint-disable-next-line @typescript-eslint/unified-signatures
-  throws(fn: () => unknown, errType: RegExp | AnyErrorConstructor | string, message?: string): void
+  throws<T = any>(fn: () => unknown, errType: RegExp | AnyErrorConstructor | string, message?: string): T
   /**
    * Expect the function to throw an exception. Optionally, you can assert
    * for the exception class or message.
@@ -1640,8 +1642,9 @@ export class Assert extends Macroable implements AssertContract {
    * @param constructor - The error constructor to match
    * @param regExp - The error message or regular expression to match
    * @param message - The error message to use if the function does not throw
+   * @returns The caught error object for further assertions
    */
-  throws(fn: () => unknown, constructor: AnyErrorConstructor, regExp: RegExp | string, message?: string): void
+  throws<T = any>(fn: () => unknown, constructor: AnyErrorConstructor, regExp: RegExp | string, message?: string): T
   /**
    * Expect the function to throw an exception. Optionally, you can assert
    * for the exception class or message.
@@ -1652,13 +1655,14 @@ export class Assert extends Macroable implements AssertContract {
    * @param errType - The error constructor, error message, or regular expression to match
    * @param regExp - The error message or regular expression to match
    * @param message - The error message to use if the function does not throw
+   * @returns The caught error object for further assertions
    */
   throws(
     fn: () => unknown,
     errType?: RegExp | AnyErrorConstructor | string,
     regExp?: RegExp | string,
     message?: string
-  ): void {
+  ): any {
     this.incrementAssertionsCount()
     const args: [any, any?, ...any[]] = [fn]
     if (errType !== undefined) args.push(errType)
@@ -2566,8 +2570,9 @@ export class Assert extends Macroable implements AssertContract {
    *
    * @param fn - The function to reject
    * @param errMessage - The error message to use if the function does not reject
+   * @returns The caught error object for further assertions
    */
-  async rejects(fn: () => unknown, errMessage?: string): Promise<void>
+  async rejects<T = any>(fn: () => unknown | Promise<unknown>, errMessage?: string): Promise<T>
   /**
    * Assert the function to reject the promise or reject with a specific
    * error class/message
@@ -2580,12 +2585,13 @@ export class Assert extends Macroable implements AssertContract {
    * @param fn - The function to reject
    * @param errType - The error type to reject with
    * @param errMessage - The error message to use if the function does not reject
+   * @returns The caught error object for further assertions
    */
-  async rejects(
+  async rejects<T = any>(
     fn: () => unknown | Promise<unknown>,
     errType: RegExp | AnyErrorConstructor,
     errMessage?: string
-  ): Promise<void>
+  ): Promise<T>
   /**
    * Assert the function to reject the promise or reject with a specific
    * error class/message
@@ -2599,13 +2605,14 @@ export class Assert extends Macroable implements AssertContract {
    * @param constructor - The error constructor to reject with
    * @param regExp - The error message to reject with
    * @param errMessage - The error message to use if the function does not reject
+   * @returns The caught error object for further assertions
    */
-  async rejects(
+  async rejects<T = any>(
     fn: () => unknown | Promise<unknown>,
     constructor: AnyErrorConstructor,
     regExp: RegExp | string,
     errMessage?: string
-  ): Promise<void>
+  ): Promise<T>
   /**
    * Assert the function to reject the promise or reject with a specific
    * error class/message
@@ -2619,13 +2626,14 @@ export class Assert extends Macroable implements AssertContract {
    * @param errType - The error type to reject with
    * @param regExp - The error message to reject with
    * @param errMessage - The error message to use if the function does not reject
+   * @returns The caught error object for further assertions
    */
   async rejects(
     fn: () => unknown | Promise<unknown>,
     errType?: RegExp | AnyErrorConstructor | string,
     regExp?: RegExp | string,
     errMessage?: string
-  ): Promise<void> {
+  ): Promise<any> {
     let raisedException: any = null
     this.incrementAssertionsCount()
 
@@ -2716,6 +2724,8 @@ export class Assert extends Macroable implements AssertContract {
         operator: 'rejects',
       })
     }
+
+    return raisedException
   }
 
   /**
