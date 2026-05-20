@@ -36,11 +36,12 @@ export class NdJSONReporter extends BaseReporter {
   }
 
   protected onTestEnd(payload: TestEndNode): void {
+    const fileName = payload.meta?.fileName
     console.log(
       JSON.stringify({
         event: 'test:end',
-        filePath: this.currentFileName,
-        relativePath: this.currentFileName ? this.#getRelativeFilename(this.currentFileName) : undefined,
+        filePath: fileName,
+        relativePath: fileName ? this.#getRelativeFilename(fileName) : undefined,
         title: payload.title,
         duration: payload.duration,
         failReason: payload.failReason,

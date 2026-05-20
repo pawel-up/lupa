@@ -70,21 +70,6 @@ export abstract class BaseReporter {
   runner?: Runner
   config?: NormalizedConfig
 
-  /**
-   * Path to the file for which the tests are getting executed
-   */
-  currentFileName?: string
-
-  /**
-   * Suite for which the tests are getting executed
-   */
-  currentSuiteName?: string
-
-  /**
-   * Group for which the tests are getting executed
-   */
-  currentGroupName?: string
-
   protected options: BaseReporterOptions
 
   constructor(options: BaseReporterOptions = {}) {
@@ -362,7 +347,6 @@ export abstract class BaseReporter {
     this.config = config
 
     emitter.on('test:start', (payload) => {
-      this.currentFileName = payload.meta?.fileName
       if (this.onTestStart) {
         this.onTestStart(payload as unknown as TestStartNode)
       }
@@ -375,29 +359,24 @@ export abstract class BaseReporter {
     })
 
     emitter.on('group:start', (payload) => {
-      this.currentGroupName = payload.title
-      this.currentFileName = payload.meta?.fileName
       if (this.onGroupStart) {
         this.onGroupStart(payload as unknown as GroupStartNode)
       }
     })
 
     emitter.on('group:end', (payload) => {
-      this.currentGroupName = undefined
       if (this.onGroupEnd) {
         this.onGroupEnd(payload as unknown as GroupEndNode)
       }
     })
 
     emitter.on('suite:start', (payload) => {
-      this.currentSuiteName = payload.name
       if (this.onSuiteStart) {
         this.onSuiteStart(payload as unknown as SuiteStartNode)
       }
     })
 
     emitter.on('suite:end', (payload) => {
-      this.currentSuiteName = undefined
       if (this.onSuiteEnd) {
         this.onSuiteEnd(payload as unknown as SuiteEndNode)
       }

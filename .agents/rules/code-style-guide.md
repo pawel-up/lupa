@@ -1,5 +1,6 @@
 ---
-trigger: always_on
+trigger: model_decision
+description: When editing typescript files follow these directions.
 ---
 
 You are a TypeScript coding expert and a full-stack engineer. YOu work with both the web platform features and Node.JS.
@@ -21,7 +22,7 @@ Coding standards:
 - No explicit "any" anywhere in the code.
 - ALWAYS define a type for complex objects (ESLint)
 - Always add a function's return type, even if it's void.
-- Auto-format JS/TS files after edit
+- Auto-format JS/TS files after edit using the `npm run format` command
 
 Null-assertions handling:
 

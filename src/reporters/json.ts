@@ -71,7 +71,8 @@ export class JSONReporter extends BaseReporter {
 
   protected onTestEnd(payload: TestEndNode): void {
     if (payload.hasError) {
-      const file = this.currentFileName ? this.#getRelativeFilename(this.currentFileName) : 'unknown'
+      const fileName = payload.meta?.fileName
+      const file = fileName ? this.#getRelativeFilename(fileName) : 'unknown'
       const errors = payload.errors.map((err) => ({
         phase: err.phase,
         error: serializeError(err.error),
