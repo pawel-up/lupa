@@ -46,6 +46,41 @@ test('displays offline fallback when network drops', async ({ assert, network })
 })
 ```
 
+## Bypassing CORS
+
+When writing integration tests that mock cross-origin requests (e.g., testing SDKs or UI components that talk to remote APIs), you may encounter browser-level **Cross-Origin Resource Sharing (CORS)** errors. Even if you mock the API endpoint using `network.mock()`, the browser may still block the request or hide custom response headers if the mock does not explicitly include the proper CORS headers.
+
+To solve this, Lupa provides the `network.ignoreCors()` method. This instructs the network interceptor to automatically bypass CORS enforcement for the duration of the test.
+
+```ts
+test('ignores CORS and reads custom headers', async ({ network, assert }) => {
+  // 1. Enable CORS bypass for this test
+  await network.ignoreCors()
+
+  // 2. Mock a cross-origin API
+  await network.mock('https://example.com/api/data', {
+    status: 200,
+    headers: { 'x-custom-id': '123' },
+    body: JSON.stringify({ success: true })
+  })
+
+  // 3. Fetch from a different origin
+  const res = await fetch('https://example.com/api/data')
+  
+  // Custom headers are fully exposed to the client!
+  assert.equal(res.headers.get('x-custom-id'), '123')
+})
+```
+
+### How it works
+
+When you call `network.ignoreCors()`, Lupa applies two automatic behaviors at the browser's network layer:
+
+1. **Preflight Interception**: All HTTP `OPTIONS` requests are automatically intercepted and fulfilled with a `204 No Content` status and permissive `Access-Control` headers.
+2. **Response Header Injection**: All responses fulfilled by your network mocks automatically receive `Access-Control-Allow-Origin: *` and `Access-Control-Expose-Headers: *` headers. This ensures the browser allows your application code to read both the body and any custom headers from the mocked response.
+
+Like all network settings in Lupa, the CORS bypass is **strictly isolated** to the current test. When the test completes, the CORS bypass state is automatically reset, preventing any configuration leakage into subsequent tests.
+
 ## Asserting on Network Traffic
 
 Lupa provides a suite of assertions to verify that your mocks were hit exactly as expected. Because network requests originate in the browser but your tests run in Node.js, Lupa has to ferry this data across an asynchronous boundary.

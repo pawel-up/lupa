@@ -82,6 +82,8 @@ export enum NetworkError {
  * Available in browser tests via the `network` fixture on the `TestContext`.
  */
 export class Network {
+  constructor(private context: TestContext) {}
+
   /**
    * A sentinel value to indicate that a request should not be intercepted and should be allowed to proceed normally.
    *
@@ -116,6 +118,34 @@ export class Network {
    */
   get error(): typeof NetworkError {
     return NetworkError
+  }
+
+  /**
+   * Tells the network interceptor to automatically bypass CORS rules by intercepting
+   * preflight OPTIONS requests and injecting `Access-Control-Allow-Origin: *` headers
+   * into any fulfilled network mock.
+   *
+   * This setting automatically reverts at the end of the test.
+   *
+   * @example
+   * ```ts
+   * test('ignores CORS', async ({ network, assert }) => {
+   *   await network.ignoreCors()
+   *   const res = await fetch('https://example.com/api/data')
+   *   assert.equal(res.headers.get('access-control-allow-origin'), '*')
+   * })
+   * ```
+   *
+   * @param ignore Whether to ignore CORS or enforce it. Defaults to true.
+   */
+  async ignoreCors(ignore = true): Promise<void> {
+    await window.__lupa_command__?.('network:mock:ignoreCors', ignore)
+
+    if (this.context && this.context.test) {
+      this.context.cleanup(async () => {
+        await window.__lupa_command__?.('network:mock:ignoreCors', false)
+      })
+    }
   }
 
   /**
@@ -188,9 +218,8 @@ export class Network {
 
     // Auto-restore logic
 
-    const context = (this as any).__context as TestContext
-    if (context && context.test) {
-      context.cleanup(() => interceptor.restore())
+    if (this.context && this.context.test) {
+      this.context.cleanup(() => interceptor.restore())
     }
 
     return interceptor
@@ -209,10 +238,7 @@ const setup: WebPluginFn = () => {
   TestContext.getter(
     'network',
     function (this: TestContext) {
-      const fixture = new Network()
-
-      ;(fixture as any).__context = this
-      return fixture
+      return new Network(this)
     },
     true
   )

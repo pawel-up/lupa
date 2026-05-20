@@ -14,6 +14,7 @@ import debuglog from '../runner/debug.js'
  */
 export class NetworkCommand {
   private routeStore = new RouteStore()
+  private ignoreCors = false
 
   /**
    * @param page Playwright page to register on
@@ -38,10 +39,18 @@ export class NetworkCommand {
   }
 
   /**
+   * Set the ignoreCors flag.
+   */
+  public setIgnoreCors(ignore: boolean): void {
+    this.ignoreCors = ignore
+  }
+
+  /**
    * Reset the network command.
    */
   public reset() {
     this.routeStore.reset()
+    this.ignoreCors = false
   }
 
   /**
@@ -58,6 +67,20 @@ export class NetworkCommand {
 
     const url = request.url()
     const method = request.method()
+
+    if (this.ignoreCors && method === 'OPTIONS') {
+      await route.fulfill({
+        status: 204,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': '*',
+          'Access-Control-Allow-Headers': '*',
+          'Access-Control-Expose-Headers': '*',
+        },
+      })
+      return
+    }
+
     const headers = request.headers()
     let body: string | null | undefined = undefined
     let query: Record<string, string | string[]> | undefined = undefined
@@ -102,6 +125,11 @@ export class NetworkCommand {
           const fulfillPayload: any = {
             status: response.status || 200,
             headers: response.headers || {},
+          }
+
+          if (this.ignoreCors) {
+            fulfillPayload.headers['Access-Control-Allow-Origin'] = '*'
+            fulfillPayload.headers['Access-Control-Expose-Headers'] = '*'
           }
 
           if (response.body !== undefined && response.body !== null) {

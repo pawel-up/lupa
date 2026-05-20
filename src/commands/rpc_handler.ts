@@ -113,6 +113,9 @@ export class CommandsHandler {
           case 'network:mock:unregister':
             await this.network.unregister(payload)
             break
+          case 'network:mock:ignoreCors':
+            this.network.setIgnoreCors(payload)
+            break
           default:
             throw new Error(`Unknown lupa command: ${command}`)
         }

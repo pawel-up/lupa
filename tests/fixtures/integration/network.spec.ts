@@ -152,6 +152,34 @@ test.group('Network Interception', () => {
     await mockObject.assert.calledOnce()
   })
 
+  test('supports bypassing CORS and reading custom headers', async ({ network, assert }) => {
+    await network.ignoreCors()
+
+    const mock = await network.mock({
+      match: 'http://different-domain.com/api/data',
+      respond: {
+        status: 200,
+        headers: { 'x-test': 'custom-value' },
+        body: JSON.stringify({ success: true }),
+      },
+    })
+
+    const res = await fetch('http://different-domain.com/api/data', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+
+    const json = await res.json()
+
+    assert.equal(res.status, 200)
+    assert.deepEqual(json, { success: true })
+    assert.equal(res.headers.get('x-test'), 'custom-value')
+
+    await mock.assert.calledOnce()
+  })
+
   test('simulates network error: {$self}')
     .with(Object.values(NetworkError))
     .run(async ({ network, assert }, error) => {
