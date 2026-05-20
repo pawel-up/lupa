@@ -63,8 +63,13 @@ test('Validators', async (t) => {
     assert.doesNotThrow(() => validateActivatedReporters(validReporters))
 
     const unknownReporters = {
-      reporters: { activated: ['progress', 'dot'], list: [{ name: 'progress' }] },
+      reporters: { activated: ['progress', 'unknown_reporter'], list: [{ name: 'progress' }] },
     } as unknown as NormalizedConfig
-    assert.throws(() => validateActivatedReporters(unknownReporters), /Invalid reporter "dot"/)
+    assert.throws(() => validateActivatedReporters(unknownReporters), /Invalid reporter "unknown_reporter"/)
+
+    const validBuiltinReporters = {
+      reporters: { activated: ['ndjson', 'dot'], list: [{ name: 'progress' }] },
+    } as unknown as NormalizedConfig
+    assert.doesNotThrow(() => validateActivatedReporters(validBuiltinReporters))
   })
 })

@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import path from 'node:path'
 import assert from 'node:assert'
 import { Planner } from '../../src/runner/planner.js'
-import { progress, dot } from '../../src/reporters/index.js'
+import { progress, dot, NamedReporterContract } from '../../src/reporters/index.js'
 import { ConfigManager } from '../../src/runner/config_manager.js'
 import { wrapAssertions, listAllTestFiles } from './helpers.js'
 
@@ -93,6 +93,46 @@ test.describe('Planner | reporters', () => {
     await wrapAssertions(() => {
       assert.strictEqual(reporters.length, 1)
       assert.strictEqual(reporters[0].name, 'dot')
+    })
+  })
+
+  test('fallback to default reporter when not in the custom list', async () => {
+    const config = new ConfigManager(
+      { files: [], reporters: { activated: ['ndjson'], list: [progress()] } },
+      {}
+    ).hydrate()
+    const { reporters } = await new Planner(config).plan()
+
+    await wrapAssertions(() => {
+      assert.strictEqual(reporters.length, 1)
+      assert.strictEqual(reporters[0].name, 'ndjson')
+    })
+  })
+
+  test('custom reporters take precedence over default reporters on name collision', async () => {
+    const customNdjson: NamedReporterContract = {
+      name: 'ndjson',
+      handler: async () => {},
+    }
+    const config = new ConfigManager(
+      { files: [], reporters: { activated: ['ndjson'], list: [customNdjson] } },
+      {}
+    ).hydrate()
+    const { reporters } = await new Planner(config).plan()
+
+    await wrapAssertions(() => {
+      assert.strictEqual(reporters.length, 1)
+      assert.strictEqual(reporters[0], customNdjson)
+    })
+  })
+
+  test('uses default reporters when none are defined in config', async () => {
+    const config = new ConfigManager({ files: [] }, {}).hydrate()
+    const { reporters } = await new Planner(config).plan()
+
+    await wrapAssertions(() => {
+      assert.strictEqual(reporters.length, config.reporters.activated.length)
+      assert.strictEqual(reporters[0].name, config.reporters.activated[0])
     })
   })
 
