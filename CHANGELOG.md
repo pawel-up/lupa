@@ -1,3 +1,10 @@
+## [0.3.3](https://github.com/pawel-up/lupa/compare/v0.3.2...v0.3.3) (2026-05-20)
+
+
+### Bug Fixes
+
+* adding GA to the docs page ([d38c5f4](https://github.com/pawel-up/lupa/commit/d38c5f4a87fc799d84d5d735884639ab42ee27fa))
+
 ## [0.3.2](https://github.com/pawel-up/lupa/compare/v0.3.1...v0.3.2) (2026-05-20)
 
 
