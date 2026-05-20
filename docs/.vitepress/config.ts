@@ -3,7 +3,28 @@ import { defineConfig } from 'vitepress'
 export default defineConfig({
   title: 'Lupa',
   description: 'The modern browser testing framework',
-  head: [['link', { rel: 'icon', type: 'image/svg+xml', href: '/lupa-icon.svg' }]],
+  head: [
+    ['link', { rel: 'icon', type: 'image/svg+xml', href: '/lupa-icon.svg' }],
+    [
+      'script',
+      {},
+      `window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('consent', 'default', {
+        'analytics_storage': 'denied',
+        'ad_storage': 'denied',
+        'ad_user_data': 'denied',
+        'ad_personalization': 'denied'
+      });`,
+    ],
+    ['script', { async: '', src: 'https://www.googletagmanager.com/gtag/js?id=G-RBNN7BPRNN' }],
+    [
+      'script',
+      {},
+      `gtag('js', new Date());
+      gtag('config', 'G-RBNN7BPRNN');`,
+    ],
+  ],
   themeConfig: {
     logo: '/lupa-icon.svg',
     nav: [
