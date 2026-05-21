@@ -8,8 +8,9 @@ import type { BrowserTelemetryEvents } from '../types.js'
 import { CoverageManager } from './coverage_manager.js'
 import { ExceptionsManager } from './exceptions_manager.js'
 import { transformBrowserStack } from './stack_transformer.js'
-import { formatPinnedTest, printPinnedTests } from './helpers.js'
+import { formatPinnedTest, printPinnedTests, colors } from './helpers.js'
 import lupaHarnessPlugin from './plugins/harness.js'
+import type { Orchestrator } from './orchestrator.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const harnessTs = resolve(__dirname, '../testing/harness.ts')
@@ -26,22 +27,40 @@ export interface ServerManagerOptions {
   config: NormalizedConfig
   testPoolManager: TestPoolManager
   exceptionsManager: ExceptionsManager
+}
+
+/**
+ * A contract that defines the telemetry API exposed by the runner server.
+ * Must be implemented by any runner type that wants to use the server manager.
+ */
+export interface ServerTelemetryContract {
   /**
-   * Callback invoked sequentially whenever a telemetry event is received.
+   * Handle compilation errors.
+   * @param error The error to handle.
+   * @param bail Whether to bail out of the test run.
    */
-  onTelemetry: (event: keyof BrowserTelemetryEvents, data: any) => Promise<void>
+  handleCompilationError(error: Error, bail: boolean): Promise<void>
+
+  /**
+   * Handle telemetry events.
+   * @param event The telemetry event name to handle.
+   * @param data The telemetry event data.
+   */
+  handleTelemetry<K extends keyof BrowserTelemetryEvents>(event: K, data: BrowserTelemetryEvents[K]): Promise<void>
 }
 
 /**
  * Manages the Vite development server lifecycle and WebSocket telemetry.
  */
 export class ServerManager {
+  #orchestrator: Orchestrator
   #vite?: ViteDevServer
   #options: ServerManagerOptions
   #telemetryQueue: Promise<void> = Promise.resolve()
   #coverageManager?: CoverageManager
 
-  constructor(options: ServerManagerOptions) {
+  constructor(orchestrator: Orchestrator, options: ServerManagerOptions) {
+    this.#orchestrator = orchestrator
     this.#options = options
   }
 
@@ -49,9 +68,19 @@ export class ServerManager {
    * Boots the Vite server and returns the local server URL.
    */
   async boot(): Promise<string> {
-    const { cwd, config, testPoolManager, exceptionsManager, onTelemetry } = this.#options
+    const { cwd, config, testPoolManager, exceptionsManager } = this.#options
 
     const logger = createLogger('silent')
+    const _error = logger.error
+    logger.error = (msg, options) => {
+      console.error(`\n${colors.red('[Vite Compilation Error]')} ${msg}`)
+      if (options?.error) {
+        console.error(options.error)
+      }
+      _error.call(logger, msg, options)
+      const err = (options?.error || new Error(msg)) as Error
+      this.#orchestrator.handleCompilationError(err, !config.watch)
+    }
 
     const resolvedPlugins: (JsonSerializable | undefined)[][] = await Promise.all(
       (config.testPlugins || []).map(async (plugin) => {
@@ -83,7 +112,7 @@ export class ServerManager {
         },
       },
       optimizeDeps: {
-        include: ['axe-core'],
+        include: ['axe-core', 'lit-html', 'lit'],
         exclude: ['@pawel-up/lupa'],
       },
       plugins: [lupaHarnessPlugin(testPoolManager, resolvedPlugins, config, harnessPath)],
@@ -100,6 +129,24 @@ export class ServerManager {
 
     // Start Vite Server
     this.#vite = await createServer(finalViteConfig)
+
+    // Intercept full-reload events to detect optimizeDeps invalidations.
+    // Note: We override ws.send() instead of using ws.on('full-reload') because
+    // 'full-reload' is an OUTGOING message sent by Vite to the browser. Vite
+    // does not emit a server-side event for this, so patching send() is the
+    // only way to intercept it.
+    const originalWsSend = this.#vite.ws.send
+    this.#vite.ws.send = function (payload: any, ...rest: any[]) {
+      if (payload.type === 'full-reload') {
+        if (!config.watch) {
+          console.warn(
+            `\n${colors.yellow('⚠️ Vite discovered new dependencies mid-run. This will cause a 504 error in headless mode.')}`
+          )
+          console.warn(`${colors.yellow('Please add these explicitly to optimizeDeps.include in lupa.config.ts.')}\n`)
+        }
+      }
+      originalWsSend.call(this, payload, ...rest)
+    }
 
     // Set up WebSocket telemetry interception
     this.#vite.ws.on('lupa:telemetry', ({ event, data }: TelemetryPayload) => {
@@ -168,7 +215,7 @@ export class ServerManager {
           }
 
           // Delegate remaining events to the orchestrator callback
-          await onTelemetry(event, data)
+          await this.#orchestrator.handleTelemetry(event, data)
         } catch (queueErr) {
           console.error('Lupa Telemetry parsing error:', queueErr)
         }

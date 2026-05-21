@@ -151,6 +151,58 @@ test('Integration: Lupa Framework End-to-End', async (t) => {
   )
 
   await t.test(
+    'executes programmatic test run and safely rejects the promise on Vite compilation errors',
+    { timeout: TIMEOUT },
+    async () => {
+      const runnerPath = path.join(process.cwd(), 'tests', 'integration', 'run-programmatic-compilation-error.ts')
+
+      const { exitCode, stdout, stderr } = await new Promise<{
+        exitCode: number | null
+        stdout: string
+        stderr: string
+      }>((resolve, reject) => {
+        const child = fork(runnerPath, [], {
+          execArgv: ['--import', 'tsx'],
+          cwd: process.cwd(),
+          env: {
+            ...process.env,
+            FORCE_COLOR: '0',
+            CI: '1',
+          },
+          stdio: 'pipe',
+        })
+
+        let out = ''
+        let err = ''
+        child.stdout?.on('data', (data) => (out += data))
+        child.stderr?.on('data', (data) => (err += data))
+
+        child.on('exit', (code) => {
+          resolve({ exitCode: code, stdout: out, stderr: err })
+        })
+
+        child.on('error', reject)
+      })
+
+      const output = stdout + '\n' + stderr
+
+      assert.strictEqual(exitCode, 1, `Expected runner to exit with code 1. Output:\n${output}`)
+
+      const errorMarker = '___PROGRAMMATIC_ERROR_CAUGHT___'
+      const lineWithError = stderr.split('\n').find((line) => line.includes(errorMarker))
+
+      assert.ok(
+        lineWithError,
+        'Could not find the programmatic error marker in stderr. The promise might not have rejected.'
+      )
+      assert.ok(
+        lineWithError.includes('Simulated Vite Compilation Error Boom'),
+        'The rejected error does not match the simulated exception'
+      )
+    }
+  )
+
+  await t.test(
     'executes list command with filters and correctly outputs filtered test table',
     { timeout: TIMEOUT },
     async () => {

@@ -1,10 +1,10 @@
 import { type ViteDevServer } from 'vite'
 import { Emitter } from '../testing/emitter.js'
-import type { RunnerEvents } from '../types.js'
+import type { BrowserTelemetryEvents, RunnerEvents } from '../types.js'
 import { Runner } from './runner.js'
 import { ExceptionsManager } from './exceptions_manager.js'
 import { BrowserManager, type BrowserName } from './browser_manager.js'
-import { ServerManager } from './server_manager.js'
+import { ServerManager, type ServerTelemetryContract } from './server_manager.js'
 import { TestPoolManager } from './test_pool_manager.js'
 import debug from './debug.js'
 import { Cli } from './cli.js'
@@ -23,7 +23,7 @@ const DEFAULT_GLOBAL_TIMEOUT = 120_000
  * - Emitting runner lifecycle events and telemetry logs
  * - Running tests in watch mode and providing a CLI for dynamic interaction
  */
-export class Orchestrator {
+export class Orchestrator implements ServerTelemetryContract {
   /** The underlying Vite development server instance. */
   public vite?: ViteDevServer
 
@@ -117,14 +117,16 @@ export class Orchestrator {
 
   #completionPromise?: Promise<number>
   #resolveCompletion?: (code: number) => void
+  #rejectCompletion?: (error: any) => void
 
   /**
    * Returns a promise that resolves with the exit code when the test run completes.
    */
   async waitForCompletion(): Promise<number> {
     if (!this.#completionPromise) {
-      this.#completionPromise = new Promise((resolve) => {
+      this.#completionPromise = new Promise((resolve, reject) => {
         this.#resolveCompletion = resolve
+        this.#rejectCompletion = reject
       })
     }
     return this.#completionPromise
@@ -151,16 +153,11 @@ export class Orchestrator {
 
     this.testPoolManager = new TestPoolManager(this.config, this.browserNames, this.suites)
 
-    this.serverManager = new ServerManager({
+    this.serverManager = new ServerManager(this, {
       cwd: this.config.cwd || process.cwd(),
       config: this.config,
       testPoolManager: this.testPoolManager,
       exceptionsManager: this.exceptionsManager,
-      onTelemetry: async (event, data) => {
-        if (this.activeNodeEmitter) {
-          await this.activeNodeEmitter.emit(event as any, data)
-        }
-      },
     })
 
     this.serverUrl = await this.serverManager.boot()
@@ -378,5 +375,25 @@ export class Orchestrator {
     }
 
     await this.browserManager?.goto(`${this.serverUrl}__lupa__/runner.html`)
+  }
+
+  async handleCompilationError(error: Error, bail: boolean): Promise<void> {
+    this.exceptionsManager.notifyException(error)
+    if (bail) {
+      if (this.#rejectCompletion) {
+        this.#rejectCompletion(error)
+      } else {
+        await this.shutdown(1)
+      }
+    }
+  }
+
+  async handleTelemetry<K extends keyof BrowserTelemetryEvents>(
+    event: K,
+    data: BrowserTelemetryEvents[K]
+  ): Promise<void> {
+    if (this.activeNodeEmitter) {
+      await this.activeNodeEmitter.emit(event, data as any)
+    }
   }
 }
