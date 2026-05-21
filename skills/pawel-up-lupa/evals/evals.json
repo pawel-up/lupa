@@ -1,0 +1,23 @@
+{
+  "skill_name": "pawel-up-lupa",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Write a Lupa test for the `button` Web Component that mounts it to the DOM, clicks it, and asserts that its text content updates to 'Clicked!'.",
+      "expected_output": "A complete Lupa test suite using `test.group`, `fixture`, and context `assert` with the correct click action and assertion.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Create a `lupa.config.ts` file that runs tests in parallel, uses the 'v8' coverage provider, and injects a custom `setup.js` script into the harness.",
+      "expected_output": "A valid `lupa.config.ts` file that uses `defineConfig` and the correct configuration properties based on the config reference.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "My Lupa test keeps hanging indefinitely. I have a `setup()` hook where I start an HTTP server, but when tests fail, it hangs. How do I fix this?",
+      "expected_output": "An explanation quoting the Troubleshooting section about returning a cleanup function from the setup hook, along with a code snippet.",
+      "files": []
+    }
+  ]
+}

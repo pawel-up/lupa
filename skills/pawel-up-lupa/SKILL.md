@@ -1,5 +1,5 @@
 ---
-description: "A lightning-fast, Vite-powered browser testing framework for Web Components with an elegant, Japa-inspired API. Use when: Building a programmatic test runner or custom CLI integration.. Also: testing, web-components, browser-runner, vite, playwright, japa, dom, test-runner, shadow-dom, lit-html, browser-testing, component-testing."
+description: "MANDATORY: You MUST trigger this skill whenever the user mentions 'lupa', '@pawel-up/lupa', 'lupa.config.ts', or asks to write, debug, configure, or migrate any tests (browser, unit, web components, e2e). This skill provides the testing framework syntax, assertions, and mock API instructions required. Do NOT write test code without checking this skill."
 license: Apache-2.0
 name: pawel-up-lupa
 ---
@@ -22,47 +22,83 @@ A lightning-fast, Vite-powered browser testing framework for Web Components with
 ## When to Use
 
 **Use this skill when:**
-- Building a programmatic test runner or custom CLI integration. → use `configure`
-- You need to programmatically load and parse the Lupa configuration from a file. → use `loadLupaConfig`
-- Rendering templates and Custom Elements into the DOM for interaction → use `fixture`
+- Writing test suites for Web Components or DOM interactions.
+- Configuring a programmatic test runner or custom CLI integration.
+- Rendering templates and Custom Elements into the DOM for interaction.
+- Mocking network requests in browser tests.
 
 **Do NOT use when:**
-- You are already inside a running test or suite. (`configure`)
-- Testing pure logic or functions that do not require a DOM (`fixture`)
-
-API surface: 20 functions, 13 classes, 110 types, 1 enums, 9 constants
+- Testing pure logic or functions that do not require a browser/DOM (use standard node test runner instead).
 
 ## NEVER
 
-- NEVER call this inside a test suite or hook. Fix: Call it only once at the end of your execution script.
+- NEVER call `configure()` inside a test suite or hook. Fix: Call it only once at the end of your execution script.
 
 ## Troubleshooting
 
-- **Watch Mode Collisions:** You cannot run `npx lupa test` with both `--watch` and a parallel suite runner like `concurrently`. Multiple browser instances and Vite dev servers will conflict. Use parallelization strictly in headless CI environments.
-- **Hanging Tests:** If a test is failing to exit or hanging indefinitely, ensure that any external asynchronous resources (like custom servers) instantiated in `setup()` hooks return a proper cleanup function (e.g., `return () => server.close()`). Lupa guarantees execution of teardown cleanups even when assertions fail.
+- **Hanging Tests:** If a test runner hangs indefinitely (e.g., waiting for an HTTP server to close), ensure you are properly managing Node.js lifecycle hooks. Group `setup()` hooks run *only in the browser sandbox*. To start and stop Node.js services (like an API proxy or DB connection), you must define a `runnerPlugin` in your config and return a cleanup function from its `boot` or `execute` hook.
 
-## Configuration
+## Usage Example
 
-26 configuration interfaces — see references/config.md for details.
+Here is a basic example of how to write a test suite using Lupa:
+
+```typescript
+import { test, fixture, html } from '@pawel-up/lupa/testing'
+
+test.group('My Component', (group) => {
+  group.setup(() => {
+    // Setup logic that runs before the group
+  })
+
+  test('renders correctly', async ({ assert }) => {
+    // Render the component into the test fixture
+    const el = await fixture(html`<my-component></my-component>`)
+    
+    // Assert against the DOM using the context assert
+    assert.isNotNull(el)
+    assert.equal(el.textContent, 'Expected Text')
+  })
+})
+```
+
+## MCP Server Tools
+
+Lupa provides a Model Context Protocol (MCP) server (`@pawel-up/lupa-mcp`) that exposes native tools for AI agents. If these tools are available in your environment, **always prefer them over terminal commands**:
+
+- **`lupa_run_tests`**: Runs tests and returns structured JSON output. This is significantly easier to parse and debug than raw terminal output from `npx lupa test`.
+- **`lupa_list_tests`**: Quickly discovers available test files, groups, and suites in the workspace without executing them.
+- **`lupa_init`**: Scaffolds the testing framework in a new project without interactive prompts.
 
 ## Quick Reference
 
-**Key functions:** `assertIsAccessible` (Asserts that a given DOM element or NodeList has no accessibility violations
-according to axe-core), `configure` (Configure the Lupa test runner), `run` (Run the test suite), `loadLupaConfig` (Loads the Lupa configuration from a local file (e), `waitUntil` (Polls the condition function until it returns true or the timeout is reached), `fixture` (Renders a HTML string or a Lit template into a dedicated fixture container and mounts it to the DOM)
+**Key imports:**
+- `import { test, fixture, html, waitUntil } from '@pawel-up/lupa/testing'` — The core testing primitives. Use `test` to define test blocks, `fixture` to mount elements to the DOM, and `waitUntil` to poll for a condition.
+- `import { assert } from '@pawel-up/lupa/assert'` — The standalone assertion library, though `assert` is also available on the test context.
+- `import { configure, run, loadLupaConfig } from '@pawel-up/lupa/runner'` — Configures and runs the Lupa test suite programmatically or loads config files.
+- `import { network } from '@pawel-up/lupa/network'` — API to mock and intercept HTTP requests made from the browser.
 
-*153 exports total — see references/ for full API.*
+## Configuration Reference
 
-## References
+Check [`references/config.md`](./references/config.md) for the `lupa.config.ts` structure, `BaseConfig` interface, and locator action options.
 
-Load these on demand — do NOT read all at once:
+## Detailed Guides
 
-- When calling any function → read `references/functions.md` for full signatures, parameters, and return types
-- When using a class → browse `references/classes/` for grouped indexes, properties, methods, and inheritance
-- When defining typed variables or function parameters → read `references/types.md`
-- When using exported constants → read `references/variables.md`
-- When configuring options → read `references/config.md` for all settings and defaults
+If you need deeper context on specific Lupa features, read the relevant guide in the `references/guide/` directory:
 
-## Links
+- **Core Concepts:** [`introduction.md`](./references/guide/introduction.md), [`installation.md`](./references/guide/installation.md), [`cli.md`](./references/guide/cli.md)
+- **Writing Tests:** [`test-suites.md`](./references/guide/test-suites.md), [`grouping-tests.md`](./references/guide/grouping-tests.md), [`lifecycle-hooks.md`](./references/guide/lifecycle-hooks.md)
+- **Assertions & DOM:** [`assertions.md`](./references/guide/assertions.md), [`commands.md`](./references/guide/commands.md)
+- **Network Interception:** [`network-mocking.md`](./references/guide/network-mocking.md)
+- **Advanced Flow Control:** [`filtering-tests.md`](./references/guide/filtering-tests.md), [`skipping-tests.md`](./references/guide/skipping-tests.md), [`exceptions.md`](./references/guide/exceptions.md)
+- **Advanced Configuration:** [`datasets.md`](./references/guide/datasets.md), [`plugins.md`](./references/guide/plugins.md), [`test-macros.md`](./references/guide/test-macros.md), [`test-reporters.md`](./references/guide/test-reporters.md)
+- **Vite & Environment:** [`vite-configuration.md`](./references/guide/vite-configuration.md), [`customizing-harness.md`](./references/guide/customizing-harness.md)
 
-- [Repository](https://github.com/pawel-up/lupa)
-- Author: Pawel Uchida-Psztyc
+## Workspace Conventions & Examples
+
+If you are writing tests, please review the local conventions and canonical examples:
+
+- **Conventions:** [`conventions.md`](./references/conventions.md) — Read this to understand file naming, assertion styles, and mocking strategies.
+- **Examples:** Check the [`references/examples/`](./references/examples/) directory for complete, working test examples:
+  - [`async-dom.spec.ts`](./references/examples/async-dom.spec.ts) — Handling async DOM updates and `waitUntil`.
+  - [`component-events.spec.ts`](./references/examples/component-events.spec.ts) — Testing events and user interactions.
+  - [`network-mocking.spec.ts`](./references/examples/network-mocking.spec.ts) — End-to-end network interception and SDK testing.

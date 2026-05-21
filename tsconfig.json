@@ -23,7 +23,7 @@
     "rootDir": "./",
     "outDir": "./dist"
   },
-  "exclude": ["dist", "node_modules", "coverage", "docs"],
+  "exclude": ["dist", "node_modules", "coverage", "docs", "skills/pawel-up-lupa/references/examples"],
   "include": ["src/**/*.ts", "tests/**/*.ts", "bin/**/*.ts"],
   "ts-node": {
     "swc": true

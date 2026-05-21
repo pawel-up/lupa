@@ -27,7 +27,7 @@
   "excludePrivate": true,
   "excludeProtected": true,
   "excludeInternal": true,
-  "plugin": ["@to-skills/typedoc", "typedoc-plugin-markdown", "typedoc-vitepress-theme"],
+  "plugin": ["typedoc-plugin-markdown", "typedoc-vitepress-theme"],
   "externalSymbolLinkMappings": {
     "typescript": {
       "AbortSignal": "https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal",
