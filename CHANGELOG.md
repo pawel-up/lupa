@@ -1,3 +1,15 @@
+## [0.3.5](https://github.com/pawel-up/lupa/compare/v0.3.4...v0.3.5) (2026-05-21)
+
+
+### Bug Fixes
+
+* error stack in setTimeout ([6a029ca](https://github.com/pawel-up/lupa/commit/6a029ca8f27b213ff06f4ff384e5ff4bd79dd32d))
+* fixing CORS in the network mock ([444ec48](https://github.com/pawel-up/lupa/commit/444ec48bc25898f8d5d7bc488730e8fc2ddef45a))
+* fixing import error reporting ([412b47a](https://github.com/pawel-up/lupa/commit/412b47a28ea87fcf80e9249ea4fe5ab9648c3580))
+* printing multi string console logs ([0328478](https://github.com/pawel-up/lupa/commit/0328478ccdef09eacfc8e0d17199c5403e678fd0))
+* rejects/throws asserts return the exception ([b33bf6e](https://github.com/pawel-up/lupa/commit/b33bf6e88af37206aac176d435a6b9760840dd46))
+* setting methods on the request matcher ([267703b](https://github.com/pawel-up/lupa/commit/267703be142354649402cf0c9037bc01a0c0e73b))
+
 ## [0.3.4](https://github.com/pawel-up/lupa/compare/v0.3.3...v0.3.4) (2026-05-20)
 
 
