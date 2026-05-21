@@ -1,0 +1,27 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "tags": ["-lintignore"],
+  "project": ["bin/**/*.{ts,js}"],
+  "entry": [
+    "lupa.config.ts",
+    "src/testing/harness.ts",
+    "src/runner/runner.ts",
+    "src/assert/assert.ts",
+    "src/testing/emitter.ts",
+    "src/runner/stack_transformer.ts",
+    "src/runner/helpers.ts",
+    "src/testing/fixture.ts",
+    "src/reporters/progress.ts",
+    "src/reporters/dot.ts",
+    "src/reporters/github.ts",
+    "src/reporters/json.ts",
+    "src/reporters/ndjson.ts",
+    "src/hooks/runner.ts",
+    "src/runner/coverage_manager.ts",
+    "src/runner/summary_builder.ts"
+  ],
+  "playwright": true,
+  "semantic-release": {
+    "entry": ["@semantic-release/changelog", "@semantic-release/git"]
+  }
+}

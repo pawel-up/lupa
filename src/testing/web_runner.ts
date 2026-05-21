@@ -4,7 +4,7 @@ import debug from './debug.js'
 import { type Suite } from './suite/main.js'
 import { type Emitter } from './emitter.js'
 import { Group } from './group/main.js'
-import { RunnerListNode } from '../types.js'
+import { type RunnerListNode } from '../types.js'
 
 /**
  * The WebRunner class exposes the API to register test suites and execute
