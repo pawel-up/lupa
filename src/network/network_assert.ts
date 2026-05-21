@@ -315,7 +315,6 @@ export class NetworkAssert {
    */
   async calledOnceWith(match: Partial<CapturedRequest>, message?: string, options?: NetworkPollingOptions) {
     const ctrl = new AbortController()
-    let request: CapturedRequest | undefined
 
     await waitFor(
       () => {
@@ -328,19 +327,16 @@ export class NetworkAssert {
           }
           throw err
         }
-        // It is to return from the `waitFor` so it won't repeat the check,
-        // after we fail (or pass) the second step.
-        request = this.interceptor.requests[0]
+        ctrl.abort()
+        // step 2: check if the request matches the provided partial request object
+        // here the request MUST be set because the above condition is met
+        if (!this.#partialMatch(this.interceptor.requests[0], match)) {
+          this.#failMatch(this.interceptor.requests[0], match, 'Expected request to match properties', message)
+        }
       },
       ctrl.signal,
       options?.interval
     )
-
-    // step 2: check if the request matches the provided partial request object
-    // here the request MUST be set because the above condition is met
-    if (!this.#partialMatch(request as CapturedRequest, match)) {
-      this.#failMatch(request as CapturedRequest, match, 'Expected request to match properties', message)
-    }
   }
 
   /**
