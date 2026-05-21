@@ -18,16 +18,29 @@ export interface NetworkPollingOptions {
   interval?: number
 }
 
-function waitFor(condition: () => void, options: NetworkPollingOptions = {}): Promise<void> {
-  const { timeout = 500, interval = 25 } = options
+function waitFor(condition: () => void, signal: AbortSignal, interval = 25): Promise<void> {
+  const callerError = new Error()
+
   return new Promise((resolve, reject) => {
-    const start = Date.now()
     const check = () => {
       try {
         condition()
         resolve()
       } catch (err) {
-        if (Date.now() - start > timeout) {
+        if (signal.aborted) {
+          if (err instanceof Error && callerError.stack) {
+            // Remove the first line of the caller stack (Error\n)
+            let callerTrace = callerError.stack.substring(callerError.stack.indexOf('\n') + 1)
+
+            // Remove all lines related to the waitFor function
+            callerTrace = callerTrace.replace(/.*at waitFor.*\n/g, '')
+
+            // Remove one more line for the Assert function called this function
+            callerTrace = callerTrace.substring(callerTrace.indexOf('\n') + 1)
+
+            // Replace the async timeout stack with the original caller stack
+            err.stack = `${err.name}: ${err.message}\n${callerTrace}`
+          }
           reject(err)
         } else {
           setTimeout(check, interval)
@@ -52,6 +65,17 @@ export class NetworkAssert {
   }
 
   /**
+   * Creates an AbortController and sets a timeout, so that the `waitFor` method
+   * does not wait indefinitely.
+   * @param options Polling options, if undefined, default timeout of 500ms will be used.
+   */
+  #createAbortController(options?: NetworkPollingOptions) {
+    const controller = new AbortController()
+    setTimeout(() => controller.abort(), options?.timeout || 500)
+    return controller
+  }
+
+  /**
    * Asserts the mock intercepted at least one request.
    *
    * @example
@@ -66,11 +90,17 @@ export class NetworkAssert {
    *            instead to prevent false positives from duplicate requests.
    */
   async called(message?: string, options?: NetworkPollingOptions) {
-    await waitFor(() => {
-      if (this.interceptor.requests.length === 0) {
-        throw new AssertionError(message || 'Expected mock to be called at least once, but it was not called.')
-      }
-    }, options)
+    const ctrl = this.#createAbortController(options)
+    await waitFor(
+      () => {
+        if (this.interceptor.requests.length === 0) {
+          throw new AssertionError(message || 'Expected mock to be called at least once, but it was not called.')
+        }
+        ctrl.abort()
+      },
+      ctrl.signal,
+      options?.interval
+    )
   }
 
   /**
@@ -88,15 +118,19 @@ export class NetworkAssert {
    *          (e.g. validating frontend cache hits or form validation failures).
    */
   async notCalled(message?: string, options?: NetworkPollingOptions) {
+    const ctrl = this.#createAbortController(options)
     await waitFor(
       () => {
         if (this.interceptor.requests.length > 0) {
-          throw new AssertionError(
+          const err = new AssertionError(
             message || `Expected mock to not be called, but it was called ${this.interceptor.requests.length} times.`
           )
+          ctrl.abort()
+          throw err
         }
       },
-      { ...options, timeout: options?.timeout || 500 }
+      ctrl.signal,
+      options?.interval
     )
   }
 
@@ -112,14 +146,23 @@ export class NetworkAssert {
    *          preventing bugs where components accidentally fire requests twice.
    */
   async calledOnce(message?: string, options?: NetworkPollingOptions) {
-    await waitFor(() => {
-      if (this.interceptor.requests.length !== 1) {
-        throw new AssertionError(
-          message ||
-            `Expected mock to be called exactly once, but it was called ${this.interceptor.requests.length} times.`
-        )
-      }
-    }, options)
+    const ctrl = this.#createAbortController(options)
+    await waitFor(
+      () => {
+        if (this.interceptor.requests.length !== 1) {
+          const err = new AssertionError(
+            message ||
+              `Expected mock to be called exactly once, but it was called ${this.interceptor.requests.length} times.`
+          )
+          if (this.interceptor.requests.length > 1) {
+            ctrl.abort()
+          }
+          throw err
+        }
+      },
+      ctrl.signal,
+      options?.interval
+    )
   }
 
   /**
@@ -133,14 +176,23 @@ export class NetworkAssert {
    * @useWhen Verifying retry logic, duplicate submissions, or flows that intentionally trigger the same endpoint twice.
    */
   async calledTwice(message?: string, options?: NetworkPollingOptions) {
-    await waitFor(() => {
-      if (this.interceptor.requests.length !== 2) {
-        throw new AssertionError(
-          message ||
-            `Expected mock to be called exactly twice, but it was called ${this.interceptor.requests.length} times.`
-        )
-      }
-    }, options)
+    const ctrl = this.#createAbortController(options)
+    await waitFor(
+      () => {
+        if (this.interceptor.requests.length !== 2) {
+          const err = new AssertionError(
+            message ||
+              `Expected mock to be called exactly twice, but it was called ${this.interceptor.requests.length} times.`
+          )
+          if (this.interceptor.requests.length > 2) {
+            ctrl.abort()
+          }
+          throw err
+        }
+      },
+      ctrl.signal,
+      options?.interval
+    )
   }
 
   /**
@@ -156,14 +208,23 @@ export class NetworkAssert {
    * @useWhen You expect a specific, dynamic number of network requests (e.g., polling, batch processing, or looping).
    */
   async callCount(n: number, message?: string, options?: NetworkPollingOptions) {
-    await waitFor(() => {
-      if (this.interceptor.requests.length !== n) {
-        throw new AssertionError(
-          message ||
-            `Expected mock to be called exactly ${n} times, but it was called ${this.interceptor.requests.length} times.`
-        )
-      }
-    }, options)
+    const ctrl = this.#createAbortController(options)
+    await waitFor(
+      () => {
+        if (this.interceptor.requests.length !== n) {
+          const err = new AssertionError(
+            message ||
+              `Expected mock to be called exactly ${n} times, but it was called ${this.interceptor.requests.length} times.`
+          )
+          if (this.interceptor.requests.length > n) {
+            ctrl.abort()
+          }
+          throw err
+        }
+      },
+      ctrl.signal,
+      options?.interval
+    )
   }
 
   /**
@@ -184,14 +245,19 @@ export class NetworkAssert {
    *          headers during a network request.
    */
   async calledWith(match: Partial<CapturedRequest>, message?: string, options?: NetworkPollingOptions) {
-    await waitFor(() => {
-      const hasMatch = this.interceptor.requests.some((req) => this.#partialMatch(req, match))
-      if (!hasMatch) {
-        throw new AssertionError(
-          message || `Expected mock to be called with ${JSON.stringify(match)}, but no matching request was found.`
-        )
-      }
-    }, options)
+    const ctrl = this.#createAbortController(options)
+    await waitFor(
+      () => {
+        const hasMatch = this.interceptor.requests.some((req) => this.#partialMatch(req, match))
+        if (!hasMatch) {
+          const actual =
+            this.interceptor.requests.length === 1 ? this.interceptor.requests[0] : this.interceptor.requests
+          this.#failMatch(actual, match, 'Expected request to match properties', message)
+        }
+      },
+      ctrl.signal,
+      options?.interval
+    )
   }
 
   /**
@@ -211,16 +277,23 @@ export class NetworkAssert {
    *          are not triggered.
    */
   async notCalledWith(match: Partial<CapturedRequest>, message?: string, options?: NetworkPollingOptions) {
+    const ctrl = this.#createAbortController(options)
     await waitFor(
       () => {
-        const hasMatch = this.interceptor.requests.some((req) => this.#partialMatch(req, match))
-        if (hasMatch) {
-          throw new AssertionError(
-            message || `Expected mock to not be called with ${JSON.stringify(match)}, but a matching request was found.`
+        const matchingRequests = this.interceptor.requests.filter((req) => this.#partialMatch(req, match))
+        if (matchingRequests.length > 0) {
+          ctrl.abort()
+          const actual = matchingRequests.length === 1 ? matchingRequests[0] : matchingRequests
+          this.#failMatch(
+            actual,
+            match,
+            'Expected request not to match properties, but a matching request was found',
+            message
           )
         }
       },
-      { ...options, timeout: options?.timeout || 500 }
+      ctrl.signal,
+      options?.interval
     )
   }
 
@@ -241,15 +314,52 @@ export class NetworkAssert {
    *          preventing duplicate submissions.
    */
   async calledOnceWith(match: Partial<CapturedRequest>, message?: string, options?: NetworkPollingOptions) {
-    await waitFor(() => {
-      const matchingCount = this.interceptor.requests.filter((req) => this.#partialMatch(req, match)).length
-      if (matchingCount !== 1) {
-        throw new AssertionError(
-          message ||
-            `Expected mock to be called exactly once with ${JSON.stringify(match)}, but found ${matchingCount} matches.`
-        )
-      }
-    }, options)
+    const ctrl = new AbortController()
+    let request: CapturedRequest | undefined
+
+    await waitFor(
+      () => {
+        // step 1: check call count
+        if (this.interceptor.requests.length !== 1) {
+          const base = `Expected mock to be called exactly once, but it was called ${this.interceptor.requests.length} times.`
+          const err = new AssertionError(message ? `${message}: ${base}` : base)
+          if (this.interceptor.requests.length > 1) {
+            ctrl.abort()
+          }
+          throw err
+        }
+        // It is to return from the `waitFor` so it won't repeat the check,
+        // after we fail (or pass) the second step.
+        request = this.interceptor.requests[0]
+      },
+      ctrl.signal,
+      options?.interval
+    )
+
+    // step 2: check if the request matches the provided partial request object
+    // here the request MUST be set because the above condition is met
+    if (!this.#partialMatch(request as CapturedRequest, match)) {
+      this.#failMatch(request as CapturedRequest, match, 'Expected request to match properties', message)
+    }
+  }
+
+  /**
+   * Throws an AssertionError configured to show a rich diff between the expected
+   * partial request and the actual intercepted request(s).
+   */
+  #failMatch(
+    actual: CapturedRequest | CapturedRequest[],
+    expected: Partial<CapturedRequest>,
+    defaultMessage: string,
+    userMessage?: string
+  ): never {
+    const message = userMessage ? `${userMessage}: ${defaultMessage}` : defaultMessage
+    const err = new AssertionError(message, {
+      actual,
+      expected,
+      showDiff: true,
+    })
+    throw err
   }
 
   /**

@@ -3,8 +3,8 @@ import assert from 'node:assert'
 import { fork } from 'node:child_process'
 import path from 'node:path'
 
-const BROWSER_TESTS_COUNT = 72
-const BROWSER_PASSED_TESTS_COUNT = 71
+const BROWSER_TESTS_COUNT = 73
+const BROWSER_PASSED_TESTS_COUNT = 72
 const BROWSER_SKIPPED_TESTS_COUNT = 1
 
 test('Integration: Lupa Framework End-to-End', async (t) => {
@@ -93,7 +93,7 @@ test('Integration: Lupa Framework End-to-End', async (t) => {
     const output = stdout + '\n' + stderr
 
     assert.strictEqual(exitCode, 0, `Expected runner to exit with code 0. Output:\n${output}`)
-    assert.ok(output.includes('Total tests: 56'), `Expected list output to show 56 tests. Actual output: ${output}`)
+    assert.ok(output.includes('Total tests: 57'), `Expected list output to show 57 tests. Actual output: ${output}`)
     assert.ok(output.includes('Suite'), 'Expected list output to contain a table with Suite column.')
   })
 
