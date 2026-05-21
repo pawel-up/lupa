@@ -118,10 +118,19 @@ export class BrowserLogs {
         if (n instanceof Node) {
           return { __lupa_type: 'node', value: n.nodeName }
         }
+        if (n instanceof Error) {
+          return { __lupa_type: 'error', name: n.name, message: n.message, stack: n.stack }
+        }
         return { __lupa_type: 'json', value: n }
       })
 
       if (result && typeof result === 'object' && '__lupa_type' in result) {
+        if (result.__lupa_type === 'error') {
+          const err = new Error(result.message)
+          if (result.name) err.name = result.name
+          err.stack = result.stack
+          return err
+        }
         return result.value
       }
 

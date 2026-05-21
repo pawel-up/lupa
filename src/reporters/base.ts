@@ -213,6 +213,7 @@ export abstract class BaseReporter {
    *   console.log(`Starting test: ${node.title}`)
    * }
    * ```
+   * @param node The test start node
    */
   protected onTestStart?(node: TestStartNode): void
 
@@ -231,6 +232,7 @@ export abstract class BaseReporter {
    *   }
    * }
    * ```
+   * @param node The test end node
    */
   protected onTestEnd?(node: TestEndNode): void
 
@@ -243,6 +245,7 @@ export abstract class BaseReporter {
    *   console.log(`\n▶ Group: ${node.title}`)
    * }
    * ```
+   * @param node The group start node
    */
   protected onGroupStart?(node: GroupStartNode): void
 
@@ -255,6 +258,7 @@ export abstract class BaseReporter {
    *   console.log(`End of group: ${node.title}`)
    * }
    * ```
+   * @param node The group end node
    */
   protected onGroupEnd?(node: GroupEndNode): void
 
@@ -267,6 +271,7 @@ export abstract class BaseReporter {
    *   console.log(`\n=== Suite: ${node.name} ===`)
    * }
    * ```
+   * @param node The suite start node
    */
   protected onSuiteStart?(node: SuiteStartNode): void
 
@@ -281,6 +286,7 @@ export abstract class BaseReporter {
    *   }
    * }
    * ```
+   * @param node The suite end node
    */
   protected onSuiteEnd?(node: SuiteEndNode): void
 
@@ -295,6 +301,7 @@ export abstract class BaseReporter {
    *   console.log('Test run started...')
    * }
    * ```
+   * @param node The runner start node
    */
   protected start?(node: RunnerStartNode): Promise<void> | void
 
@@ -309,13 +316,35 @@ export abstract class BaseReporter {
    *   await this.printSummary(summary)
    * }
    * ```
+   * @param node The runner end node
    */
   protected end?(node: RunnerEndNode): Promise<void> | void
 
   /**
    * Invoked when the runner is in list mode and dumps the test tree.
+   *
+   * @example
+   * ```ts
+   * protected onRunnerList(node: RunnerListNode) {
+   *   console.log(`Runner list: ${node.tree.size}`)
+   * }
+   * ```
+   * @param node The runner list node
    */
   protected onRunnerList?(node: RunnerListNode): void
+
+  /**
+   * Invoked when an import error happens.
+   *
+   * @example
+   * ```ts
+   * protected onImportError(node: RunnerEvents['runner:import_error']) {
+   *   console.log(`Import Error: ${node.file}`)
+   * }
+   * ```
+   * @param node The import error node
+   */
+  protected onImportError?(node: RunnerEvents['runner:import_error']): void
 
   /**
    * Print tests summary
@@ -400,8 +429,14 @@ export abstract class BaseReporter {
       }
     })
 
+    emitter.on('runner:import_error', (payload) => {
+      if (this.onImportError) {
+        this.onImportError(payload as unknown as RunnerEvents['runner:import_error'])
+      }
+    })
+
     emitter.on('browser:log', (payload) => {
-      this.onBrowserLog(payload as RunnerEvents['browser:log'])
+      this.onBrowserLog(payload as unknown as RunnerEvents['browser:log'])
     })
   }
 

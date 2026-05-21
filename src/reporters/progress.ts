@@ -62,6 +62,16 @@ export class ProgressReporter extends BaseReporter {
     this.render()
   }
 
+  protected onImportError(payload: RunnerEvents['runner:import_error']) {
+    this.#seenFiles.add(payload.file)
+    this.#logs.push({
+      file: payload.file,
+      type: 'error',
+      messages: ['%c✖ Import Error: %s', 'color: #D32F2F; font-weight: bold', payload.file, payload.error],
+    })
+    this.render()
+  }
+
   protected onBrowserLog(payload: RunnerEvents['browser:log']) {
     this.#logs.push(payload)
     this.render()
