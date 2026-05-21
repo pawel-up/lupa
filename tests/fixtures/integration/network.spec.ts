@@ -187,4 +187,34 @@ test.group('Network Interception', () => {
       await assert.rejects(async () => await fetch('/api/error'), TypeError, 'Failed to fetch')
       await mock.assert.calledOnce()
     })
+
+  test('uses custom assertion messages on failure', async ({ network, assert }) => {
+    const mock = await network.mock('/api/custom-msg', { status: 200 })
+
+    // Should fail because it wasn't called
+    const calledError = await assert.rejects(async () => {
+      await mock.assert.called('Custom called message')
+    })
+    assert.include(calledError.message, 'Custom called message')
+
+    // Should fail because it wasn't called once
+    const calledOnceError = await assert.rejects(async () => {
+      await mock.assert.calledOnce('Custom calledOnce message')
+    })
+    assert.include(calledOnceError.message, 'Custom calledOnce message')
+
+    await fetch('/api/custom-msg')
+
+    // Should fail because it was called, not 'notCalled'
+    const notCalledError = await assert.rejects(async () => {
+      await mock.assert.notCalled('Custom notCalled message')
+    })
+    assert.include(notCalledError.message, 'Custom notCalled message')
+
+    // Should fail because it was called once, not twice
+    const calledTwiceError = await assert.rejects(async () => {
+      await mock.assert.calledTwice('Custom calledTwice message')
+    })
+    assert.include(calledTwiceError.message, 'Custom calledTwice message')
+  })
 })

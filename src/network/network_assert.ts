@@ -48,10 +48,10 @@ export class NetworkAssert {
    * @avoidWhen You expect the network call to happen exactly once. Use `calledOnce()`
    *            instead to prevent false positives from duplicate requests.
    */
-  async called() {
+  async called(message?: string) {
     await waitFor(() => {
       if (this.interceptor.requests.length === 0) {
-        throw new AssertionError('Expected mock to be called at least once, but it was not called.')
+        throw new AssertionError(message || 'Expected mock to be called at least once, but it was not called.')
       }
     })
   }
@@ -70,11 +70,11 @@ export class NetworkAssert {
    * @useWhen Ensuring that an action did NOT trigger a network request
    *          (e.g. validating frontend cache hits or form validation failures).
    */
-  async notCalled() {
+  async notCalled(message?: string) {
     await waitFor(() => {
       if (this.interceptor.requests.length > 0) {
         throw new AssertionError(
-          `Expected mock to not be called, but it was called ${this.interceptor.requests.length} times.`
+          message || `Expected mock to not be called, but it was called ${this.interceptor.requests.length} times.`
         )
       }
     }, 500)
@@ -91,11 +91,12 @@ export class NetworkAssert {
    * @useWhen You want to verify that an event triggers exactly one network request,
    *          preventing bugs where components accidentally fire requests twice.
    */
-  async calledOnce() {
+  async calledOnce(message?: string) {
     await waitFor(() => {
       if (this.interceptor.requests.length !== 1) {
         throw new AssertionError(
-          `Expected mock to be called exactly once, but it was called ${this.interceptor.requests.length} times.`
+          message ||
+            `Expected mock to be called exactly once, but it was called ${this.interceptor.requests.length} times.`
         )
       }
     })
@@ -111,11 +112,12 @@ export class NetworkAssert {
    *
    * @useWhen Verifying retry logic, duplicate submissions, or flows that intentionally trigger the same endpoint twice.
    */
-  async calledTwice() {
+  async calledTwice(message?: string) {
     await waitFor(() => {
       if (this.interceptor.requests.length !== 2) {
         throw new AssertionError(
-          `Expected mock to be called exactly twice, but it was called ${this.interceptor.requests.length} times.`
+          message ||
+            `Expected mock to be called exactly twice, but it was called ${this.interceptor.requests.length} times.`
         )
       }
     })
@@ -133,11 +135,12 @@ export class NetworkAssert {
    *
    * @useWhen You expect a specific, dynamic number of network requests (e.g., polling, batch processing, or looping).
    */
-  async callCount(n: number) {
+  async callCount(n: number, message?: string) {
     await waitFor(() => {
       if (this.interceptor.requests.length !== n) {
         throw new AssertionError(
-          `Expected mock to be called exactly ${n} times, but it was called ${this.interceptor.requests.length} times.`
+          message ||
+            `Expected mock to be called exactly ${n} times, but it was called ${this.interceptor.requests.length} times.`
         )
       }
     })
@@ -160,12 +163,12 @@ export class NetworkAssert {
    * @useWhen Verifying that the application sends the correct payload, HTTP method, or authentication
    *          headers during a network request.
    */
-  async calledWith(match: Partial<CapturedRequest>) {
+  async calledWith(match: Partial<CapturedRequest>, message?: string) {
     await waitFor(() => {
       const hasMatch = this.interceptor.requests.some((req) => this.#partialMatch(req, match))
       if (!hasMatch) {
         throw new AssertionError(
-          `Expected mock to be called with ${JSON.stringify(match)}, but no matching request was found.`
+          message || `Expected mock to be called with ${JSON.stringify(match)}, but no matching request was found.`
         )
       }
     })
@@ -187,12 +190,12 @@ export class NetworkAssert {
    * @useWhen Validating that sensitive data is not sent, or ensuring that specific unwanted operations
    *          are not triggered.
    */
-  async notCalledWith(match: Partial<CapturedRequest>) {
+  async notCalledWith(match: Partial<CapturedRequest>, message?: string) {
     await waitFor(() => {
       const hasMatch = this.interceptor.requests.some((req) => this.#partialMatch(req, match))
       if (hasMatch) {
         throw new AssertionError(
-          `Expected mock to not be called with ${JSON.stringify(match)}, but a matching request was found.`
+          message || `Expected mock to not be called with ${JSON.stringify(match)}, but a matching request was found.`
         )
       }
     }, 500)
@@ -214,12 +217,13 @@ export class NetworkAssert {
    * @useWhen You want strict validation that a specific request happened exactly once with a specific payload,
    *          preventing duplicate submissions.
    */
-  async calledOnceWith(match: Partial<CapturedRequest>) {
+  async calledOnceWith(match: Partial<CapturedRequest>, message?: string) {
     await waitFor(() => {
       const matchingCount = this.interceptor.requests.filter((req) => this.#partialMatch(req, match)).length
       if (matchingCount !== 1) {
         throw new AssertionError(
-          `Expected mock to be called exactly once with ${JSON.stringify(match)}, but found ${matchingCount} matches.`
+          message ||
+            `Expected mock to be called exactly once with ${JSON.stringify(match)}, but found ${matchingCount} matches.`
         )
       }
     })

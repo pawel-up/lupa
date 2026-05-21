@@ -22,7 +22,12 @@ export async function transformBrowserStack(vite: ViteDevServer, cwd: string, st
 
   for (const line of lines) {
     // Filter out framework internals
-    if (line.includes('/src/testing/') || line.includes('/src/assert/') || line.includes('/src/hooks/')) {
+    if (
+      line.includes('/src/testing/') ||
+      line.includes('/src/assert/') ||
+      line.includes('/src/hooks/') ||
+      line.includes('/src/network/')
+    ) {
       continue
     }
 
