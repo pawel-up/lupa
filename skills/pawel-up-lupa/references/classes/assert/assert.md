@@ -115,7 +115,7 @@ Use deepPropertyVal for deep comparing the value
 properties will fail the assertion
 - `notAnyProperties<T>(object: T, keys: Record<string, any> | (string | object)[], message?: string): void` — Assert the object to not have any of the mentioned properties
 - `notAllProperties<T>(object: T, keys: Record<string, any> | (string | object)[], message?: string): void` — Assert the object to not have all of the mentioned properties
-- `throws(fn: () => unknown): void` — Expect the function to throw an exception.
+- `throws<T>(fn: () => unknown): T` — Expect the function to throw an exception.
 - `doesNotThrow(fn: () => unknown): void` — Expect the function to not throw an exception.
 - `closeTo(actual: number, expected: number, delta: number, message?: string): void` — Assert the value is closer to the expected value + delta
 - `approximately(actual: number, expected: number, delta: number, message?: string): void` — Assert the value is equal to the expected value +/- delta range
@@ -199,7 +199,7 @@ value. Useful for testing API responses.
 - `notContainsSubset(haystack: any, needle: any, message?: string): void` — Assert an array or an object to not contain a subset of the expected
 value.
 - `oneOf<T>(inList: T, list: T[], message?: string): void` — Assert the value is available in the provided list.
-- `rejects(fn: () => unknown, errMessage?: string): Promise<void>` — Assert the function to reject the promise or reject with a specific
+- `rejects<T>(fn: () => unknown, errMessage?: string): Promise<T>` — Assert the function to reject the promise or reject with a specific
 error class/message
 
 The method returns a promise

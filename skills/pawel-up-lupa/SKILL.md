@@ -43,7 +43,7 @@ API surface: 20 functions, 13 classes, 110 types, 1 enums, 9 constants
 
 ## Configuration
 
-25 configuration interfaces — see references/config.md for details.
+26 configuration interfaces — see references/config.md for details.
 
 ## Quick Reference
 
