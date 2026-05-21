@@ -190,16 +190,15 @@ test.group('Network Interception', () => {
 
   test('uses custom assertion messages on failure', async ({ network, assert }) => {
     const mock = await network.mock('/api/custom-msg', { status: 200 })
-
     // Should fail because it wasn't called
     const calledError = await assert.rejects(async () => {
-      await mock.assert.called('Custom called message')
+      await mock.assert.called('Custom called message', { timeout: 10 })
     })
     assert.include(calledError.message, 'Custom called message')
 
     // Should fail because it wasn't called once
     const calledOnceError = await assert.rejects(async () => {
-      await mock.assert.calledOnce('Custom calledOnce message')
+      await mock.assert.calledOnce('Custom calledOnce message', { timeout: 10 })
     })
     assert.include(calledOnceError.message, 'Custom calledOnce message')
 
@@ -207,14 +206,13 @@ test.group('Network Interception', () => {
 
     // Should fail because it was called, not 'notCalled'
     const notCalledError = await assert.rejects(async () => {
-      await mock.assert.notCalled('Custom notCalled message')
+      await mock.assert.notCalled('Custom notCalled message', { timeout: 10 })
     })
     assert.include(notCalledError.message, 'Custom notCalled message')
-
     // Should fail because it was called once, not twice
     const calledTwiceError = await assert.rejects(async () => {
-      await mock.assert.calledTwice('Custom calledTwice message')
+      await mock.assert.calledTwice('Custom calledTwice message', { timeout: 10 })
     })
     assert.include(calledTwiceError.message, 'Custom calledTwice message')
-  })
+  }).timeout(5000)
 })

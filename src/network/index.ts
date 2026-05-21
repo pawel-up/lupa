@@ -12,6 +12,7 @@ export type {
 } from './types.js'
 import { bypass } from './constants.js'
 export type { NetworkInterceptor }
+export type { NetworkPollingOptions } from './network_assert.js'
 
 /**
  * Network-level error types which can be thrown when fulfilling network request.
