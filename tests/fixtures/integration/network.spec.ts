@@ -100,7 +100,7 @@ test.group('Network Interception', () => {
     await fallbackMock.assert.calledOnce()
   })
 
-  test('properly records requests for assertions', async ({ network, assert }) => {
+  test('handles basic network request matching', async ({ network, assert }) => {
     const mock = await network.mock({
       match: '/api/submit',
       respond: { status: 201 },

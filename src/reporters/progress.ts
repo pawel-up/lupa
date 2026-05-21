@@ -1,3 +1,4 @@
+import util from 'node:util'
 import logUpdate from 'log-update'
 import { BaseReporter } from './base.js'
 import type { RunnerEvents, TestEndNode, RunnerStartNode, SuiteEndNode } from '../types.js'
@@ -125,12 +126,10 @@ export class ProgressReporter extends BaseReporter {
         const prefixColored = log.type === 'error' ? colors.red(prefix) : colors.yellow(prefix)
         console.log(` ${prefixColored}`)
 
-        for (const msg of log.messages) {
-          const formatted = typeof msg === 'string' ? msg : JSON.stringify(msg, null, 2)
-          formatted.split('\n').forEach((line) => {
-            console.log(`      ${line}`)
-          })
-        }
+        const formatted = util.formatWithOptions({ colors: true, depth: null }, ...log.messages)
+        formatted.split('\n').forEach((line) => {
+          console.log(`      ${line}`)
+        })
       }
     }
 
