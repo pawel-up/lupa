@@ -106,16 +106,20 @@ export class Cli {
     const cwd = this.#orchestrator.config.cwd
     const exclude = this.#orchestrator.config.exclude || []
 
+    let urls: URL[] = []
     if ('files' in this.#orchestrator.config) {
-      return fileManager.getFiles(cwd, this.#orchestrator.config.files, exclude)
+      urls = await fileManager.getFiles(cwd, this.#orchestrator.config.files, exclude)
     } else if ('suites' in this.#orchestrator.config) {
-      const urls: URL[] = []
       for (const suite of this.#orchestrator.config.suites) {
         urls.push(...(await fileManager.getFiles(cwd, suite.files, exclude)))
       }
-      return urls
     }
-    return []
+
+    const fileFilters = this.#orchestrator.config.filters?.files
+    if (fileFilters && fileFilters.length > 0) {
+      return urls.filter((u) => fileFilters.some((allowed) => u.pathname.endsWith(allowed)))
+    }
+    return urls
   }
 
   /**
