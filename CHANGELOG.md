@@ -1,3 +1,12 @@
+## [0.3.6](https://github.com/pawel-up/lupa/compare/v0.3.5...v0.3.6) (2026-05-22)
+
+
+### Bug Fixes
+
+* fixing compilation time error reporting ([94b7a53](https://github.com/pawel-up/lupa/commit/94b7a538a6a2f6fc4223985b5092b552979119fb))
+* fixing formatting error ([7980d8e](https://github.com/pawel-up/lupa/commit/7980d8eb32e86322ff9e25c6c450ac00ec504a5c))
+* updating SKILLS file ([165e834](https://github.com/pawel-up/lupa/commit/165e834504627deb9253f4af77c6af9c9a2a3577))
+
 ## [0.3.5](https://github.com/pawel-up/lupa/compare/v0.3.4...v0.3.5) (2026-05-21)
 
 
