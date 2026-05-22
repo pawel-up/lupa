@@ -10,7 +10,7 @@ import { Group } from '../../../src/testing/group/main.js'
 test('WebRunner', async (t) => {
   await t.test('add() registers suite and runs configure callbacks', () => {
     const runner = new WebRunner(new Emitter())
-    const suite = new Suite('test suite', new Emitter(), new Refiner())
+    const suite = new Suite('test suite', [], new Emitter(), new Refiner())
 
     let callbackExecuted = false
     runner.onSuite((s) => {
@@ -55,8 +55,8 @@ test('WebRunner', async (t) => {
     const emitter = new Emitter()
     const runner = new WebRunner(emitter)
 
-    const suite1 = new Suite('s1', emitter, new Refiner())
-    const suite2 = new Suite('s2', emitter, new Refiner())
+    const suite1 = new Suite('s1', [], emitter, new Refiner())
+    const suite2 = new Suite('s2', [], emitter, new Refiner())
 
     runner.add(suite1)
     runner.add(suite2)
@@ -72,8 +72,8 @@ test('WebRunner', async (t) => {
     const emitter = new Emitter()
     const runner = new WebRunner(emitter)
 
-    const suite1 = new Suite('s1', emitter, new Refiner())
-    const suite2 = new Suite('s2', emitter, new Refiner())
+    const suite1 = new Suite('s1', [], emitter, new Refiner())
+    const suite2 = new Suite('s2', [], emitter, new Refiner())
 
     Object.defineProperty(suite1, 'failed', { value: true, configurable: true })
 

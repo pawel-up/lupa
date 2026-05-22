@@ -28,6 +28,10 @@ import type {
   RunnerListNode,
   BaseReporterOptions,
   RunnerEvents,
+  WithCorrelation,
+  CorrelationIds,
+  FileEndNode,
+  FileStartNode,
 } from '../types.js'
 import type { NormalizedConfig } from '../runner/types.js'
 
@@ -209,13 +213,13 @@ export abstract class BaseReporter {
    *
    * @example
    * ```ts
-   * protected onTestStart(node: TestStartNode) {
+   * protected onTestStart(node: WithCorrelation<TestStartNode>) {
    *   console.log(`Starting test: ${node.title}`)
    * }
    * ```
    * @param node The test start node
    */
-  protected onTestStart?(node: TestStartNode): void
+  protected onTestStart?(node: WithCorrelation<TestStartNode>): void
 
   /**
    * Invoked when an individual test completes, regardless of success or failure.
@@ -223,7 +227,7 @@ export abstract class BaseReporter {
    *
    * @example
    * ```ts
-   * protected onTestEnd(node: TestEndNode) {
+   * protected onTestEnd(node: WithCorrelation<TestEndNode>) {
    *   const duration = String(node.duration).padStart(4, ' ')
    *   if (node.hasError) {
    *     console.log(`[FAILED] ${duration}ms - ${node.title}`)
@@ -234,53 +238,53 @@ export abstract class BaseReporter {
    * ```
    * @param node The test end node
    */
-  protected onTestEnd?(node: TestEndNode): void
+  protected onTestEnd?(node: WithCorrelation<TestEndNode>): void
 
   /**
    * Invoked when a test group (created via `test.group()`) begins execution.
    *
    * @example
    * ```ts
-   * protected onGroupStart(node: GroupStartNode) {
+   * protected onGroupStart(node: WithCorrelation<GroupStartNode>) {
    *   console.log(`\n▶ Group: ${node.title}`)
    * }
    * ```
    * @param node The group start node
    */
-  protected onGroupStart?(node: GroupStartNode): void
+  protected onGroupStart?(node: WithCorrelation<GroupStartNode>): void
 
   /**
    * Invoked when a test group completes execution.
    *
    * @example
    * ```ts
-   * protected onGroupEnd(node: GroupEndNode) {
+   * protected onGroupEnd(node: WithCorrelation<GroupEndNode>) {
    *   console.log(`End of group: ${node.title}`)
    * }
    * ```
    * @param node The group end node
    */
-  protected onGroupEnd?(node: GroupEndNode): void
+  protected onGroupEnd?(node: WithCorrelation<GroupEndNode>): void
 
   /**
    * Invoked when a test suite begins execution.
    *
    * @example
    * ```ts
-   * protected onSuiteStart(node: SuiteStartNode) {
+   * protected onSuiteStart(node: WithCorrelation<SuiteStartNode>) {
    *   console.log(`\n=== Suite: ${node.name} ===`)
    * }
    * ```
    * @param node The suite start node
    */
-  protected onSuiteStart?(node: SuiteStartNode): void
+  protected onSuiteStart?(node: WithCorrelation<SuiteStartNode>): void
 
   /**
    * Invoked when a test suite completes execution.
    *
    * @example
    * ```ts
-   * protected onSuiteEnd(node: SuiteEndNode) {
+   * protected onSuiteEnd(node: WithCorrelation<SuiteEndNode>) {
    *   if (node.hasError) {
    *     console.log(`Suite ${node.name} encountered errors.`)
    *   }
@@ -288,7 +292,7 @@ export abstract class BaseReporter {
    * ```
    * @param node The suite end node
    */
-  protected onSuiteEnd?(node: SuiteEndNode): void
+  protected onSuiteEnd?(node: WithCorrelation<SuiteEndNode>): void
 
   /**
    * Invoked once when the entire runner initiates execution.
@@ -296,14 +300,14 @@ export abstract class BaseReporter {
    *
    * @example
    * ```ts
-   * protected async start(node: RunnerStartNode) {
+   * protected async start(node: RunnerStartNode & Partial<CorrelationIds>) {
    *   console.clear()
    *   console.log('Test run started...')
    * }
    * ```
    * @param node The runner start node
    */
-  protected start?(node: RunnerStartNode): Promise<void> | void
+  protected start?(node: RunnerStartNode & Partial<CorrelationIds>): Promise<void> | void
 
   /**
    * Invoked once when the runner completely finishes execution.
@@ -347,6 +351,32 @@ export abstract class BaseReporter {
   protected onImportError?(node: RunnerEvents['runner:import_error']): void
 
   /**
+   * Invoked when a test file starts being processed.
+   *
+   * @example
+   * ```ts
+   * protected onFileStart(node: WithCorrelation<FileStartNode>) {
+   *   console.log(`Processing file: ${node.file}`)
+   * }
+   * ```
+   * @param node The file start node
+   */
+  protected onFileStart?(node: WithCorrelation<FileStartNode>): void
+
+  /**
+   * Invoked when a test file finished all tests execution.
+   *
+   * @example
+   * ```ts
+   * protected onFileEnd(node: WithCorrelation<FileEndNode>) {
+   *   console.log(`Finished processing file: ${node.file}`)
+   * }
+   * ```
+   * @param node The file end node
+   */
+  protected onFileEnd?(node: WithCorrelation<FileEndNode>): void
+
+  /**
    * Print tests summary
    */
   protected async printSummary(summary: RunnerSummary) {
@@ -377,66 +407,78 @@ export abstract class BaseReporter {
 
     emitter.on('test:start', (payload) => {
       if (this.onTestStart) {
-        this.onTestStart(payload as unknown as TestStartNode)
+        this.onTestStart(payload)
       }
     })
 
     emitter.on('test:end', (payload) => {
       if (this.onTestEnd) {
-        this.onTestEnd(payload as unknown as TestEndNode)
+        this.onTestEnd(payload)
       }
     })
 
     emitter.on('group:start', (payload) => {
       if (this.onGroupStart) {
-        this.onGroupStart(payload as unknown as GroupStartNode)
+        this.onGroupStart(payload)
       }
     })
 
     emitter.on('group:end', (payload) => {
       if (this.onGroupEnd) {
-        this.onGroupEnd(payload as unknown as GroupEndNode)
+        this.onGroupEnd(payload)
       }
     })
 
     emitter.on('suite:start', (payload) => {
       if (this.onSuiteStart) {
-        this.onSuiteStart(payload as unknown as SuiteStartNode)
+        this.onSuiteStart(payload)
       }
     })
 
     emitter.on('suite:end', (payload) => {
       if (this.onSuiteEnd) {
-        this.onSuiteEnd(payload as unknown as SuiteEndNode)
+        this.onSuiteEnd(payload)
       }
     })
 
     emitter.on('runner:start', async (payload) => {
       if (this.start) {
-        await this.start(payload as unknown as RunnerStartNode)
+        await this.start(payload)
       }
     })
 
     emitter.on('runner:end', async (payload) => {
       if (this.end) {
-        await this.end(payload as unknown as RunnerEndNode)
+        await this.end(payload)
       }
     })
 
     emitter.on('runner:list', (payload) => {
       if (this.onRunnerList) {
-        this.onRunnerList(payload as unknown as RunnerListNode)
+        this.onRunnerList(payload)
       }
     })
 
     emitter.on('runner:import_error', (payload) => {
       if (this.onImportError) {
-        this.onImportError(payload as unknown as RunnerEvents['runner:import_error'])
+        this.onImportError(payload)
       }
     })
 
     emitter.on('browser:log', (payload) => {
-      this.onBrowserLog(payload as unknown as RunnerEvents['browser:log'])
+      this.onBrowserLog(payload as RunnerEvents['browser:log'])
+    })
+
+    emitter.on('file:start', (payload) => {
+      if (this.onFileStart) {
+        this.onFileStart(payload)
+      }
+    })
+
+    emitter.on('file:end', (payload) => {
+      if (this.onFileEnd) {
+        this.onFileEnd(payload)
+      }
     })
   }
 

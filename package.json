@@ -30,6 +30,7 @@
     "coverage": "npx --yes c8 npm test",
     "coverage:node": "npx tsx --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/lcov.info \"tests/unit/**/*.spec.ts\"",
     "test:browser": "tsx bin/lupa.ts test",
+    "test:browser:suites": "tsx bin/lupa.ts test --config lupa.suites.config.ts",
     "build": "tsc -p tsconfig.build.json",
     "clean": "rm -rf dist",
     "prepublishOnly": "npm run clean && npm run build",
@@ -40,7 +41,8 @@
     "format:eslint": "eslint --color --cache --fix --cache-location .eslintcache .",
     "format:prettier": "prettier \"**/*.ts\" --write",
     "format": "npm run format:eslint && npm run format:prettier",
-    "knip": "knip"
+    "knip": "knip",
+    "typecheck": "tsc -p tsconfig.build.json --noEmit"
   },
   "exports": {
     "./package.json": "./package.json",

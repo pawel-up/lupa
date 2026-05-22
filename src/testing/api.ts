@@ -95,7 +95,7 @@ export function setActiveFile(file: string | undefined) {
  * ```
  */
 export function test(title: string, callback?: TestExecutor<undefined>) {
-  if (!activeEmitter || !activeRefiner || !activeSuite) {
+  if (!activeEmitter || !activeRefiner || !activeSuite || !activeFile) {
     throw new Error('Test API is not initialized. Ensure tests are executed via Lupa harness.')
   }
 
@@ -154,7 +154,7 @@ export function test(title: string, callback?: TestExecutor<undefined>) {
  * ```
  */
 test.group = function (title: string, callback: (group: Group) => void) {
-  if (!activeEmitter || !activeRefiner || !activeSuite) {
+  if (!activeEmitter || !activeRefiner || !activeSuite || !activeFile) {
     throw new Error('Test API is not initialized. Ensure tests are executed via Lupa harness.')
   }
 

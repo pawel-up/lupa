@@ -90,6 +90,8 @@ export class Runner extends Macroable {
       }
       this.#tracker?.processEvent('test:end', payload)
     })
+    trackerEmitter.on('file:start', (payload) => this.#tracker?.processEvent('file:start', payload))
+    trackerEmitter.on('file:end', (payload) => this.#tracker?.processEvent('file:end', payload))
   }
 
   /**

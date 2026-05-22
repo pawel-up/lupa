@@ -77,9 +77,9 @@ export class BrowserLogs {
         const urlObj = new URL(file)
         if (urlObj.pathname.startsWith('/@fs/')) {
           file = urlObj.pathname.replace('/@fs', '')
-        } else {
-          file = urlObj.pathname
         }
+        // we don't strip anything else because mocking API calls often results in localhost URLs that
+        // are useful to identify the source of the log
       } catch {
         // ignore errors parsing URLs
       }

@@ -1,4 +1,5 @@
 import { Refiner } from '../refiner/main.js'
+import type { GroupMetadata, TestMetadata } from '../types.js'
 import { Emitter } from './emitter.js'
 import { Group } from './group/main.js'
 import { Suite } from './suite/main.js'
@@ -19,28 +20,29 @@ export function createTest(
   refiner: Refiner,
   debuggingError: Error,
   options: {
+    // It is safe to require a suite here as even when not using test suites, a "default" suite
+    // is created to hold all tests.
+    suite: Suite
     group?: Group
-    suite?: Suite
-    file?: string
-    timeout?: number
-    retries?: number
+    file: string
   }
 ) {
   const testInstance = new Test(title, contextBuilder, emitter, refiner, options.group)
-  testInstance.options.meta.suite = options.suite?.name
-  testInstance.options.meta.group = options.group?.title
-  testInstance.options.meta.fileName = options.file
-  testInstance.options.meta.abort = (message: string) => {
-    debuggingError.message = message
-    throw debuggingError
+  const meta: TestMetadata = {
+    file: options.file,
+    suite: options.suite.name,
+    abort: (message: string) => {
+      debuggingError.message = message
+      throw debuggingError
+    },
   }
+  if (options.group) {
+    meta.group = options.group.title
+  }
+  Object.assign(testInstance.options.meta, meta)
 
-  if (options.timeout !== undefined) {
-    testInstance.timeout(options.timeout)
-  }
-  if (options.retries !== undefined) {
-    testInstance.retry(options.retries)
-  }
+  // The timeout and retries is set up in the harness
+  // for each suite abd taps into each test/group.
 
   // Registration to group/suite is now handled by the caller (api.ts)
   // to ensure internal lifecycle hooks are added before group hooks.
@@ -57,10 +59,10 @@ export function createTestGroup(
   refiner: Refiner,
   options: {
     group?: Group
-    suite?: Suite
-    file?: string
-    timeout?: number
-    retries?: number
+    // It is safe to require a suite here as even when not using test suites, a "default" suite
+    // is created to hold all tests.
+    suite: Suite
+    file: string
   }
 ): Group {
   if (options.group) {
@@ -68,8 +70,14 @@ export function createTestGroup(
   }
 
   const group = new Group(title, emitter, refiner)
-  group.options.meta.suite = options.suite?.name
-  group.options.meta.fileName = options.file
+  const meta: GroupMetadata = {
+    file: options.file,
+    suite: options.suite.name,
+  }
+  Object.assign(group.options.meta, meta)
+
+  // The timeout and retries is set up in the harness
+  // for each suite abd taps into each test/group.
 
   if (options.suite) {
     options.suite.add(group)

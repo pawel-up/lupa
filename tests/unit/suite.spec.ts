@@ -19,7 +19,7 @@ test('Suite', async (t) => {
   await t.test('adds tests and groups to the stack', () => {
     const emitter = new Emitter()
     const refiner = new Refiner()
-    const suite = new Suite('Unit Suite', emitter, refiner)
+    const suite = new Suite('Unit Suite', [], emitter, refiner)
 
     const testItem = createTest('T1', emitter, refiner)
     const group = new Group('Math', emitter, refiner)
@@ -33,7 +33,7 @@ test('Suite', async (t) => {
   await t.test('taps into tests via onTest', () => {
     const emitter = new Emitter()
     const refiner = new Refiner()
-    const suite = new Suite('Unit Suite', emitter, refiner)
+    const suite = new Suite('Unit Suite', [], emitter, refiner)
 
     const testItem = createTest('T1', emitter, refiner)
     suite.add(testItem)
@@ -52,7 +52,7 @@ test('Suite', async (t) => {
   await t.test('taps into groups via onGroup', () => {
     const emitter = new Emitter()
     const refiner = new Refiner()
-    const suite = new Suite('Unit Suite', emitter, refiner)
+    const suite = new Suite('Unit Suite', [], emitter, refiner)
 
     const group = new Group('Math', emitter, refiner)
     suite.add(group)
@@ -68,7 +68,7 @@ test('Suite', async (t) => {
   await t.test('enables bail mode recursively', async () => {
     const emitter = new Emitter()
     const refiner = new Refiner()
-    const suite = new Suite('Unit Suite', emitter, refiner)
+    const suite = new Suite('Unit Suite', [], emitter, refiner)
 
     const group = new Group('Math', emitter, refiner)
     suite.add(group)
@@ -98,7 +98,7 @@ test('Suite', async (t) => {
   await t.test('executes setup and teardown hooks', async () => {
     const emitter = new Emitter()
     const refiner = new Refiner()
-    const suite = new Suite('Unit Suite', emitter, refiner)
+    const suite = new Suite('Unit Suite', [], emitter, refiner)
 
     const calls: string[] = []
     suite.setup(() => {
@@ -119,7 +119,7 @@ test('Suite', async (t) => {
   await t.test('skips suite if refiner disables it', async () => {
     const emitter = new Emitter()
     const refiner = new Refiner({ tests: ['T2'] })
-    const suite = new Suite('Unit Suite', emitter, refiner)
+    const suite = new Suite('Unit Suite', [], emitter, refiner)
 
     let setupCalled = false
     suite.setup(() => {

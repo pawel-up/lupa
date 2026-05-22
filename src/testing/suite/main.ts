@@ -61,9 +61,33 @@ export class Suite extends Macroable {
   stack: (Test<any> | Group)[] = []
 
   /**
+   * The number of files in the suite.
+   * This is used by the progress reporter to calculate the progress percentage.
+   * It is set when the suite is created and comes from the backend.
+   */
+  #filesCount = 0
+
+  /**
+   * The list of files in the suite.
+   * It is reported back to the backend to help reporters track which files are being executed.
+   * It is set when the suite is created and comes from the backend.
+   */
+  #files: string[] = []
+
+  /**
    * Number of files in the suite
    */
-  filesCount = 0
+  get filesCount() {
+    return this.#filesCount
+  }
+
+  /**
+   * List of files in the suite.
+   * Note that this is a copy of the original array to prevent external mutations.
+   */
+  get files() {
+    return [...this.#files]
+  }
 
   /**
    * Know if one or more groups or tests within this suite
@@ -73,14 +97,23 @@ export class Suite extends Macroable {
     return this.#failed
   }
 
+  /**
+   * @param name The name of the suite.
+   * @param files The list of files aggregated for that suite. This comes directly from the backend
+   * @param emitter The emitter to use.
+   * @param refiner The test refiner.
+   */
   constructor(
-    public name: string,
+    public readonly name: string,
+    files: string[],
     emitter: Emitter,
     refiner: Refiner
   ) {
     super()
     this.#emitter = emitter
     this.#refiner = refiner
+    this.#files = files
+    this.#filesCount = files.length
   }
 
   /**
@@ -212,7 +245,7 @@ export class Suite extends Macroable {
     const groups = []
 
     for (const item of this.stack) {
-      if (!this.#refiner.allows(item as any)) {
+      if (!this.#refiner.allows(item)) {
         continue
       }
 
@@ -222,12 +255,13 @@ export class Suite extends Macroable {
           groups.push(groupJSON)
         }
       } else {
-        tests.push((item as Test<any>).toJSON())
+        tests.push(item.toJSON())
       }
     }
 
     return {
       name: this.name,
+      files: this.files,
       groups,
       tests,
     }

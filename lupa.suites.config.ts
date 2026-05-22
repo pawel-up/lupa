@@ -4,7 +4,16 @@ import type { Assert } from './src/assert/index.js'
 import type { Network } from './src/network/index.js'
 
 export default defineConfig({
-  files: ['tests/fixtures/integration/**/*.spec.ts'],
+  suites: [
+    {
+      name: 'Unit Tests',
+      files: ['tests/fixtures/unit/**/*.spec.ts'],
+    },
+    {
+      name: 'Integration Tests',
+      files: ['tests/fixtures/integration/**/*.spec.ts'],
+    },
+  ],
   testPlugins: [path.join(process.cwd(), 'src/assert/index.ts'), path.join(process.cwd(), 'src/network/index.ts')],
   reporters: {
     activated: ['progress'],

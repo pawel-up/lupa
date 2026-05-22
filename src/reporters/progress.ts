@@ -1,7 +1,7 @@
 import util from 'node:util'
 import logUpdate from 'log-update'
 import { BaseReporter } from './base.js'
-import type { RunnerEvents, TestEndNode, RunnerStartNode, SuiteEndNode } from '../types.js'
+import type { RunnerEvents, TestEndNode, RunnerStartNode, WithCorrelation, FileEndNode } from '../types.js'
 import { colors, icons } from '../runner/helpers.js'
 
 const PROGRESS_BLOCKS = [' ', '▏', '▎', '▍', '▌', '▋', '▊', '▉', '█']
@@ -23,12 +23,16 @@ export class ProgressReporter extends BaseReporter {
   #passedTests = 0
   #failedTests = 0
   #skippedTests = 0
-  #seenFiles = new Set<string>()
+  /**
+   * A Set of all files that either were already executed or had an import error.
+   * We use this to calculate progress, and also to know which files had logs/errors for grouping them in the output.
+   */
+  #executedFiles = new Set<string>()
   #lastRenderTime = 0
 
   #logs: { file: string; type: string; messages: any[] }[] = []
 
-  protected onTestEnd(payload: TestEndNode) {
+  protected override onTestEnd(payload: WithCorrelation<TestEndNode>) {
     if (payload.isSkipped || payload.isTodo) {
       this.#skippedTests++
     } else if (payload.hasError) {
@@ -37,33 +41,29 @@ export class ProgressReporter extends BaseReporter {
       this.#passedTests++
     }
 
-    const file = (payload as any).file || payload.meta?.fileName
-    if (file) {
-      this.#seenFiles.add(file)
-    }
-
     this.render()
   }
 
-  protected start(node: RunnerStartNode) {
+  protected override start(node: RunnerStartNode) {
     this.#totalFiles = node.estimatedTotalFiles
 
     this.#passedTests = 0
     this.#failedTests = 0
     this.#skippedTests = 0
     this.#logs = []
-    this.#seenFiles.clear()
+    this.#executedFiles.clear()
     this.#lastRenderTime = Date.now()
 
     this.render()
   }
 
-  protected onSuiteEnd(_payload: SuiteEndNode) {
+  protected onFileEnd(node: WithCorrelation<FileEndNode>): void {
+    this.#executedFiles.add(node.file)
     this.render()
   }
 
-  protected onImportError(payload: RunnerEvents['runner:import_error']) {
-    this.#seenFiles.add(payload.file)
+  protected override onImportError(payload: RunnerEvents['runner:import_error']) {
+    this.#executedFiles.add(payload.file)
     this.#logs.push({
       file: payload.file,
       type: 'error',
@@ -72,12 +72,12 @@ export class ProgressReporter extends BaseReporter {
     this.render()
   }
 
-  protected onBrowserLog(payload: RunnerEvents['browser:log']) {
+  protected override onBrowserLog(payload: RunnerEvents['browser:log']) {
     this.#logs.push(payload)
     this.render()
   }
 
-  protected async end() {
+  protected override async end() {
     logUpdate.clear()
 
     // We flush all buffered logs just in case some came very late
@@ -129,17 +129,20 @@ export class ProgressReporter extends BaseReporter {
     for (const [file, fileLogs] of groupedByFile.entries()) {
       console.log('')
       console.log(`${colors.cyan(file)}:`)
-      console.log('')
+      // console.log('')
 
       for (const log of fileLogs) {
-        const prefix = log.type === 'error' ? `${icons.cross} Browser errors:` : `${icons.browserLog} Browser logs:`
+        const isError = log.type === 'error'
+        const prefix = isError ? `${icons.cross} Browser error:` : `${icons.browserLog} Browser logs:`
         const prefixColored = log.type === 'error' ? colors.red(prefix) : colors.yellow(prefix)
         console.log(` ${prefixColored}`)
 
-        const formatted = util.formatWithOptions({ colors: true, depth: null }, ...log.messages)
+        const formatted = util.formatWithOptions({ colors: true }, ...log.messages)
         formatted.split('\n').forEach((line) => {
           console.log(`      ${line}`)
         })
+        // This line is consumed by logUpdate and will be cleared on the next render
+        console.log('')
       }
     }
 
@@ -147,7 +150,7 @@ export class ProgressReporter extends BaseReporter {
   }
 
   #getProgressBar(): string {
-    const completedFiles = this.#seenFiles.size
+    const completedFiles = this.#executedFiles.size
     const totalExpected = Math.max(completedFiles, this.#totalFiles)
 
     const progressBlocks = createProgressBlocks(completedFiles, totalExpected)

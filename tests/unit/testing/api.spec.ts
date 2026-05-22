@@ -22,7 +22,7 @@ nodeTest('Testing API (api.ts)', async (t) => {
     emitter = new Emitter()
     refiner = new Refiner({})
     runner = new WebRunner(emitter)
-    suite = new Suite('default', emitter, refiner)
+    suite = new Suite('default', [], emitter, refiner)
     setActiveInstances(runner, suite, emitter, refiner)
     setActiveFile('test.spec.ts')
   })
@@ -32,7 +32,7 @@ nodeTest('Testing API (api.ts)', async (t) => {
       // ...
     })
     assert.strictEqual(instance.title, 'my test')
-    assert.strictEqual(instance.options.meta.fileName, 'test.spec.ts')
+    assert.strictEqual(instance.options.meta.file, 'test.spec.ts')
 
     // Test should be pushed to the suite
     assert.strictEqual(suite.stack.length, 1)
@@ -54,7 +54,7 @@ nodeTest('Testing API (api.ts)', async (t) => {
   await t.test('test.group() registers a group and attaches nested tests to it', () => {
     test.group('my group', (group) => {
       assert.strictEqual(group.title, 'my group')
-      assert.strictEqual(group.options.meta.fileName, 'test.spec.ts')
+      assert.strictEqual(group.options.meta.file, 'test.spec.ts')
 
       // Nested test should be attached to the group, not the suite stack directly
       const childTest = test('child test', () => {

@@ -107,7 +107,7 @@ export class Test<TestData extends DataSetNode = undefined> extends Macroable {
   /**
    * The function for creating the test context
    */
-  #contextAccumlator?: (test: this) => TestContext | Promise<TestContext>
+  #contextAccumulator?: (test: this) => TestContext | Promise<TestContext>
 
   /**
    * The function for computing if test should
@@ -118,7 +118,7 @@ export class Test<TestData extends DataSetNode = undefined> extends Macroable {
   /**
    * The function that returns the test data set
    */
-  #datasetAccumlator?: () => Promise<any[]> | any[]
+  #datasetAccumulator?: () => Promise<any[]> | any[]
 
   /**
    * Know if the test has been executed. Skipped and
@@ -173,7 +173,10 @@ export class Test<TestData extends DataSetNode = undefined> extends Macroable {
       title: this.title,
       tags: [],
       timeout: 2000,
-      meta: {},
+      meta: {
+        file: '',
+        suite: '',
+      },
     }
 
     /**
@@ -188,7 +191,7 @@ export class Test<TestData extends DataSetNode = undefined> extends Macroable {
     }
 
     if (typeof context === 'function') {
-      this.#contextAccumlator = context as (test: Test<TestData>) => TestContext | Promise<TestContext>
+      this.#contextAccumulator = context as (test: Test<TestData>) => TestContext | Promise<TestContext>
     } else {
       this.context = context
     }
@@ -206,7 +209,7 @@ export class Test<TestData extends DataSetNode = undefined> extends Macroable {
   /**
    * Find if test is a todo
    */
-  #computeisTodo() {
+  #computeIsTodo() {
     this.options.isTodo = !this.options.executor
   }
 
@@ -214,8 +217,8 @@ export class Test<TestData extends DataSetNode = undefined> extends Macroable {
    * Returns the dataset array or undefined
    */
   async #computeDataset(): Promise<any[] | undefined> {
-    if (typeof this.#datasetAccumlator === 'function') {
-      this.dataset = await this.#datasetAccumlator()
+    if (typeof this.#datasetAccumulator === 'function') {
+      this.dataset = await this.#datasetAccumulator()
     }
 
     return this.dataset
@@ -225,8 +228,8 @@ export class Test<TestData extends DataSetNode = undefined> extends Macroable {
    * Get context instance for the test
    */
   async #computeContext(): Promise<TestContext> {
-    if (typeof this.#contextAccumlator === 'function') {
-      this.context = await this.#contextAccumlator(this)
+    if (typeof this.#contextAccumulator === 'function') {
+      this.context = await this.#contextAccumulator(this)
     }
 
     return this.context
@@ -361,7 +364,7 @@ export class Test<TestData extends DataSetNode = undefined> extends Macroable {
     }
 
     if (typeof dataset === 'function') {
-      this.#datasetAccumlator = dataset
+      this.#datasetAccumulator = dataset
       return this as unknown as Test<Dataset>
     }
 
@@ -443,7 +446,7 @@ export class Test<TestData extends DataSetNode = undefined> extends Macroable {
     /**
      * Do not run tests without executor function
      */
-    this.#computeisTodo()
+    this.#computeIsTodo()
     if (this.options.isTodo) {
       debug('skipping todo test "%s"', this.title)
       new DummyRunner(this, this.#emitter).run()

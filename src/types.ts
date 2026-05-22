@@ -245,17 +245,10 @@ export interface CorrelationIds {
    */
   browserId: string
   /**
-   * File path
+   * File path.
+   * Note, for the `suite:*` event, this will be set to `unknown` as the suite can contain multiple files.
    */
   file: string
-  /**
-   * Suite ID
-   */
-  suiteId?: string
-  /**
-   * Group ID
-   */
-  groupId?: string
 }
 
 /**
@@ -336,11 +329,13 @@ export interface GroupMetadata {
   /**
    * File path in which the group is defined
    */
-  fileName?: string
+  file: string
   /**
-   * Suite name in which the group is defined
+   * Suite name in which the group is defined.
+   * It is safe to assume that a group is always defined inside a suite,
+   * even when not using test suites, as a "default" suite is created to hold all tests.
    */
-  suite?: string
+  suite: string
 }
 
 /**
@@ -350,11 +345,13 @@ export interface TestMetadata {
   /**
    * File path in which the test is defined
    */
-  fileName?: string
+  file: string
   /**
    * Suite name in which the test is defined
+   * It is safe to assume that a test is always defined inside a suite,
+   * even when not using test suites, as a "default" suite is created to hold all tests.
    */
-  suite?: string
+  suite: string
   /**
    * Group name in which the test is defined
    */
@@ -377,6 +374,42 @@ export interface GroupOptions {
    * Group metadata
    */
   meta: GroupMetadata
+}
+
+/**
+ * File start node shared during "file:start" event
+ */
+export interface FileStartNode {
+  /**
+   * File path
+   */
+  file: string
+  /**
+   * The number of groups in the file
+   */
+  groups: number
+  /**
+   * The number of tests in the file
+   */
+  tests: number
+}
+
+/**
+ * File end node shared during "file:end" event
+ */
+export interface FileEndNode {
+  /**
+   * File path
+   */
+  file: string
+  /**
+   * The number of groups executed in the file
+   */
+  groups: number
+  /**
+   * The number of tests executed in the file
+   */
+  tests: number
 }
 
 /**
@@ -413,6 +446,10 @@ export interface SuiteStartNode {
    * Number of files in the suite
    */
   filesCount?: number
+  /**
+   * File paths of the files in the suite. This can be used for grouping logs and errors in the reporter output.
+   */
+  files: string[]
 }
 
 /**
@@ -427,6 +464,10 @@ export interface SuiteEndNode {
    * Number of files in the suite
    */
   filesCount?: number
+  /**
+   * File paths of the files in the suite. This can be used for grouping logs and errors in the reporter output.
+   */
+  files: string[]
   /**
    * Whether the suite has any errors
    */
@@ -549,6 +590,10 @@ export interface RunnerListSuiteNode {
   groups: RunnerListGroupNode[]
   /** A collection of tests directly belonging to this suite (not inside any group). */
   tests: RunnerListTestNode[]
+  /**
+   * The list of files in the suite. This is used by the progress reporter to track which files are being executed.
+   */
+  files: string[]
 }
 
 /**
@@ -630,10 +675,20 @@ export interface FrameworkEvents {
    * Emitted when a test file fails to import
    */
   'runner:import_error': RunnerImportErrorNode
+  /**
+   * Emitted when a test file starts being processed
+   */
+  'file:start': FileStartNode
+  /**
+   * Emitted when a test file finished all tests execution
+   */
+  'file:end': FileEndNode
 }
 
 /**
- * Events emitted by the browser telemetry over WebSocket
+ * Events emitted by the browser telemetry over WebSocket.
+ * The augmentation happens in the src/testing/event_manager.ts file, where the correlation IDs
+ * are added to the events emitted by the framework.
  */
 export interface BrowserTelemetryEvents {
   /**
@@ -684,6 +739,14 @@ export interface BrowserTelemetryEvents {
    * Emitted when a test file fails to import
    */
   'runner:import_error': RunnerImportErrorNode & Partial<CorrelationIds>
+  /**
+   * Emitted when a test file starts being processed
+   */
+  'file:start': WithCorrelation<FileStartNode>
+  /**
+   * Emitted when a test file finished all tests execution
+   */
+  'file:end': WithCorrelation<FileEndNode>
 }
 
 /**

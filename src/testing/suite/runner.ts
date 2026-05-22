@@ -80,7 +80,11 @@ export class SuiteRunner {
    * Notify the reporter about the suite start
    */
   #notifyStart() {
-    const startOptions: SuiteStartNode = { name: this.#suite.name, filesCount: this.#suite.filesCount }
+    const startOptions: SuiteStartNode = {
+      name: this.#suite.name,
+      filesCount: this.#suite.filesCount,
+      files: this.#suite.files,
+    }
     this.#emitter.emit('suite:start', startOptions)
   }
 
@@ -93,9 +97,18 @@ export class SuiteRunner {
       hasError: this.#hasError,
       errors: this.#errors,
       filesCount: this.#suite.filesCount,
+      files: this.#suite.files,
     }
 
     this.#emitter.emit('suite:end', endOptions)
+  }
+
+  #notifyFileStart(file: string, info: FilesTracker) {
+    this.#emitter.emit('file:start', { file, groups: info.expectedGroups, tests: info.expectedTests })
+  }
+
+  #notifyFileEnd(file: string, info: FilesTracker) {
+    this.#emitter.emit('file:end', { file, groups: info.expectedGroups, tests: info.expectedTests })
   }
 
   /**
@@ -173,9 +186,38 @@ export class SuiteRunner {
     }
 
     /**
+     * To report which file is staring and which has ended, we need to track the files seen during the test execution.
+     * This is required since a test file have multiple groups and tests, so we can't rely on the test/group start
+     * and end events to report file start and end.
+     */
+    const seenFiles = new Map<string, FilesTracker>()
+    for (const groupOrTest of this.#suite.stack) {
+      const file = groupOrTest.options.meta.file
+      let info = seenFiles.get(file)
+      if (!info) {
+        info = {
+          expectedGroups: 0,
+          expectedTests: 0,
+          seenGroups: 0,
+          seenTests: 0,
+          notified: false,
+        }
+        seenFiles.set(file, info)
+      }
+      if (groupOrTest instanceof Group) {
+        info.expectedGroups++
+      } else {
+        info.expectedTests++
+      }
+    }
+
+    /**
      * Run the test executor
      */
     for (const groupOrTest of this.#suite.stack) {
+      const file = groupOrTest.options.meta.file
+      const tracker = seenFiles.get(file) as FilesTracker
+
       /**
        * Skip tests in bail mode when there is an error
        */
@@ -187,9 +229,25 @@ export class SuiteRunner {
         }
       }
 
+      if (tracker.notified === false) {
+        this.#notifyFileStart(file, tracker)
+        tracker.notified = true
+      }
+
       await groupOrTest.exec()
+
       if (!this.#hasError && groupOrTest.failed) {
         this.#hasError = true
+      }
+
+      if (groupOrTest instanceof Group) {
+        tracker.seenGroups++
+      } else {
+        tracker.seenTests++
+      }
+
+      if (tracker.expectedGroups === tracker.seenGroups && tracker.expectedTests === tracker.seenTests) {
+        this.#notifyFileEnd(file, tracker)
       }
     }
 
@@ -209,4 +267,12 @@ export class SuiteRunner {
      */
     this.#notifyEnd()
   }
+}
+
+interface FilesTracker {
+  notified: boolean
+  expectedGroups: number
+  expectedTests: number
+  seenGroups: number
+  seenTests: number
 }

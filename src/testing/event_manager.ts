@@ -45,6 +45,8 @@ export class EventManager {
     this.#emitter.on('runner:pinned_tests', (data) => this.#passThrough('runner:pinned_tests', data))
     this.#emitter.on('runner:list', (data) => this.#passThrough('runner:list', data))
     this.#emitter.on('runner:import_error', this.#handleImportError.bind(this))
+    this.#emitter.on('file:start', (data) => this.#passThrough('file:start', data))
+    this.#emitter.on('file:end', (data) => this.#passThrough('file:end', data))
   }
 
   #serializeError(error: TestError): TestError {
@@ -77,7 +79,8 @@ export class EventManager {
       return
     }
     const chunkId = (globalThis as any).__lupa__?.chunkId || 'default'
-    this.#ctx.send('lupa:telemetry', { event: name, data: { ...data, browserId: chunkId } })
+    const file = data.file || (data.meta && data.meta.file) || 'unknown'
+    this.#ctx.send('lupa:telemetry', { event: name, data: { ...data, browserId: chunkId, file } })
   }
 
   #handleSuiteEnd(data: SuiteEndNode): void {

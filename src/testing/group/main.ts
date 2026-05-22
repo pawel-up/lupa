@@ -149,7 +149,7 @@ export class Group extends Macroable {
     this.options = {
       title: this.title,
       meta: {
-        fileName: '',
+        file: '',
         suite: '',
       },
     }
