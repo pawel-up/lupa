@@ -184,6 +184,9 @@ export class ProgressReporter extends BaseReporter {
   }
 
   protected render() {
+    if (this.#logs.length > 0) {
+      logUpdate.clear()
+    }
     this.#printLogs()
     this.#print(this.#getProgressBar())
   }
