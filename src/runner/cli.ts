@@ -316,6 +316,17 @@ export class Cli {
       return
     }
 
+    if (allFiles.length === 1) {
+      if (process.stdin.isTTY) process.stdin.setRawMode(true)
+      process.stdin.on('keypress', this.#onKeypress)
+      const selected = allFiles[0]
+      this.#focusedFile = selected.pathname.split('/').pop() || null
+      this.#orchestrator.config.filters.files = [selected.pathname]
+      console.log(`\nAuto-focusing on: ${this.#focusedFile}`)
+      this.#orchestrator.executeTests()
+      return
+    }
+
     const failedFiles = new Set<string>()
     for (const events of this.#fileEvents.values()) {
       for (const event of events) {
