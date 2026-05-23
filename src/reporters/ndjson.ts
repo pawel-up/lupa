@@ -36,7 +36,7 @@ export class NdJSONReporter extends BaseReporter {
   }
 
   protected onTestEnd(payload: TestEndNode): void {
-    const fileName = payload.meta?.fileName
+    const fileName = payload.meta?.file
     console.log(
       JSON.stringify({
         event: 'test:end',

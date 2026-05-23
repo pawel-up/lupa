@@ -24,5 +24,6 @@
   "playwright": true,
   "semantic-release": {
     "entry": ["@semantic-release/changelog", "@semantic-release/git"]
-  }
+  },
+  "ignore": ["skills/**/*"]
 }
