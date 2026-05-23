@@ -1,3 +1,13 @@
+## [0.3.7](https://github.com/pawel-up/lupa/compare/v0.3.6...v0.3.7) (2026-05-23)
+
+
+### Bug Fixes
+
+* fixed file end reporting ([510326f](https://github.com/pawel-up/lupa/commit/510326f579d1e4ab553f2f12999200fe02b90edc))
+* progress bar render below the console log ([22fa247](https://github.com/pawel-up/lupa/commit/22fa24784edc95dc6ce46de6744f4fe740a17299))
+* rename meta fileName property to file and ignore skills directory in knip configuration ([739a94e](https://github.com/pawel-up/lupa/commit/739a94e6efb318e0cf61bbd3905b845f61caf880))
+* when defining `--files` CLI option the focus should only see that file ([6d6dcfb](https://github.com/pawel-up/lupa/commit/6d6dcfb93c2ecd4562531bc5a88f095a3f2fabf5))
+
 ## [0.3.6](https://github.com/pawel-up/lupa/compare/v0.3.5...v0.3.6) (2026-05-22)
 
 
