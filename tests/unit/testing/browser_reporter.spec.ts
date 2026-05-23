@@ -52,13 +52,19 @@ test('BrowserReporter', async (t) => {
     const emitter = new Emitter<BrowserTelemetryEvents>()
     reporter.boot(emitter)
 
-    const payloadStart: WithCorrelation<SuiteStartNode> = { name: 'Suite 1', file: 'abc', browserId: '1' }
+    const payloadStart: WithCorrelation<SuiteStartNode> = {
+      name: 'Suite 1',
+      file: 'abc',
+      browserId: '1',
+      files: [],
+    }
     const payloadEnd: WithCorrelation<SuiteEndNode> = {
       name: 'Suite 1',
       file: 'abc',
       browserId: '1',
       errors: [],
       hasError: false,
+      files: [],
     }
     await emitter.emit('suite:start', payloadStart)
     await emitter.emit('suite:end', payloadEnd)
@@ -78,13 +84,19 @@ test('BrowserReporter', async (t) => {
       title: 'Group 1',
       file: 'abc',
       browserId: '1',
-      meta: {},
+      meta: {
+        file: 'abc',
+        suite: 'Suite 1',
+      },
     }
     const payloadEnd: WithCorrelation<GroupEndNode> = {
       title: 'Group 1',
       file: 'abc',
       browserId: '1',
-      meta: {},
+      meta: {
+        file: 'abc',
+        suite: 'Suite 1',
+      },
       errors: [],
       hasError: false,
     }
@@ -113,7 +125,10 @@ test('BrowserReporter', async (t) => {
       duration: 12,
       retryAttempt: 1,
       tags: [],
-      meta: {},
+      meta: {
+        file: 'abc',
+        suite: 'Suite 1',
+      },
       timeout: 1,
     }
     await emitter.emit('test:end', payload as any)
@@ -140,7 +155,10 @@ test('BrowserReporter', async (t) => {
       duration: 12,
       retryAttempt: 1,
       tags: [],
-      meta: {},
+      meta: {
+        file: '',
+        suite: '',
+      },
       timeout: 1,
       browserId: '1',
       file: '',

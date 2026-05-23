@@ -83,7 +83,14 @@ test('JSONReporter', async (t) => {
     reporter.boot(mockRunner, emitter, {} as any)
 
     const payload: RunnerListNode = {
-      suites: [{ name: 'Suite 1', groups: [], tests: [] }],
+      suites: [
+        {
+          name: 'Suite 1',
+          groups: [],
+          tests: [],
+          files: ['abc'],
+        },
+      ],
     }
 
     await emitter.emit('runner:list', payload as any)
