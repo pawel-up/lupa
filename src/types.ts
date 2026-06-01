@@ -624,9 +624,30 @@ export interface RunnerPinnedTestsNode {
 }
 
 /**
- * Events emitted natively by the test framework without correlation IDs
+ * Extension point for custom events shared across the browser and Node emitters.
+ *
+ * Third-party plugins can add typed events by augmenting this interface via declaration merging.
+ * A single augmentation gives full type safety on both sides:
+ * - the `emitter` in `WebPluginFn` (browser, emit side)
+ * - the `emitter` in `LupaPlugin.execute()` (Node, subscribe side)
+ *
+ * ```typescript
+ * declare module '@pawel-up/lupa/types' {
+ *   interface CustomRunnerEvents {
+ *     'benchmark:result': { name: string; duration: number }
+ *   }
+ * }
+ * ```
  */
-export interface FrameworkEvents {
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface CustomRunnerEvents {}
+
+/**
+ * Events emitted natively by the test framework without correlation IDs.
+ * Also includes custom events registered via `CustomRunnerEvents`, so browser-side
+ * plugins can emit typed custom events on the same emitter they receive in `WebPluginContext`.
+ */
+export interface FrameworkEvents extends CustomRunnerEvents {
   /**
    * Emitted when a test starts.
    */
@@ -751,10 +772,10 @@ export interface BrowserTelemetryEvents {
 
 /**
  * Events emitted by the Node runner orchestrator.
- * Includes hydrated browser events and pool lifecycle events.
+ * Includes hydrated browser events, pool lifecycle events, and any custom events
+ * registered via `CustomRunnerEvents`.
  */
-
-export interface RunnerEvents extends BrowserTelemetryEvents {
+export interface RunnerEvents extends BrowserTelemetryEvents, CustomRunnerEvents {
   /**
    * Browser console log
    */

@@ -4,7 +4,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import { createServer, createLogger, mergeConfig, type ViteDevServer, type InlineConfig } from 'vite'
 
 import type { NormalizedConfig, JsonSerializable } from './types.js'
-import type { BrowserTelemetryEvents } from '../types.js'
+import type { TestPoolManager } from './test_pool_manager.js'
+import type { RunnerEvents } from '../types.js'
 import { CoverageManager } from './coverage_manager.js'
 import { ExceptionsManager } from './exceptions_manager.js'
 import { transformBrowserStack } from './stack_transformer.js'
@@ -17,10 +18,8 @@ const harnessTs = resolve(__dirname, '../testing/harness.ts')
 const harnessPath = existsSync(harnessTs) ? harnessTs : resolve(__dirname, '../testing/harness.js')
 
 export type TelemetryPayload = {
-  [K in keyof BrowserTelemetryEvents]: { event: K; data: BrowserTelemetryEvents[K] }
-}[keyof BrowserTelemetryEvents]
-
-import type { TestPoolManager } from './test_pool_manager.js'
+  [K in keyof RunnerEvents]: { event: K; data: RunnerEvents[K] }
+}[keyof RunnerEvents]
 
 export interface ServerManagerOptions {
   cwd: string
@@ -46,7 +45,7 @@ export interface ServerTelemetryContract {
    * @param event The telemetry event name to handle.
    * @param data The telemetry event data.
    */
-  handleTelemetry<K extends keyof BrowserTelemetryEvents>(event: K, data: BrowserTelemetryEvents[K]): Promise<void>
+  handleTelemetry<K extends keyof RunnerEvents>(event: K, data: RunnerEvents[K]): Promise<void>
 }
 
 /**
@@ -204,7 +203,7 @@ export class ServerManager {
           } else if (event === 'runner:pinned_tests') {
             if (data && data.tests) {
               const formatted = await Promise.all(
-                data.tests.map(async (t) => {
+                data.tests.map(async (t: { title: string; stack: string }) => {
                   const transformed = this.#vite ? await transformBrowserStack(this.#vite, cwd, t.stack) : t.stack
                   return formatPinnedTest(t.title, transformed)
                 })

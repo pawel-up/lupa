@@ -1,6 +1,6 @@
 # Lupa Plugins API
 
-Lupa's highly extensible architecture allows you to customize both the test execution environment and the test runner lifecycle itself. Because Lupa is powered by Vite under the hood, you have two distinct plugin ecosystems at your disposal: **Vite Plugins** and **Lupa Runner Plugins**. 
+Lupa's highly extensible architecture allows you to customize both the test execution environment and the test runner lifecycle itself. Because Lupa is powered by Vite under the hood, you have two distinct plugin ecosystems at your disposal: **Vite Plugins** and **Lupa Runner Plugins**.
 
 Lupa Runner Plugins are configured via the `runnerPlugins` array in your `lupa.config.ts`. They provide a powerful way to hook into the core test runner events to start services, collect telemetry, or reset backend state.
 
@@ -15,11 +15,13 @@ Lupa Runner Plugins are configured via the `runnerPlugins` array in your `lupa.c
 Because Lupa spins up a Vite dev server to bundle and serve your tests, you can (and should) use standard Vite plugins for many tasks. It is critical to understand the boundary between when to use a Vite Plugin versus a Lupa Runner Plugin.
 
 **Vite Plugins** hook into the Dev Server lifecycle. Use them when you need to:
+
 - Transform or compile code (e.g., stripping proprietary syntax).
 - Inject mock API middlewares into the dev server.
 - Alter the HTML/CSS served to the browser test harness.
 
 *Brief Example: Adding a Vite plugin to inject middleware:*
+
 ```ts
 // lupa.config.ts
 import { defineConfig } from '@pawel-up/lupa'
@@ -39,42 +41,55 @@ export default defineConfig({
 ```
 
 **Lupa Runner Plugins** hook into the Test Runner lifecycle. Use them when you need to:
+
 - Start external services (like a database or proxy server) before the test suite begins.
 - Reset backend state or clear caches before each test run.
 - Hook into runner events to attach custom reporters or telemetry.
 
 ### Quick Comparison
 
-| Feature / Task | Use a Vite Plugin | Use a Lupa Plugin |
-| --- | --- | --- |
-| Transform source code files | ✅ | ❌ |
-| Start a database daemon on boot | ❌ | ✅ |
-| Inject a dev server middleware | ✅ | ❌ |
-| Reset database state before a run | ❌ | ✅ |
-| Runs in Node.js | ✅ | ✅ |
-| Bleeds into your production build | ❌ (Tests only) | ❌ (Tests only) |
+| Feature / Task | Use a Vite Plugin | Use a Lupa Runner Plugin | Use a Test Plugin |
+| --- | --- | --- | --- |
+| Transform source code files | ✅ | ❌ | ❌ |
+| Start a database daemon on boot | ❌ | ✅ | ❌ |
+| Inject a dev server middleware | ✅ | ❌ | ❌ |
+| Reset database state before a run | ❌ | ✅ | ❌ |
+| Add browser-side globals / assertions | ❌ | ❌ | ✅ |
+| Emit custom events from the browser | ❌ | ❌ | ✅ |
+| Subscribe to custom events from Node | ❌ | ✅ | ❌ |
+| Runs in Node.js | ✅ | ✅ | ❌ |
+| Runs in the browser | ❌ | ❌ | ✅ |
+| Bleeds into your production build | ❌ (Tests only) | ❌ (Tests only) | ❌ (Tests only) |
 
 ## The Plugin Lifecycle
 
 Lupa Runner Plugins execute through four distinct phases, allowing you to fine-tune setup and teardown processes—especially during interactive Watch Mode. All hooks support asynchronous execution (`async`/`Promise`).
 
 ### `plan`
+
 Executed before the orchestrator fully boots and before test files are discovered.
+
 - **Use when:** You need to dynamically inject test files or modify configuration defaults (e.g. forcing `--bail` in CI environments).
 - **Never use for:** Starting services that need to be available during the test execution.
 
 ### `boot`
+
 Executed **once** when the Orchestrator boots.
+
 - **Use when:** Performing one-time global setup tasks, such as starting an external database daemon or a proxy server that must persist across watch-mode reruns.
 - **Never use for:** Resetting state between individual test runs.
 
 ### `execute`
+
 Executed **before a test execution cycle begins** (i.e., before the entire batch of tests starts). In watch mode, this runs multiple times whenever files change.
+
 - **Use when:** Resetting external state (e.g., clearing a database) before an entire test suite run starts, or attaching custom telemetry to the event emitter.
 - **Never use for:** Logic that needs to run before *each individual test* (use `testPlugins` for that), or starting heavy services that should persist across watch-mode runs (use `boot` instead).
 
 ### `shutdown`
+
 Executed **once** when the Orchestrator completely shuts down.
+
 - **Use when:** Finalizing custom reports or explicitly tearing down services if you aren't using the closure teardown pattern.
 
 ## Writing a Plugin (Closure Pattern)
@@ -124,9 +139,9 @@ This pattern guarantees that your cleanup logic has direct scope access to the i
 
 While `runnerPlugins` run exclusively in the Node.js orchestrator, there are many scenarios where you need to inject code directly into the browser where tests are executing (e.g., setting up global browser mocks, importing custom DOM assertions, or attaching listeners to the browser-side test runner).
 
-To do this, use the `testPlugins` array in your `lupa.config.ts`. 
+To do this, use the `testPlugins` array in your `lupa.config.ts`.
 
-Test plugins are specified as module import paths. Lupa will import these modules directly into the browser environment before any test files are executed. 
+Test plugins are specified as module import paths. Lupa will import these modules directly into the browser environment before any test files are executed.
 
 ### Writing a Test Plugin
 
@@ -168,3 +183,76 @@ export default defineConfig({
   ]
 })
 ```
+
+## Cross-Boundary IPC: Browser ↔ Node Custom Events
+
+Both plugin types receive an instance of the same `Emitter`. Events emitted in the browser are automatically forwarded to the Node-side emitter over Vite's WebSocket channel — and that includes **any event you define**, not just Lupa's built-in ones.
+
+This means a `testPlugin` can emit arbitrary events from the browser and a `runnerPlugin` can subscribe to them on the Node side, giving you a clean, structured IPC channel with no extra wiring required.
+
+### Extending the Event Types
+
+To get full TypeScript safety on both sides, augment the `CustomRunnerEvents` interface via declaration merging. A single augmentation covers the browser emitter (`FrameworkEvents`), the Node emitter (`RunnerEvents`), and the discriminated `TelemetryPayload` union:
+
+```ts
+// env.d.ts (or any .ts file included in your project)
+declare module '@pawel-up/lupa/types' {
+  interface CustomRunnerEvents {
+    'benchmark:result': { name: string; ops: number; margin: number }
+  }
+}
+```
+
+### Browser Plugin — Emitting Custom Events
+
+```ts
+// src/plugins/benchmark-browser.ts
+import type { WebPluginFn } from '@pawel-up/lupa/testing'
+
+const setup: WebPluginFn = ({ emitter }) => {
+  // 'benchmark:result' is fully typed — TypeScript will enforce the payload shape
+  emitter.emit('benchmark:result', { name: 'render', ops: 142_000, margin: 0.5 })
+}
+
+export default setup
+```
+
+### Node Runner Plugin — Subscribing to Custom Events
+
+```ts
+// src/plugins/benchmark-node.ts
+import type { LupaPlugin } from '@pawel-up/lupa/runner'
+
+export function benchmarkReporterPlugin(): LupaPlugin {
+  return {
+    name: 'benchmark-reporter',
+
+    execute({ emitter }) {
+      // 'benchmark:result' is fully typed here too
+      emitter.on('benchmark:result', ({ name, ops, margin }) => {
+        console.log(`${name}: ${ops.toLocaleString()} ops/s ±${margin}%`)
+      })
+    }
+  }
+}
+```
+
+### Registering Both Sides
+
+```ts
+// lupa.config.ts
+import { defineConfig } from '@pawel-up/lupa'
+import { benchmarkReporterPlugin } from './src/plugins/benchmark-node.ts'
+
+export default defineConfig({
+  testPlugins: [
+    './src/plugins/benchmark-browser.ts'
+  ],
+  runnerPlugins: [
+    benchmarkReporterPlugin()
+  ]
+})
+```
+
+> [!NOTE]
+> No special configuration is needed to route custom events. All events emitted on the browser-side `emitter` are forwarded to Node automatically. The `CustomRunnerEvents` augmentation is purely a TypeScript concern — it adds type safety without changing runtime behaviour.

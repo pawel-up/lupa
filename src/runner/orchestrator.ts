@@ -1,6 +1,6 @@
 import { type ViteDevServer } from 'vite'
 import { Emitter } from '../testing/emitter.js'
-import type { BrowserTelemetryEvents, RunnerEvents } from '../types.js'
+import type { RunnerEvents } from '../types.js'
 import { Runner } from './runner.js'
 import { ExceptionsManager } from './exceptions_manager.js'
 import { BrowserManager, type BrowserName } from './browser_manager.js'
@@ -388,12 +388,9 @@ export class Orchestrator implements ServerTelemetryContract {
     }
   }
 
-  async handleTelemetry<K extends keyof BrowserTelemetryEvents>(
-    event: K,
-    data: BrowserTelemetryEvents[K]
-  ): Promise<void> {
+  async handleTelemetry<K extends keyof RunnerEvents>(event: K, data: RunnerEvents[K]): Promise<void> {
     if (this.activeNodeEmitter) {
-      await this.activeNodeEmitter.emit(event, data as any)
+      await this.activeNodeEmitter.emit(event, data)
     }
   }
 }

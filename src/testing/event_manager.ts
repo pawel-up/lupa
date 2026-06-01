@@ -1,7 +1,7 @@
 import type { ViteHotContext } from 'vite/types/hot.js'
 import type { AssertionError } from 'assertion-error'
 import type { Emitter } from './emitter.js'
-import type { GroupEndNode, SuiteEndNode, TestEndNode, UncaughtExceptionNode, TestError } from '../types.js'
+import type { TestError } from '../types.js'
 
 interface EndError<P> {
   phase: P
@@ -28,25 +28,27 @@ export class EventManager {
   }
 
   /**
-   * Boot the event manager
+   * Boot the event manager.
+   *
+   * Forwards all emitter events — both built-in framework events and any custom events
+   * emitted by browser-side plugins — to Node via the Vite HMR WebSocket channel.
+   * Known events with errors are serialized before sending.
    */
   boot(): void {
     if (!this.#ctx) {
       return
     }
 
-    this.#emitter.on('suite:start', (data) => this.#passThrough('suite:start', data))
-    this.#emitter.on('suite:end', this.#handleSuiteEnd.bind(this))
-    this.#emitter.on('group:start', (data) => this.#passThrough('group:start', data))
-    this.#emitter.on('group:end', this.#handleGroupEnd.bind(this))
-    this.#emitter.on('test:start', (data) => this.#passThrough('test:start', data))
-    this.#emitter.on('test:end', this.#handleTestEnd.bind(this))
-    this.#emitter.on('uncaught:exception', this.#handleUncaughtException.bind(this))
-    this.#emitter.on('runner:pinned_tests', (data) => this.#passThrough('runner:pinned_tests', data))
-    this.#emitter.on('runner:list', (data) => this.#passThrough('runner:list', data))
-    this.#emitter.on('runner:import_error', this.#handleImportError.bind(this))
-    this.#emitter.on('file:start', (data) => this.#passThrough('file:start', data))
-    this.#emitter.on('file:end', (data) => this.#passThrough('file:end', data))
+    this.#emitter.onAny(({ name, data }: { name: string; data: any }) => {
+      if (name === 'suite:end' || name === 'group:end' || name === 'test:end') {
+        data = { ...data, errors: this.#serializeErrors(data?.errors) }
+      } else if (name === 'uncaught:exception' || name === 'runner:import_error') {
+        if (data?.error) {
+          data = { ...data, error: this.#serializeError(data.error) }
+        }
+      }
+      this.#passThrough(name, data)
+    })
   }
 
   #serializeError(error: TestError): TestError {
@@ -81,45 +83,5 @@ export class EventManager {
     const chunkId = (globalThis as any).__lupa__?.chunkId || 'default'
     const file = data.file || (data.meta && data.meta.file) || 'unknown'
     this.#ctx.send('lupa:telemetry', { event: name, data: { ...data, browserId: chunkId, file } })
-  }
-
-  #handleSuiteEnd(data: SuiteEndNode): void {
-    if (!this.#ctx || !data) {
-      return
-    }
-    data.errors = this.#serializeErrors(data.errors)
-    this.#passThrough('suite:end', data)
-  }
-
-  #handleGroupEnd(data: GroupEndNode): void {
-    if (!this.#ctx || !data) {
-      return
-    }
-    data.errors = this.#serializeErrors(data.errors)
-    this.#passThrough('group:end', data)
-  }
-
-  #handleTestEnd(data: TestEndNode): void {
-    if (!this.#ctx || !data) {
-      return
-    }
-    data.errors = this.#serializeErrors(data.errors)
-    this.#passThrough('test:end', data)
-  }
-
-  #handleUncaughtException(data: UncaughtExceptionNode): void {
-    if (!this.#ctx || !data) {
-      return
-    }
-    data.error = this.#serializeError(data.error)
-    this.#passThrough('uncaught:exception', data)
-  }
-
-  #handleImportError(data: any): void {
-    if (!this.#ctx || !data) {
-      return
-    }
-    data.error = this.#serializeError(data.error)
-    this.#passThrough('runner:import_error', data)
   }
 }
