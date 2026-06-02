@@ -1,3 +1,10 @@
+## [0.3.12](https://github.com/pawel-up/lupa/compare/v0.3.11...v0.3.12) (2026-06-02)
+
+
+### Bug Fixes
+
+* conditionally enable full coverage collection based on include pattern ([6e2ec41](https://github.com/pawel-up/lupa/commit/6e2ec41c569d6bcd1b081a8e423124976626d2b5))
+
 ## [0.3.11](https://github.com/pawel-up/lupa/compare/v0.3.10...v0.3.11) (2026-06-02)
 
 
