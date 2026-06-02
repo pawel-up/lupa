@@ -1,3 +1,10 @@
+# [0.4.0](https://github.com/pawel-up/lupa/compare/v0.3.12...v0.4.0) (2026-06-02)
+
+
+### Features
+
+* **coverage:** filter TS non-executable lines ([ea40503](https://github.com/pawel-up/lupa/commit/ea40503de36427eeb9b3f0996c3a786cd4bd02f0)), closes [istanbuljs/v8-to-istanbul#266](https://github.com/istanbuljs/v8-to-istanbul/issues/266)
+
 ## [0.3.12](https://github.com/pawel-up/lupa/compare/v0.3.11...v0.3.12) (2026-06-02)
 
 
