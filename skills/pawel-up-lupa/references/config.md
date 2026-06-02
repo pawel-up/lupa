@@ -20,7 +20,6 @@ export default defineConfig({
     '@pawel-up/lupa/assert'
   ],
 
-  // Coverage settings
   coverage: {
     enabled: true,
     include: ['src/**/*.ts'],

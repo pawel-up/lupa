@@ -55,4 +55,9 @@ test('CoverageManager', async (t) => {
     await mgr.generateReport(exceptions)
     assert.strictEqual(exceptions.hasErrors, false)
   })
+
+  await t.test('handles configuration with include patterns', () => {
+    const mgr = new CoverageManager({ enabled: true, include: ['src/**'] })
+    assert.ok(mgr.isEnabled)
+  })
 })

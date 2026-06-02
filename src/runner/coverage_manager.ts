@@ -224,8 +224,7 @@ export class CoverageManager {
         reporter: reporters,
         reportsDirectory: reportsDirectory,
         tempDirectory: this.#tempDir,
-        resolve: process.cwd(),
-        all: true,
+        all: Array.isArray(coverageOpts.include) && coverageOpts.include.length > 0,
       })
 
       debug('Running c8 report compiler')

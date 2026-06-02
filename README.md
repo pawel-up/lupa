@@ -166,7 +166,8 @@ export default defineConfig({
     // Explicitly enable coverage collection (defaults to false)
     enabled: true,
 
-    // Array of glob patterns to include in coverage reports
+    // Array of glob patterns to include in coverage reports.
+    // Specifying this will automatically include all matched files (even untested ones).
     include: ['src/**/*.ts'],
 
     // Array of glob patterns to exclude from coverage reports
