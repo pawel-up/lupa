@@ -22,6 +22,7 @@ export default defineConfig({
 
   // Coverage settings
   coverage: {
+    enabled: true,
     include: ['src/**/*.ts'],
     exclude: ['test/**']
   },
@@ -84,9 +85,18 @@ export interface HarnessConfig {
 }
 
 export interface CoverageOptions {
-  include?: string[]
-  exclude?: string[]
-  extension?: string[]
+  enabled?: boolean // Explicitly toggle coverage (defaults to false)
+  include?: string[] // Glob patterns to include in coverage reports
+  exclude?: string[] // Glob patterns to exclude from coverage reports
+  extension?: string[] // File extensions to process
+  reporters?: string[] // List of coverage reporters to run simultaneously (default: ['text-summary', 'html'])
+  reportsDirectory?: string // Output directory for reports (default: './coverage')
+  thresholds?: {
+    lines?: number
+    functions?: number
+    branches?: number
+    statements?: number
+  }
 }
 
 export interface SemanticDomOptions {

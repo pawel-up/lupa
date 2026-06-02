@@ -85,6 +85,14 @@ export type CLIArgs = {
    */
   coverage?: boolean
   /**
+   * List of coverage reporters to generate
+   */
+  coverageReporters?: string | string[]
+  /**
+   * Directory where coverage reports are written
+   */
+  coverageDir?: string
+  /**
    * Whether to disable parallel execution
    */
   parallel?: boolean
@@ -365,17 +373,51 @@ export interface BaseConfig {
  */
 export interface CoverageOptions {
   /**
-   * Array of glob patterns to include in coverage
+   * Whether to enable code coverage collection.
+   * Defaults to `false`.
+   */
+  enabled?: boolean
+
+  /**
+   * Array of glob patterns to include in coverage reports.
+   * Files matching these patterns will be included in the coverage mapping.
    */
   include?: string[]
+
   /**
-   * Array of glob patterns to exclude from coverage
+   * Array of glob patterns to exclude from coverage reports.
+   * Files matching these patterns will be skipped during coverage mapping.
    */
   exclude?: string[]
+
   /**
-   * Array of file extensions to instrument
+   * Array of file extensions to process (e.g., ['.js', '.ts', '.jsx', '.tsx', '.vue']).
+   * Only files with these extensions will be included in the coverage report.
    */
   extension?: string[]
+
+  /**
+   * List of coverage reporters to run simultaneously (e.g., ['text', 'html', 'lcov']).
+   * Defaults to `['text', 'html']` if not specified.
+   */
+  reporters?: string[]
+
+  /**
+   * The output directory where the coverage reports will be written.
+   * Defaults to './coverage'.
+   */
+  reportsDirectory?: string
+
+  /**
+   * Coverage threshold gates. If the coverage percentages fall below
+   * these thresholds, the test run will fail with an exit code of 1.
+   */
+  thresholds?: {
+    lines?: number
+    functions?: number
+    branches?: number
+    statements?: number
+  }
 }
 
 /**

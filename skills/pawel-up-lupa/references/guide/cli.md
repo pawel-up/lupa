@@ -36,6 +36,9 @@ You can narrow down what gets executed using various filters:
 - `-c, --config <path>`: Path to a custom configuration file (defaults to `lupa.config.ts`).
 - `--reporters <names...>`: Activate one or more test reporters (e.g., `npx lupa test --reporters html`).
 - `--browser <browser>`: Specify the browser to run tests in (choices: `chromium`, `firefox`, `webkit`).
+- `--coverage`: Enable V8 code coverage instrumentation and collection.
+- `--coverage-reporters <reporters...>`: Comma-separated list or multiple values of coverage report formats.
+- `--coverage-dir <dir>`: Directory where coverage reports are written.
 - `--verbose`: Enable verbose logging.
 
 ---

@@ -174,7 +174,7 @@ export class Orchestrator implements ServerTelemetryContract {
 
     this.browserManager = new BrowserManager(this.browserNames, !!this.cliArgs.verbose, this.browserEmitter)
 
-    await this.browserManager.boot(this.testPoolManager)
+    await this.browserManager.boot(this.testPoolManager, this.serverManager?.coverageManager)
   }
 
   /**
@@ -240,6 +240,7 @@ export class Orchestrator implements ServerTelemetryContract {
     try {
       if (this.browserManager && this.serverManager?.coverageManager) {
         await this.browserManager.extractCoverage(this.serverManager.coverageManager)
+        await this.serverManager.coverageManager.generateReport(this.exceptionsManager)
       }
     } catch (err) {
       console.error('Failed to extract coverage:', err)
@@ -406,6 +407,16 @@ export class Orchestrator implements ServerTelemetryContract {
       this.#runnerEnded = true
       await this.activeNodeRunner.end()
     }
+
+    try {
+      if (this.browserManager && this.serverManager?.coverageManager) {
+        await this.browserManager.extractCoverage(this.serverManager.coverageManager)
+        await this.serverManager.coverageManager.generateReport(this.exceptionsManager)
+      }
+    } catch (err) {
+      console.error('Failed to extract coverage:', err)
+    }
+
     this.isRunning = false
 
     const exitCode = (this.activeNodeRunner && this.activeNodeRunner.failed) || this.exceptionsManager.hasErrors ? 1 : 0

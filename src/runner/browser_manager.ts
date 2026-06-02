@@ -6,6 +6,7 @@ import type { TestPoolManager } from './test_pool_manager.js'
 import debug from './debug.js'
 import type { Emitter } from '../testing/emitter.js'
 import type { RunnerEvents } from '../types.js'
+import { colors } from './helpers.js'
 
 export type BrowserName = 'chromium' | 'firefox' | 'webkit'
 
@@ -28,8 +29,14 @@ export class BrowserManager {
     this.#emitter = emitter
   }
 
-  async boot(testPoolManager: TestPoolManager) {
+  async boot(testPoolManager: TestPoolManager, coverageManager?: CoverageManager) {
     for (const name of this.#browserNames) {
+      if (name !== 'chromium' && coverageManager?.isEnabled) {
+        console.warn(
+          `\n⚠️  ${colors.yellow('Warning:')} Code coverage is only supported on Chromium-based browsers. Coverage collection will be skipped for ${name}.`
+        )
+      }
+
       debug('launching browser: %s', name)
       let browser: Browser
       if (name === 'firefox') browser = await firefox.launch()
@@ -43,6 +50,10 @@ export class BrowserManager {
       for (const chunkId of chunkIds) {
         const page = await browser.newPage()
         this.#pages.set(chunkId, page)
+
+        if (name === 'chromium' && coverageManager) {
+          await coverageManager.startCoverage(page, name)
+        }
 
         const logs = new BrowserLogs(page, this.#verboseLogs, this.#emitter)
         logs.boot()
@@ -100,7 +111,8 @@ export class BrowserManager {
     for (const [chunkId, page] of this.#pages.entries()) {
       try {
         debug('extracting coverage for chunk %s', chunkId)
-        await coverageManager.extractAndReport(page)
+        const browserName = page.context().browser()?.browserType().name() || 'chromium'
+        await coverageManager.collectPageCoverage(page, browserName)
       } catch (err) {
         console.error(`Failed to extract coverage for chunk ${chunkId}:`, err)
       }

@@ -1,5 +1,5 @@
 import debug from './debug.js'
-import type { CLIArgs, Config, Filters, NormalizedBaseConfig, NormalizedConfig } from './types.js'
+import type { CLIArgs, Config, CoverageOptions, Filters, NormalizedBaseConfig, NormalizedConfig } from './types.js'
 import { dot, github, ndjson, progress, json } from '../reporters/index.js'
 import { Refiner } from '../refiner/main.js'
 
@@ -151,11 +151,34 @@ export class ConfigManager {
       concurrency = 1
     }
 
-    let resolvedCoverage = this.#config.coverage ?? false
-    if (this.#cliArgs.coverage === true) {
-      resolvedCoverage = typeof this.#config.coverage === 'object' ? this.#config.coverage : true
-    } else if (this.#cliArgs.coverage === false || this.#cliArgs.coverage === 'false') {
+    let resolvedCoverage: boolean | CoverageOptions
+
+    const isCoverageRequested =
+      this.#cliArgs.coverage === true ||
+      this.#cliArgs.coverageReporters !== undefined ||
+      this.#cliArgs.coverageDir !== undefined
+
+    const configCoverage = this.#config.coverage
+
+    if (isCoverageRequested) {
+      resolvedCoverage = typeof configCoverage === 'object' ? { ...configCoverage, enabled: true } : { enabled: true }
+    } else if (this.#cliArgs.coverage === false) {
       resolvedCoverage = false
+    } else if (typeof configCoverage === 'object' && configCoverage.enabled === true) {
+      resolvedCoverage = { ...configCoverage }
+    } else if (configCoverage === true) {
+      resolvedCoverage = { enabled: true }
+    } else {
+      resolvedCoverage = false
+    }
+
+    if (typeof resolvedCoverage === 'object') {
+      if (this.#cliArgs.coverageReporters !== undefined) {
+        resolvedCoverage.reporters = this.#processAsArray(this.#cliArgs.coverageReporters, true)
+      }
+      if (this.#cliArgs.coverageDir !== undefined) {
+        resolvedCoverage.reportsDirectory = this.#cliArgs.coverageDir as string
+      }
     }
 
     const baseConfig: NormalizedBaseConfig = {

@@ -137,7 +137,80 @@ For the ultimate developer experience, run it in **Watch Mode**:
 npx lupa test --watch
 ```
 
-### 4. Discovering Tests
+### 5. Code Coverage
+
+Lupa has native code coverage collection built directly on Playwright's Chromium V8 coverage engine and programmatic `c8` reports. This avoids slow build-time Istanbul instrumentation.
+
+To enable code coverage, pass the `--coverage` flag:
+
+```bash
+npx lupa test --coverage
+```
+
+You can also override coverage settings directly from the command line (which automatically enables coverage):
+
+```bash
+# Specify coverage reporters (comma-separated or multiple flags)
+npx lupa test --coverage-reporters html,lcov,text
+
+# Specify output directory for coverage reports
+npx lupa test --coverage-dir ./custom-coverage-dir
+```
+
+You can customize coverage behavior in your `lupa.config.ts` configuration file. Note that declaring configuration options alone does not enable coverage collection (to avoid unexpected performance overhead). You must explicitly enable it via `enabled: true` in your config, or run tests with `--coverage` from the CLI:
+
+```typescript
+export default defineConfig({
+  files: ['tests/**/*.spec.ts'],
+  coverage: {
+    // Explicitly enable coverage collection (defaults to false)
+    enabled: true,
+
+    // Array of glob patterns to include in coverage reports
+    include: ['src/**/*.ts'],
+
+    // Array of glob patterns to exclude from coverage reports
+    exclude: ['src/**/*.spec.ts', 'src/types.ts'],
+
+    // Only process files with these extensions
+    extension: ['.ts', '.js'],
+
+    // List of coverage reporters to generate simultaneously (default: ['text-summary', 'html'])
+    reporters: ['text-summary', 'html'],
+
+    // The output directory where the reports will be written
+    reportsDirectory: './coverage',
+
+    // Enforce coverage threshold gates. If unmet, the test run will fail.
+    thresholds: {
+      lines: 80,
+      functions: 80,
+      branches: 70,
+      statements: 80,
+    },
+  },
+})
+```
+
+#### Supported Coverage Reporters
+
+Lupa supports all standard Istanbul/c8 reporters:
+* **`text-summary`** (default): Prints a compact coverage percentage summary to the console stdout.
+* **`html`** (default): Generates an interactive, clickable HTML report to browse coverage per line.
+* **`text`**: Prints a detailed, file-by-file coverage table to the console stdout.
+* **`lcov`**: Generates standard LCOV coverage files (`lcov.info`) and an HTML interactive report.
+* **`lcovonly`**: Generates only the `lcov.info` file.
+* **`clover`**: Generates Clover XML coverage reports (useful for Jenkins/CI integrations).
+* **`cobertura`**: Generates Cobertura XML coverage reports (useful for Azure DevOps/GitLab integrations).
+* **`json`**: Generates detailed raw JSON coverage data.
+* **`json-summary`**: Generates a compact JSON summary of coverage metrics.
+* **`teamcity`**: Prints TeamCity-formatted service messages.
+* **`none`**: Silent mode (produces no terminal or file output).
+
+> [!NOTE]
+> **Browser Support:** Native V8 JavaScript coverage collection is only supported on Chromium-based browsers. If you execute tests on Firefox or WebKit, Lupa will print a warning that coverage collection is skipped for those browsers and proceed with the test execution.
+
+### 6. Discovering Tests
 
 You can list all available test suites and tests without executing them. You can filter the listing to specific suites using positional arguments or the `--suites` option:
 

@@ -30,8 +30,17 @@ export default defineConfig({
       </html>
     `,
   },
+  coverage: {
+    thresholds: {
+      statements: 80,
+      branches: 80,
+      functions: 80,
+      lines: 80,
+    },
+  },
 })
 
+// @ts-expect-error - extending a module from this package
 declare module './src/testing/index.js' {
   interface TestContext {
     assert: Assert

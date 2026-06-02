@@ -145,4 +145,71 @@ test('ConfigManager', async (t) => {
     assert.deepStrictEqual(hydrated.harness.stylesheets, ['styles.css'])
     assert.strictEqual(hydrated.harness.template, '<!-- lupa-scripts -->')
   })
+
+  await t.test('enables coverage and sets overrides from CLI options', () => {
+    const config: Config = { files: [] }
+    const cliArgs: CLIArgs = {
+      _: [],
+      coverageReporters: 'html,json',
+      coverageDir: './custom-coverage-dir',
+    }
+
+    const manager = new ConfigManager(config, cliArgs)
+    const hydrated = manager.hydrate()
+
+    assert.ok(hydrated.coverage)
+    assert.ok(typeof hydrated.coverage === 'object')
+    assert.deepStrictEqual(hydrated.coverage.reporters, ['html', 'json'])
+    assert.strictEqual(hydrated.coverage.reportsDirectory, './custom-coverage-dir')
+  })
+
+  await t.test('keeps coverage disabled if CLI explicitly disables it', () => {
+    const config: Config = { files: [], coverage: { reporters: ['html'] } }
+    const cliArgs: CLIArgs = { _: [], coverage: false }
+
+    const manager = new ConfigManager(config, cliArgs)
+    const hydrated = manager.hydrate()
+
+    assert.strictEqual(hydrated.coverage, false)
+  })
+
+  await t.test('keeps coverage disabled if only configured in config file without being enabled', () => {
+    const config: Config = { files: [], coverage: { thresholds: { lines: 80 } } }
+    const cliArgs: CLIArgs = { _: [] }
+
+    const manager = new ConfigManager(config, cliArgs)
+    const hydrated = manager.hydrate()
+
+    assert.strictEqual(hydrated.coverage, false)
+  })
+
+  await t.test('enables coverage if explicitly set to true in config file', () => {
+    const config: Config = { files: [], coverage: true }
+    const cliArgs: CLIArgs = { _: [] }
+
+    const manager = new ConfigManager(config, cliArgs)
+    const hydrated = manager.hydrate()
+
+    assert.deepStrictEqual(hydrated.coverage, { enabled: true })
+  })
+
+  await t.test('enables coverage if enabled: true is defined in config coverage options', () => {
+    const config: Config = { files: [], coverage: { enabled: true, thresholds: { lines: 80 } } }
+    const cliArgs: CLIArgs = { _: [] }
+
+    const manager = new ConfigManager(config, cliArgs)
+    const hydrated = manager.hydrate()
+
+    assert.deepStrictEqual(hydrated.coverage, { enabled: true, thresholds: { lines: 80 } })
+  })
+
+  await t.test('enables coverage if config coverage is defined but CLI requested coverage', () => {
+    const config: Config = { files: [], coverage: { thresholds: { lines: 80 } } }
+    const cliArgs: CLIArgs = { _: [], coverage: true }
+
+    const manager = new ConfigManager(config, cliArgs)
+    const hydrated = manager.hydrate()
+
+    assert.deepStrictEqual(hydrated.coverage, { enabled: true, thresholds: { lines: 80 } })
+  })
 })
