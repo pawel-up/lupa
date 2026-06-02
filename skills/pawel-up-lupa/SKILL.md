@@ -89,6 +89,7 @@ If you need deeper context on specific Lupa features, read the relevant guide in
 - **Writing Tests:** [`test-suites.md`](./references/guide/test-suites.md), [`grouping-tests.md`](./references/guide/grouping-tests.md), [`lifecycle-hooks.md`](./references/guide/lifecycle-hooks.md)
 - **Assertions & DOM:** [`assertions.md`](./references/guide/assertions.md), [`commands.md`](./references/guide/commands.md)
 - **Network Interception:** [`network-mocking.md`](./references/guide/network-mocking.md)
+- **ESM Mocking:** [`module-mocking.md`](./references/guide/module-mocking.md)
 - **Advanced Flow Control:** [`filtering-tests.md`](./references/guide/filtering-tests.md), [`skipping-tests.md`](./references/guide/skipping-tests.md), [`exceptions.md`](./references/guide/exceptions.md)
 - **Advanced Configuration:** [`datasets.md`](./references/guide/datasets.md), [`plugins.md`](./references/guide/plugins.md), [`test-macros.md`](./references/guide/test-macros.md), [`test-reporters.md`](./references/guide/test-reporters.md)
 - **Vite & Environment:** [`vite-configuration.md`](./references/guide/vite-configuration.md), [`customizing-harness.md`](./references/guide/customizing-harness.md)

@@ -36,6 +36,7 @@ import type {
 } from './locator.js'
 import debuglog from '../runner/debug.js'
 import { NetworkCommand } from '../network/network_command.js'
+import { registry } from '../module-mock/registry.js'
 
 function isTypePayload(payload: SendKeysPayload): payload is TypePayload {
   return 'type' in payload
@@ -115,6 +116,12 @@ export class CommandsHandler {
             break
           case 'network:mock:ignoreCors':
             this.network.setIgnoreCors(payload)
+            break
+          case 'module:mock:register':
+            registry.register(payload.testId, payload.path)
+            break
+          case 'module:mock:clear':
+            registry.clear(payload.testId)
             break
           default:
             throw new Error(`Unknown lupa command: ${command}`)

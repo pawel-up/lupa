@@ -2,10 +2,13 @@ import path from 'node:path'
 import { defineConfig } from './src/runner/index.js'
 import type { Assert } from './src/assert/index.js'
 import type { Network } from './src/network/index.js'
+import { moduleMocking } from './src/module-mock/index.js'
+import type { ModuleMock } from './src/module-mock/index.js'
 
 export default defineConfig({
   files: ['tests/fixtures/integration/**/*.spec.ts'],
   testPlugins: [path.join(process.cwd(), 'src/assert/index.ts'), path.join(process.cwd(), 'src/network/index.ts')],
+  runnerPlugins: [moduleMocking()],
   reporters: {
     activated: ['progress'],
   },
@@ -45,5 +48,6 @@ declare module './src/testing/index.js' {
   interface TestContext {
     assert: Assert
     network: Network
+    module: ModuleMock
   }
 }

@@ -139,3 +139,5 @@ export type CommandNames =
   | 'network:mock:register'
   | 'network:mock:unregister'
   | 'network:mock:ignoreCors'
+  | 'module:mock:register'
+  | 'module:mock:clear'
