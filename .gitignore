@@ -51,3 +51,4 @@ Thumbs.db
 /docs/.vitepress/dist
 /docs/.vitepress/cache
 skills/pawel-up-lupa-workspace
+.agents/skills/

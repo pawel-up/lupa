@@ -17,7 +17,7 @@ configure({
             server.config.logger.error('Fake compilation error', {
               error: new Error('Simulated Vite Compilation Error Boom'),
             })
-          }, 500)
+          }, 50)
         },
       },
     ],

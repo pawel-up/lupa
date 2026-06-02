@@ -222,6 +222,16 @@ export class ServerManager {
     })
 
     await this.#vite.listen()
+
+    // Pre-warm plugin files so their modules are in Vite's cache before
+    // Playwright opens the browser. Without this, a cold node_modules/.vite
+    // cache causes the first dynamic import() in harness.ts to race Vite's
+    // optimizeDeps bundling, producing "Failed to fetch dynamically imported module".
+    const warmupUrls = resolvedPlugins.map(([url]) => url).filter((u): u is string => typeof u === 'string')
+    if (warmupUrls.length > 0) {
+      await Promise.all(warmupUrls.map((url) => this.#vite?.warmupRequest(url)))
+    }
+
     return this.#vite.resolvedUrls?.local[0] || `http://localhost:${this.#vite.config.server.port}`
   }
 
