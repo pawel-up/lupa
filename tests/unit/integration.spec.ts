@@ -300,14 +300,14 @@ test('Integration: Lupa Framework End-to-End', async (t) => {
   await t.test(
     'executes list command with files filter and correctly outputs filtered test table',
     { timeout: TIMEOUT },
-    async () => {
+    async (): Promise<void> => {
       const runnerPath = path.join(process.cwd(), 'bin', 'lupa.ts')
 
       const { exitCode, stdout, stderr } = await new Promise<{
         exitCode: number | null
         stdout: string
         stderr: string
-      }>((resolve, reject) => {
+      }>((resolve, reject): void => {
         const child = fork(runnerPath, ['list', '--files', 'dummy2.spec.ts'], {
           execArgv: ['--import', 'tsx'],
           cwd: process.cwd(),
@@ -343,6 +343,145 @@ test('Integration: Lupa Framework End-to-End', async (t) => {
         output.includes('Math Operations Group'),
         `Expected output to include the correct group. Actual output: ${output}`
       )
+    }
+  )
+
+  await t.test(
+    'executes list command with --files-only and correctly outputs files list',
+    { timeout: TIMEOUT },
+    async (): Promise<void> => {
+      const runnerPath = path.join(process.cwd(), 'bin', 'lupa.ts')
+
+      const { exitCode, stdout, stderr } = await new Promise<{
+        exitCode: number | null
+        stdout: string
+        stderr: string
+      }>((resolve, reject): void => {
+        const child = fork(runnerPath, ['list', '--files-only'], {
+          execArgv: ['--import', 'tsx'],
+          cwd: process.cwd(),
+          env: {
+            ...process.env,
+            FORCE_COLOR: '0',
+            CI: '1',
+          },
+          stdio: 'pipe',
+        })
+
+        let out = ''
+        let err = ''
+
+        child.stdout?.on('data', (data) => (out += data))
+        child.stderr?.on('data', (data) => (err += data))
+
+        child.on('exit', (code) => {
+          resolve({ exitCode: code, stdout: out, stderr: err })
+        })
+
+        child.on('error', reject)
+      })
+
+      const output = stdout + '\n' + stderr
+
+      assert.strictEqual(exitCode, 0, `Expected runner to exit with code 0. Output:\n${output}`)
+      assert.ok(output.includes('dummy.spec.ts'), `Expected output to include dummy.spec.ts. Output:\n${output}`)
+      assert.ok(output.includes('dummy2.spec.ts'), `Expected output to include dummy2.spec.ts. Output:\n${output}`)
+      assert.ok(output.includes('Total files:'), `Expected output to include Total files count. Output:\n${output}`)
+    }
+  )
+
+  await t.test(
+    'executes list command with --search-files and correctly filters files list with multiple queries',
+    { timeout: TIMEOUT },
+    async (): Promise<void> => {
+      const runnerPath = path.join(process.cwd(), 'bin', 'lupa.ts')
+
+      const { exitCode, stdout, stderr } = await new Promise<{
+        exitCode: number | null
+        stdout: string
+        stderr: string
+      }>((resolve, reject): void => {
+        const child = fork(runnerPath, ['list', '--search-files', 'dummy2', 'assert-dom'], {
+          execArgv: ['--import', 'tsx'],
+          cwd: process.cwd(),
+          env: {
+            ...process.env,
+            FORCE_COLOR: '0',
+            CI: '1',
+          },
+          stdio: 'pipe',
+        })
+
+        let out = ''
+        let err = ''
+
+        child.stdout?.on('data', (data) => (out += data))
+        child.stderr?.on('data', (data) => (err += data))
+
+        child.on('exit', (code) => {
+          resolve({ exitCode: code, stdout: out, stderr: err })
+        })
+
+        child.on('error', reject)
+      })
+
+      const output = stdout + '\n' + stderr
+
+      assert.strictEqual(exitCode, 0, `Expected runner to exit with code 0. Output:\n${output}`)
+      assert.ok(output.includes('dummy2.spec.ts'), `Expected output to include dummy2.spec.ts. Output:\n${output}`)
+      assert.ok(
+        output.includes('assert-dom.spec.ts'),
+        `Expected output to include assert-dom.spec.ts. Output:\n${output}`
+      )
+      assert.ok(!output.includes('dummy.spec.ts'), `Expected output to NOT include dummy.spec.ts. Output:\n${output}`)
+      assert.ok(output.includes('Total files: 2'), `Expected output to show Total files: 2. Output:\n${output}`)
+    }
+  )
+
+  await t.test(
+    'executes list command with --search-tests and correctly filters test list with multiple queries',
+    { timeout: TIMEOUT },
+    async (): Promise<void> => {
+      const runnerPath = path.join(process.cwd(), 'bin', 'lupa.ts')
+
+      const { exitCode, stdout, stderr } = await new Promise<{
+        exitCode: number | null
+        stdout: string
+        stderr: string
+      }>((resolve, reject): void => {
+        const child = fork(runnerPath, ['list', '--search-tests', 'should pass', 'add two numbers'], {
+          execArgv: ['--import', 'tsx'],
+          cwd: process.cwd(),
+          env: {
+            ...process.env,
+            FORCE_COLOR: '0',
+            CI: '1',
+          },
+          stdio: 'pipe',
+        })
+
+        let out = ''
+        let err = ''
+
+        child.stdout?.on('data', (data) => (out += data))
+        child.stderr?.on('data', (data) => (err += data))
+
+        child.on('exit', (code) => {
+          resolve({ exitCode: code, stdout: out, stderr: err })
+        })
+
+        child.on('error', reject)
+      })
+
+      const output = stdout + '\n' + stderr
+
+      assert.strictEqual(exitCode, 0, `Expected runner to exit with code 0. Output:\n${output}`)
+      assert.ok(
+        output.includes('this test should pass'),
+        `Expected output to include 'this test should pass'. Output:\n${output}`
+      )
+      assert.ok(output.includes('add two numbers'), `Expected output to include 'add two numbers'. Output:\n${output}`)
+      assert.ok(output.includes('Total tests: 2'), `Expected output to show Total tests: 2. Output:\n${output}`)
     }
   )
 })

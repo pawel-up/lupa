@@ -49,18 +49,34 @@ npx lupa list
 By default, it outputs a clean, human-readable table of your Suites, Groups, and Tests. 
 
 ### Format Option
-You can output the test tree as structured JSON using the `--format` flag:
+You can output the test tree or file list as structured JSON using the `--format` flag:
 
 ```bash
 npx lupa list --format json
 ```
 
 ### Filtering
-The `list` command accepts the same filtering options as the `test` command. For example, to list all tests in a specific file:
+The `list` command accepts the same filtering options as the `test` command (such as `--files`, `--tests`, `--groups`, and `--tags`). For example:
 
 ```bash
 npx lupa list --files auth.spec.ts
 ```
+
+### Advanced Search & File Options
+Lupa provides optimized options to list resolved files and perform text-based filtering on files and tests:
+
+- `--files-only`: Lists only the resolved test files (relative paths) without starting Vite or any Playwright browser instances.
+  ```bash
+  npx lupa list --files-only
+  ```
+- `--search-files <queries...>`: Filters resolved test file paths against case-insensitive substring queries (checks with OR logic if multiple queries are provided). This option automatically skips starting Vite/browser.
+  ```bash
+  npx lupa list --search-files "auth" "profile"
+  ```
+- `--search-tests <queries...>`: Filters discovered tests by matching test titles against case-insensitive substring queries (checks with OR logic if multiple queries are provided).
+  ```bash
+  npx lupa list --search-tests "should login" "should logout"
+  ```
 
 ---
 

@@ -144,6 +144,21 @@ npx lupa list
 npx lupa list --format json
 ```
 
+You can also list files only, or filter files and tests directly using the following options:
+
+- **List resolved files only** (skips starting Vite/Playwright):
+  ```bash
+  npx lupa list --files-only
+  ```
+- **Filter files by path** (implies `--files-only`, supports multiple queries with OR logic):
+  ```bash
+  npx lupa list --search-files "auth" "profile"
+  ```
+- **Filter tests by title** (supports multiple queries with OR logic):
+  ```bash
+  npx lupa list --search-tests "should login" "should logout"
+  ```
+
 ## AI Agent Integration (MCP)
 
 Lupa features a standalone Model Context Protocol (MCP) server package that empowers AI agents inside your IDE (like Cline, Roo, or Cursor) to programmatically discover, filter, and run your test suites. 
