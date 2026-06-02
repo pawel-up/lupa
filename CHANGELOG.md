@@ -1,3 +1,10 @@
+## [0.3.9](https://github.com/pawel-up/lupa/compare/v0.3.8...v0.3.9) (2026-06-02)
+
+
+### Bug Fixes
+
+* updating depednencies ([8227b3a](https://github.com/pawel-up/lupa/commit/8227b3a53d87486210818c7861706c8f26e3186a))
+
 ## [0.3.8](https://github.com/pawel-up/lupa/compare/v0.3.7...v0.3.8) (2026-06-02)
 
 
