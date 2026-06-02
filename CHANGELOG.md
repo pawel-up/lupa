@@ -1,3 +1,11 @@
+## [0.3.10](https://github.com/pawel-up/lupa/compare/v0.3.9...v0.3.10) (2026-06-02)
+
+
+### Bug Fixes
+
+* fixes [#26](https://github.com/pawel-up/lupa/issues/26) search commands ([cbb2570](https://github.com/pawel-up/lupa/commit/cbb2570bae72ebb2756ec4f9635461e01629ad25))
+* restoring running suites ([2b081f6](https://github.com/pawel-up/lupa/commit/2b081f60b5570b5f28e636e7c445a75843d590ca))
+
 ## [0.3.9](https://github.com/pawel-up/lupa/compare/v0.3.8...v0.3.9) (2026-06-02)
 
 
