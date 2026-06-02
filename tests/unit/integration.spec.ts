@@ -9,7 +9,7 @@ const BROWSER_SKIPPED_TESTS_COUNT = 1
 
 test('Integration: Lupa Framework End-to-End', async (t) => {
   // Give it a longer timeout since it boots Vite and Playwright
-  const TIMEOUT = 30000
+  const TIMEOUT = 60000
 
   await t.test(
     'executes browser tests, reports telemetry, and exits with correct code',
@@ -482,6 +482,98 @@ test('Integration: Lupa Framework End-to-End', async (t) => {
       )
       assert.ok(output.includes('add two numbers'), `Expected output to include 'add two numbers'. Output:\n${output}`)
       assert.ok(output.includes('Total tests: 2'), `Expected output to show Total tests: 2. Output:\n${output}`)
+    }
+  )
+
+  await t.test(
+    'executes list command with positional arguments to filter suites',
+    { timeout: TIMEOUT },
+    async (): Promise<void> => {
+      const runnerPath = path.join(process.cwd(), 'bin', 'lupa.ts')
+
+      const { exitCode, stdout, stderr } = await new Promise<{
+        exitCode: number | null
+        stdout: string
+        stderr: string
+      }>((resolve, reject): void => {
+        const child = fork(runnerPath, ['list', 'Unit Tests', '--config', 'lupa.suites.config.ts'], {
+          execArgv: ['--import', 'tsx'],
+          cwd: process.cwd(),
+          env: {
+            ...process.env,
+            FORCE_COLOR: '0',
+            CI: '1',
+          },
+          stdio: 'pipe',
+        })
+
+        let out = ''
+        let err = ''
+
+        child.stdout?.on('data', (data) => (out += data))
+        child.stderr?.on('data', (data) => (err += data))
+
+        child.on('exit', (code) => {
+          resolve({ exitCode: code, stdout: out, stderr: err })
+        })
+
+        child.on('error', reject)
+      })
+
+      const output = stdout + '\n' + stderr
+
+      assert.strictEqual(exitCode, 0, `Expected runner to exit with code 0. Output:\n${output}`)
+      assert.ok(
+        output.includes('unit 1 - no suite'),
+        `Expected output to include 'unit 1 - no suite'. Output:\n${output}`
+      )
+      assert.ok(output.includes('Total tests: 1'), `Expected output to show Total tests: 1. Output:\n${output}`)
+    }
+  )
+
+  await t.test(
+    'executes list command with --suites option to filter suites',
+    { timeout: TIMEOUT },
+    async (): Promise<void> => {
+      const runnerPath = path.join(process.cwd(), 'bin', 'lupa.ts')
+
+      const { exitCode, stdout, stderr } = await new Promise<{
+        exitCode: number | null
+        stdout: string
+        stderr: string
+      }>((resolve, reject): void => {
+        const child = fork(runnerPath, ['list', '--suites', 'Unit Tests', '--config', 'lupa.suites.config.ts'], {
+          execArgv: ['--import', 'tsx'],
+          cwd: process.cwd(),
+          env: {
+            ...process.env,
+            FORCE_COLOR: '0',
+            CI: '1',
+          },
+          stdio: 'pipe',
+        })
+
+        let out = ''
+        let err = ''
+
+        child.stdout?.on('data', (data) => (out += data))
+        child.stderr?.on('data', (data) => (err += data))
+
+        child.on('exit', (code) => {
+          resolve({ exitCode: code, stdout: out, stderr: err })
+        })
+
+        child.on('error', reject)
+      })
+
+      const output = stdout + '\n' + stderr
+
+      assert.strictEqual(exitCode, 0, `Expected runner to exit with code 0. Output:\n${output}`)
+      assert.ok(
+        output.includes('unit 1 - no suite'),
+        `Expected output to include 'unit 1 - no suite'. Output:\n${output}`
+      )
+      assert.ok(output.includes('Total tests: 1'), `Expected output to show Total tests: 1. Output:\n${output}`)
     }
   )
 })

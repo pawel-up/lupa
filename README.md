@@ -123,10 +123,12 @@ test('mocks a network request', async ({ assert, network }) => {
 
 ### 4. Running the Tests
 
-Execute your test script using a transpiler like `tsx`:
+Execute your test script using a transpiler like `tsx`. You can run all test suites, or run specific suites by passing positional arguments or the `--suites` option:
 
 ```bash
 npx lupa test
+npx lupa test "Unit Tests" "Integration Tests"
+npx lupa test --suites "Unit Tests" "Integration Tests"
 ```
 
 For the ultimate developer experience, run it in **Watch Mode**:
@@ -137,10 +139,12 @@ npx lupa test --watch
 
 ### 4. Discovering Tests
 
-You can list all available test suites and tests without executing them. By default, it prints a clean table, but you can also output JSON for programmatic integrations:
+You can list all available test suites and tests without executing them. You can filter the listing to specific suites using positional arguments or the `--suites` option:
 
 ```bash
 npx lupa list
+npx lupa list "Unit Tests"
+npx lupa list --suites "Unit Tests"
 npx lupa list --format json
 ```
 

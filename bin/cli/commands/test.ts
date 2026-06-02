@@ -36,7 +36,9 @@ ${colors.yellow('Notes:')}
 
 export const testCommand = new Command('test')
   .description('Run Lupa tests')
+  .argument('[suites...]', 'Run specific test suites')
   .option('-c, --config <path>', 'Path to the configuration file', 'lupa.config.ts')
+  .option('--suites <names...>', 'Filter tests by suite name')
   .option('--tests <titles...>', 'Filter tests by the test title')
   .option('--groups <titles...>', 'Filter tests by the group title')
   .option('--tags <tags...>', 'Filter tests by tags')
@@ -64,11 +66,11 @@ export const testCommand = new Command('test')
   .allowUnknownOption()
   .addHelpText('after', examples)
   .addHelpText('after', notes)
-  .action(async (options, command) => {
+  .action(async (suites, options, command) => {
     try {
       // 1. Process arguments for the test runner.
       const cliArgs: CLIArgs = command.opts()
-      cliArgs._ = command.args
+      cliArgs._ = suites
 
       // 2. Load Configuration
       let configPath = path.resolve(process.cwd(), options.config)

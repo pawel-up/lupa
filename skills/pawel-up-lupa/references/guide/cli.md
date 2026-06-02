@@ -11,12 +11,14 @@ While the test execution is entirely driven by your `lupa.config.ts` file, the C
 The primary command for executing your Lupa test suite. By default, it automatically detects and loads `lupa.config.ts` from your current directory and runs the test runner.
 
 ```bash
-npx lupa test
+npx lupa test [suites...]
 ```
 
 ### Filtering & Options
 You can narrow down what gets executed using various filters:
 
+- `[suites...]`: Positional arguments to run specific test suites (e.g. `npx lupa test "Unit Tests"`).
+- `--suites <names...>`: Filter tests by suite name (e.g. `npx lupa test --suites "Unit Tests"`).
 - `--files <files...>`: Filter tests by file name substring (e.g. `npx lupa test --files auth.spec.ts`)
 - `--tests <titles...>`: Filter tests by test title (e.g. `npx lupa test --tests "Login"`)
 - `--groups <titles...>`: Filter tests by group title
@@ -43,7 +45,7 @@ You can narrow down what gets executed using various filters:
 Discover and list available tests without running them. This is useful for introspecting your test architecture or for programmatic integrations (like AI agents).
 
 ```bash
-npx lupa list
+npx lupa list [suites...]
 ```
 
 By default, it outputs a clean, human-readable table of your Suites, Groups, and Tests. 
@@ -56,7 +58,12 @@ npx lupa list --format json
 ```
 
 ### Filtering
-The `list` command accepts the same filtering options as the `test` command (such as `--files`, `--tests`, `--groups`, and `--tags`). For example:
+You can restrict the listing to specific suites by passing them as positional arguments or using the `--suites` option:
+
+- `[suites...]`: Positional arguments to specify which test suites to list (e.g. `npx lupa list "Unit Tests"`).
+- `--suites <names...>`: Filter tests by suite name (e.g. `npx lupa list --suites "Unit Tests"`).
+
+The `list` command also accepts the same filtering options as the `test` command (such as `--files`, `--tests`, `--groups`, and `--tags`). For example:
 
 ```bash
 npx lupa list --files auth.spec.ts

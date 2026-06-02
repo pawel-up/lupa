@@ -37,6 +37,19 @@ test('ConfigManager', async (t) => {
     assert.deepStrictEqual(hydrated.filters.suites, ['unit', 'e2e'])
   })
 
+  await t.test('merges CLI filters and prioritizes explicit suites option', () => {
+    const config: Config = { files: [] }
+    const cliArgs: CLIArgs = {
+      _: ['unit'],
+      suites: 'functional,integration',
+    }
+
+    const manager = new ConfigManager(config, cliArgs)
+    const hydrated = manager.hydrate()
+
+    assert.deepStrictEqual(hydrated.filters.suites, ['functional', 'integration'])
+  })
+
   await t.test('overwrites config with CLI args', () => {
     const config: Config = { files: [], timeout: 5000, retries: 2 }
     const cliArgs: CLIArgs = { _: [], timeout: '1000', retries: '5' }

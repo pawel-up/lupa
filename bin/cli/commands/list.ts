@@ -19,7 +19,9 @@ import { Planner } from '../../../src/runner/planner.js'
 
 export const listCommand = new Command('list')
   .description('Discover and list available tests without running them')
+  .argument('[suites...]', 'Discover tests for specific suites')
   .option('-c, --config <path>', 'Path to the configuration file', 'lupa.config.ts')
+  .option('--suites <names...>', 'Filter tests by suite name')
   .option('--tests <titles...>', 'Filter tests by the test title')
   .option('--groups <titles...>', 'Filter tests by the group title')
   .option('--tags <tags...>', 'Filter tests by tags')
@@ -33,8 +35,10 @@ export const listCommand = new Command('list')
   .allowUnknownOption()
   .action(
     async (
+      suites: string[],
       options: {
         config: string
+        suites?: string[]
         tests?: string[]
         groups?: string[]
         tags?: string[]
@@ -50,7 +54,7 @@ export const listCommand = new Command('list')
     ) => {
       try {
         const cliArgs: CLIArgs = command.opts()
-        cliArgs._ = command.args
+        cliArgs._ = suites
         cliArgs.list = true
 
         let configPath = path.resolve(process.cwd(), options.config)

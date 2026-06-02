@@ -72,7 +72,9 @@ export class ConfigManager {
     if (this.#cliArgs.groups) {
       filters.groups = this.#processAsArray(this.#cliArgs.groups, false)
     }
-    if (this.#cliArgs._ && this.#cliArgs._.length) {
+    if (this.#cliArgs.suites) {
+      filters.suites = this.#processAsArray(this.#cliArgs.suites, true)
+    } else if (this.#cliArgs._ && this.#cliArgs._.length) {
       filters.suites = this.#processAsArray(this.#cliArgs._, true)
     }
 

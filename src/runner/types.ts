@@ -13,6 +13,10 @@ export type CLIArgs = {
    */
   _?: string[]
   /**
+   * Test suites to filter by
+   */
+  suites?: string | string[]
+  /**
    * Test tags to filter by
    */
   tags?: string | string[]
