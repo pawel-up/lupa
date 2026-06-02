@@ -1,3 +1,11 @@
+## [0.3.8](https://github.com/pawel-up/lupa/compare/v0.3.7...v0.3.8) (2026-06-02)
+
+
+### Bug Fixes
+
+* implement priority and exclusion options for test suites ([246ca7f](https://github.com/pawel-up/lupa/commit/246ca7f22d27433a572c09a235cbbb8b2fcc525c))
+* update plugin documentation and enhance telemetry event handling ([9ef8a8a](https://github.com/pawel-up/lupa/commit/9ef8a8afc7a78b40cfffd50c4d3663b9ae99e403))
+
 ## [0.3.7](https://github.com/pawel-up/lupa/compare/v0.3.6...v0.3.7) (2026-05-23)
 
 
