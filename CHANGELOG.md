@@ -1,3 +1,10 @@
+## [0.4.2](https://github.com/pawel-up/lupa/compare/v0.4.1...v0.4.2) (2026-06-02)
+
+
+### Bug Fixes
+
+* upgrading c8 ([6e106fb](https://github.com/pawel-up/lupa/commit/6e106fb2760c1d080720bc2aaefdf74f5779f3ee))
+
 ## [0.4.1](https://github.com/pawel-up/lupa/compare/v0.4.0...v0.4.1) (2026-06-02)
 
 
