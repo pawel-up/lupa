@@ -35,13 +35,13 @@ test('TestPoolManager', async (t) => {
 
     const chromiumChunks = manager.getChunkIdsForBrowser('chromium')
     assert.equal(chromiumChunks.length, 2)
-    assert.equal(chromiumChunks[0], 'chromium-0')
-    assert.equal(chromiumChunks[1], 'chromium-1')
+    assert.equal(chromiumChunks[0], 'chromium-t100-0')
+    assert.equal(chromiumChunks[1], 'chromium-t100-1')
 
     const firefoxChunks = manager.getChunkIdsForBrowser('firefox')
     assert.equal(firefoxChunks.length, 2)
 
-    const chunk0 = manager.getChunk('chromium-0')
+    const chunk0 = manager.getChunk('chromium-t100-0')
     assert.ok(chunk0)
     assert.equal(chunk0.browserName, 'chromium')
     assert.equal(chunk0.pageIndex, 0)
@@ -55,7 +55,7 @@ test('TestPoolManager', async (t) => {
     assert.equal(chunk0.suites[0].name, 'unit')
     assert.equal(chunk0.suites[0].filesURLs.length, 2)
 
-    const chunk1 = manager.getChunk('chromium-1')
+    const chunk1 = manager.getChunk('chromium-t100-1')
     assert.ok(chunk1)
     assert.equal(chunk1.suites.length, 2) // unit and e2e
     assert.equal(chunk1.suites[0].name, 'unit')
@@ -100,19 +100,44 @@ test('TestPoolManager', async (t) => {
     const manager = new TestPoolManager(mockConfig, browsers, suites)
 
     // concurrency=2, round-robin: test1->0, test2->1, test3->0, test4->1
-    // test2 lives in chromium-1, not chromium-0 (the regression case)
-    assert.equal(manager.getChunkIdForFile('chromium', '/absolute/path/to/test2.spec.ts'), 'chromium-1')
+    // test2 lives in chromium-t100-1, not chromium-t100-0 (the regression case)
+    assert.equal(manager.getChunkIdForFile('chromium', '/absolute/path/to/test2.spec.ts'), 'chromium-t100-1')
   })
 
   await t.test('getChunkIdForFile matches by path suffix', () => {
     const manager = new TestPoolManager(mockConfig, browsers, suites)
 
-    assert.equal(manager.getChunkIdForFile('chromium', 'test3.spec.ts'), 'chromium-0')
+    assert.equal(manager.getChunkIdForFile('chromium', 'test3.spec.ts'), 'chromium-t100-0')
   })
 
-  await t.test('getChunkIdForFile falls back to <browser>-0 when file not found', () => {
+  await t.test('getChunkIdForFile falls back to first chunk when file not found', () => {
     const manager = new TestPoolManager(mockConfig, browsers, suites)
 
-    assert.equal(manager.getChunkIdForFile('chromium', 'unknown.spec.ts'), 'chromium-0')
+    assert.equal(manager.getChunkIdForFile('chromium', 'unknown.spec.ts'), 'chromium-t100-0')
+  })
+
+  await t.test('getChunkIdsByTier returns chunks grouped by priority, descending', () => {
+    const highPrioritySuite: PlannedTestSuite = {
+      name: 'unit',
+      files: [],
+      priority: 100,
+      filesURLs: [pathToFileURL('/absolute/path/to/test1.spec.ts')],
+    }
+    const lowPrioritySuite: PlannedTestSuite = {
+      name: 'benchmarks',
+      files: [],
+      priority: 50,
+      filesURLs: [pathToFileURL('/absolute/path/to/bench1.benchmark.ts')],
+    }
+
+    const manager = new TestPoolManager(mockConfig, ['chromium'], [highPrioritySuite, lowPrioritySuite])
+    const tiers = manager.getChunkIdsByTier('chromium')
+
+    const priorities = [...tiers.keys()]
+    assert.equal(priorities[0], 100)
+    assert.equal(priorities[1], 50)
+
+    assert.ok(tiers.get(100)?.every((id) => id.includes('-t100-')))
+    assert.ok(tiers.get(50)?.every((id) => id.includes('-t50-')))
   })
 })

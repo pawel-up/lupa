@@ -234,6 +234,14 @@ export class ServerManager {
   }
 
   /**
+   * Resolves when all queued telemetry events have been processed.
+   * Must be awaited before ending the runner to ensure no events are lost.
+   */
+  drainTelemetry(): Promise<void> {
+    return this.#telemetryQueue
+  }
+
+  /**
    * Closes the Vite server if running.
    */
   async close() {

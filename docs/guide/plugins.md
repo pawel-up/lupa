@@ -196,7 +196,7 @@ To get full TypeScript safety on both sides, augment the `CustomRunnerEvents` in
 
 ```ts
 // env.d.ts (or any .ts file included in your project)
-declare module '@pawel-up/lupa/types' {
+declare module '@pawel-up/lupa/testing/api' {
   interface CustomRunnerEvents {
     'benchmark:result': { name: string; ops: number; margin: number }
   }
@@ -256,3 +256,89 @@ export default defineConfig({
 
 > [!NOTE]
 > No special configuration is needed to route custom events. All events emitted on the browser-side `emitter` are forwarded to Node automatically. The `CustomRunnerEvents` augmentation is purely a TypeScript concern — it adds type safety without changing runtime behaviour.
+
+## Suite Execution Order: `priority` and `disableInWatchMode`
+
+When running benchmark suites alongside regular tests, you typically want benchmarks to run **after** all tests have completed — not interleaved — so their output appears at the end. Lupa supports this via two suite-level options.
+
+### `priority`
+
+Suites are executed in **descending priority order**. All suites at a given priority level complete before the next level starts.
+
+- Default priority: `100`
+- Lower value = runs later (e.g. `50`)
+
+```ts
+// lupa.config.ts
+export default defineConfig({
+  suites: [
+    {
+      name: 'unit',
+      files: ['tests/**/*.spec.ts'],
+      // priority defaults to 100
+    },
+    {
+      name: 'benchmarks',
+      files: ['tests/**/*.benchmark.ts'],
+      priority: 50, // runs after all priority-100 suites finish
+    }
+  ]
+})
+```
+
+Reporters receive a single continuous stream of events — `runner:start` and `runner:end` bracket the whole run. Benchmark output appears naturally at the end because those suite events arrive last.
+
+### `disableInWatchMode`
+
+Benchmarks are slow. Setting `disableInWatchMode: true` skips the suite entirely during `--watch` runs, keeping the feedback loop fast.
+
+```ts
+{
+  name: 'benchmarks',
+  files: ['tests/**/*.benchmark.ts'],
+  priority: 50,
+  disableInWatchMode: true,
+}
+```
+
+### Automatic assignment via a plugin
+
+Rather than requiring consumers to set `priority` and `disableInWatchMode` manually, a plugin can assign these values automatically in its `plan()` hook:
+
+```ts
+import type { LupaPlugin } from '@pawel-up/lupa/runner'
+
+export function benchmarkPlugin(): LupaPlugin {
+  return {
+    name: 'benchmark',
+
+    plan({ config }) {
+      if (!('suites' in config)) return
+      for (const suite of config.suites) {
+        if (String(suite.files).includes('.benchmark.')) {
+          suite.priority = 50
+          suite.disableInWatchMode = true
+        }
+      }
+    },
+
+    execute({ emitter }) {
+      emitter.on('suite:start', ({ name }) => {
+        if (name === 'benchmarks') console.log('\nRunning benchmarks...')
+      })
+    }
+  }
+}
+```
+
+Consumers register the plugin and get the correct ordering with zero manual config:
+
+```ts
+export default defineConfig({
+  suites: [
+    { name: 'unit', files: ['tests/**/*.spec.ts'] },
+    { name: 'benchmarks', files: ['tests/**/*.benchmark.ts'] },
+  ],
+  runnerPlugins: [benchmarkPlugin()]
+})
+```

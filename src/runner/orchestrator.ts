@@ -118,6 +118,7 @@ export class Orchestrator implements ServerTelemetryContract {
   #completionPromise?: Promise<number>
   #resolveCompletion?: (code: number) => void
   #rejectCompletion?: (error: any) => void
+  #runnerEnded = false
 
   /**
    * Returns a promise that resolves with the exit code when the test run completes.
@@ -152,6 +153,7 @@ export class Orchestrator implements ServerTelemetryContract {
     }
 
     this.testPoolManager = new TestPoolManager(this.config, this.browserNames, this.suites)
+    this.cli.setExcludedFilePaths(this.testPoolManager.getExcludedFilePaths())
 
     this.serverManager = new ServerManager(this, {
       cwd: this.config.cwd || process.cwd(),
@@ -172,30 +174,7 @@ export class Orchestrator implements ServerTelemetryContract {
 
     this.browserManager = new BrowserManager(this.browserNames, !!this.cliArgs.verbose, this.browserEmitter)
 
-    await this.browserManager.boot(this.testPoolManager, async () => {
-      if (this.globalTimeout) {
-        clearTimeout(this.globalTimeout)
-        this.globalTimeout = undefined
-      }
-
-      if (this.activeNodeRunner) {
-        await this.activeNodeRunner.end()
-      }
-      this.isRunning = false
-
-      const exitCode =
-        (this.activeNodeRunner && this.activeNodeRunner.failed) || this.exceptionsManager.hasErrors ? 1 : 0
-
-      if (this.#resolveCompletion) {
-        this.#resolveCompletion(exitCode)
-      }
-
-      if (!this.isWatchMode) {
-        await this.shutdown(exitCode)
-      } else {
-        this.cli.printWaitingMessage()
-      }
-    })
+    await this.browserManager.boot(this.testPoolManager)
   }
 
   /**
@@ -309,6 +288,7 @@ export class Orchestrator implements ServerTelemetryContract {
       this.cli.clearEventBufferFor(this.config.filters?.files)
     }
 
+    this.#runnerEnded = false
     this.activeNodeEmitter = new Emitter<RunnerEvents>()
     this.activeNodeRunner = new Runner(this.activeNodeEmitter, this.config)
 
@@ -374,7 +354,71 @@ export class Orchestrator implements ServerTelemetryContract {
       this.globalTimeout?.unref()
     }
 
-    await this.browserManager?.goto(`${this.serverUrl}__lupa__/runner.html`)
+    // Execute each priority tier sequentially, highest priority first.
+    // This runs as a detached promise so executeTests() returns immediately —
+    // matching the original behaviour where goto() returned before tests ran.
+    this.#runWaves().catch((err) => this.exceptionsManager.notifyException(err))
+  }
+
+  async #runWaves() {
+    if (!this.testPoolManager || !this.browserManager || !this.activeNodeRunner) {
+      return
+    }
+    const { testPoolManager, browserManager } = this
+    const tiers = testPoolManager.getChunkIdsByTier(this.browserNames[0])
+
+    if (tiers.size === 0) {
+      // No files to run — the test harness will signal runner end via the browser.
+      // Nothing to do here; completion is driven by the existing runner:end event path.
+      return
+    }
+
+    const excludedOnlyPriorities = testPoolManager.getExcludedOnlyPriorities()
+
+    for (const [priority] of tiers) {
+      const allBrowserChunkIds = this.browserNames.flatMap(
+        (b) => testPoolManager.getChunkIdsByTier(b).get(priority) ?? []
+      )
+      await browserManager.navigateAndWait(`${this.serverUrl}__lupa__/runner.html`, allBrowserChunkIds)
+
+      // After the last reporting wave completes, drain telemetry and end the runner
+      // so the reporter prints its summary before any excluded (e.g. benchmark) waves run.
+      if (!excludedOnlyPriorities.has(priority)) {
+        const remainingTiers = [...tiers.keys()].filter((p) => p < priority)
+        const hasMoreReportingTiers = remainingTiers.some((p) => !excludedOnlyPriorities.has(p))
+        if (!hasMoreReportingTiers && !this.#runnerEnded) {
+          await this.serverManager?.drainTelemetry()
+          this.#runnerEnded = true
+          await this.activeNodeRunner.end()
+        }
+      }
+    }
+
+    if (this.globalTimeout) {
+      clearTimeout(this.globalTimeout)
+      this.globalTimeout = undefined
+    }
+
+    // Final drain + end in case all tiers were excluded-only (no reporting waves).
+    await this.serverManager?.drainTelemetry()
+
+    if (this.activeNodeRunner && !this.#runnerEnded) {
+      this.#runnerEnded = true
+      await this.activeNodeRunner.end()
+    }
+    this.isRunning = false
+
+    const exitCode = (this.activeNodeRunner && this.activeNodeRunner.failed) || this.exceptionsManager.hasErrors ? 1 : 0
+
+    if (this.#resolveCompletion) {
+      this.#resolveCompletion(exitCode)
+    }
+
+    if (!this.isWatchMode) {
+      await this.shutdown(exitCode)
+    } else {
+      this.cli.printWaitingMessage()
+    }
   }
 
   async handleCompilationError(error: Error, bail: boolean): Promise<void> {

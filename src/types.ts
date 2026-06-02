@@ -632,7 +632,7 @@ export interface RunnerPinnedTestsNode {
  * - the `emitter` in `LupaPlugin.execute()` (Node, subscribe side)
  *
  * ```typescript
- * declare module '@pawel-up/lupa/types' {
+ * declare module '@pawel-up/lupa/testing/api' {
  *   interface CustomRunnerEvents {
  *     'benchmark:result': { name: string; duration: number }
  *   }

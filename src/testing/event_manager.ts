@@ -40,6 +40,11 @@ export class EventManager {
     }
 
     this.#emitter.onAny(({ name, data }: { name: string; data: any }) => {
+      // runner:start and runner:end are lifecycle signals managed by the Node orchestrator
+      // via activeNodeRunner.start() / activeNodeRunner.end(). Forwarding them over the
+      // WebSocket would cause them to fire twice on the Node emitter.
+      if (name === 'runner:start' || name === 'runner:end') return
+
       if (name === 'suite:end' || name === 'group:end' || name === 'test:end') {
         data = { ...data, errors: this.#serializeErrors(data?.errors) }
       } else if (name === 'uncaught:exception' || name === 'runner:import_error') {

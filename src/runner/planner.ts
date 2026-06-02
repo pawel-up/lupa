@@ -96,6 +96,7 @@ export class Planner {
 
     if ('suites' in this.#config) {
       for (const suite of this.#config.suites) {
+        if (this.#config.watch && suite.disableInWatchMode) continue
         if (!suitesFilters.length || suitesFilters.includes(suite.name)) {
           suites.push({
             ...suite,

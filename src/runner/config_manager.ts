@@ -203,6 +203,9 @@ export class ConfigManager {
           files: suite.files,
           timeout: cliTimeout ?? suite.timeout ?? baseConfig.timeout,
           retries: cliRetries ?? suite.retries ?? baseConfig.retries,
+          priority: suite.priority ?? 100,
+          disableInWatchMode: suite.disableInWatchMode ?? false,
+          excludeFromReporting: suite.excludeFromReporting ?? false,
         }
       }),
       ...baseConfig,

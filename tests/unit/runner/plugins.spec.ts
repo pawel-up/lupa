@@ -51,13 +51,13 @@ test('Runner Plugins Lifecycle', async (t) => {
       orchestrator.registerTeardowns([planTeardown])
     }
 
-    // Mock methods that launch actual services/browsers
+    // Mock methods that launch actual services/browsers.
+    // navigateAndWait never resolves so #runWaves() hangs, letting the test
+    // manually control when runner:end fires.
     orchestrator.serverManager = { boot: async () => 'http://localhost' } as any
     orchestrator.browserManager = {
-      boot: async () => {
-        // Simulate browser boot completion without running actual browser
-      },
-      goto: async () => {},
+      boot: async () => {},
+      navigateAndWait: () => new Promise(() => {}),
       close: async () => {},
     } as any
 
@@ -140,7 +140,7 @@ test('Runner Plugins Lifecycle', async (t) => {
     orchestrator.serverManager = { boot: async () => 'http://localhost' } as any
     orchestrator.browserManager = {
       boot: async () => {},
-      goto: async () => {},
+      navigateAndWait: () => new Promise(() => {}),
       close: async () => {},
     } as any
 
@@ -208,7 +208,11 @@ test('Runner Plugins Lifecycle', async (t) => {
     orchestrator.registerTeardowns([planTeardown as any])
 
     orchestrator.serverManager = { boot: async () => 'http://localhost' } as any
-    orchestrator.browserManager = { boot: async () => {}, goto: async () => {}, close: async () => {} } as any
+    orchestrator.browserManager = {
+      boot: async () => {},
+      navigateAndWait: () => new Promise(() => {}),
+      close: async () => {},
+    } as any
 
     await orchestrator.boot()
     assert.strictEqual(executedHooks.length, 2)
@@ -259,7 +263,11 @@ test('Runner Plugins Lifecycle', async (t) => {
 
     const orchestrator = new Orchestrator(config, {}, [] as NamedReporterContract[], [], [])
     orchestrator.serverManager = { boot: async () => 'http://localhost' } as any
-    orchestrator.browserManager = { boot: async () => {}, goto: async () => {}, close: async () => {} } as any
+    orchestrator.browserManager = {
+      boot: async () => {},
+      navigateAndWait: () => new Promise(() => {}),
+      close: async () => {},
+    } as any
 
     await orchestrator.boot()
     assert.strictEqual(executedHooks[0], 'plugin1:boot')
@@ -287,7 +295,11 @@ test.describe('Ignoring lifecycle methods on plugins', () => {
 
     const orchestrator = new Orchestrator(config, {}, [], [], [])
     orchestrator.serverManager = { boot: async () => 'http://localhost' } as any
-    orchestrator.browserManager = { boot: async () => {}, goto: async () => {}, close: async () => {} } as any
+    orchestrator.browserManager = {
+      boot: async () => {},
+      navigateAndWait: () => new Promise(() => {}),
+      close: async () => {},
+    } as any
 
     await assert.doesNotReject(async () => {
       await orchestrator.boot()
@@ -312,7 +324,11 @@ test.describe('Ignoring lifecycle methods on plugins', () => {
 
     const orchestrator = new Orchestrator(config, {}, [], [], [])
     orchestrator.serverManager = { boot: async () => 'http://localhost' } as any
-    orchestrator.browserManager = { boot: async () => {}, goto: async () => {}, close: async () => {} } as any
+    orchestrator.browserManager = {
+      boot: async () => {},
+      navigateAndWait: () => new Promise(() => {}),
+      close: async () => {},
+    } as any
 
     await assert.doesNotReject(async () => {
       await orchestrator.boot()
@@ -337,7 +353,11 @@ test.describe('Ignoring lifecycle methods on plugins', () => {
 
     const orchestrator = new Orchestrator(config, {}, [], [], [])
     orchestrator.serverManager = { boot: async () => 'http://localhost' } as any
-    orchestrator.browserManager = { boot: async () => {}, goto: async () => {}, close: async () => {} } as any
+    orchestrator.browserManager = {
+      boot: async () => {},
+      navigateAndWait: () => new Promise(() => {}),
+      close: async () => {},
+    } as any
 
     await assert.doesNotReject(async () => {
       await orchestrator.boot()
@@ -362,7 +382,11 @@ test.describe('Ignoring lifecycle methods on plugins', () => {
 
     const orchestrator = new Orchestrator(config, {}, [], [], [])
     orchestrator.serverManager = { boot: async () => 'http://localhost' } as any
-    orchestrator.browserManager = { boot: async () => {}, goto: async () => {}, close: async () => {} } as any
+    orchestrator.browserManager = {
+      boot: async () => {},
+      navigateAndWait: () => new Promise(() => {}),
+      close: async () => {},
+    } as any
 
     await assert.doesNotReject(async () => {
       await orchestrator.boot()

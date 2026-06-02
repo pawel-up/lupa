@@ -404,6 +404,36 @@ export interface TestSuite {
    * The retries to apply on all the tests in this suite, unless overwritten explicitly
    */
   retries?: number
+
+  /**
+   * Execution priority. Suites are executed in descending order — higher values run first.
+   * Defaults to `100`. Use a lower value (e.g. `50`) to ensure this suite runs after all
+   * higher-priority suites have fully completed.
+   *
+   * @default 100
+   */
+  priority?: number
+
+  /**
+   * When `true`, this suite is skipped entirely during watch mode.
+   * Useful for long-running suites (e.g. benchmarks) that should only run in CI
+   * or on an explicit full run.
+   *
+   * @default false
+   */
+  disableInWatchMode?: boolean
+
+  /**
+   * When `true`, files in this suite are excluded from reporter progress tracking.
+   * The suite still executes normally, but `file:start` and `file:end` events are
+   * suppressed from reporters, and the files are not counted toward the progress total.
+   *
+   * Useful for non-test suites (e.g. benchmarks) that run alongside tests but should
+   * not affect the test summary output.
+   *
+   * @default false
+   */
+  excludeFromReporting?: boolean
 }
 
 /**

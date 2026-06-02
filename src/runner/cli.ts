@@ -17,11 +17,16 @@ export class Cli {
   #originalFilesFilter: string[] | undefined
   #fileEvents = new Map<string, { eventName: string; data: any }[]>()
   #isReplaying = false
+  #excludedFilePaths = new Set<string>()
 
   debugBrowser: Browser | undefined
 
   constructor(orchestrator: Orchestrator) {
     this.#orchestrator = orchestrator
+  }
+
+  setExcludedFilePaths(paths: Set<string>) {
+    this.#excludedFilePaths = paths
   }
 
   get focusedFile() {
@@ -80,6 +85,14 @@ export class Cli {
             }
             events.push({ eventName, data })
           }
+        }
+      }
+
+      // Suppress file:start / file:end for suites marked excludeFromReporting
+      if (this.#excludedFilePaths.size > 0 && (eventName === 'file:start' || eventName === 'file:end')) {
+        const filePath = data?.file || ''
+        if (filePath && this.#excludedFilePaths.has(filePath)) {
+          return
         }
       }
 

@@ -16,15 +16,19 @@ export class BrowserManager {
   #verboseLogs: boolean
   #emitter: Emitter<RunnerEvents>
 
+  // The set of chunk IDs expected to finish in the current wave,
+  // and the resolve function for the current wave's completion promise.
+  #currentWaveChunkIds = new Set<string>()
+  #currentWaveFinished = new Set<string>()
+  #resolveWave?: () => void
+
   constructor(browserNames: BrowserName[], verboseLogs: boolean, emitter: Emitter<RunnerEvents>) {
     this.#browserNames = browserNames
     this.#verboseLogs = verboseLogs
     this.#emitter = emitter
   }
 
-  async boot(testPoolManager: TestPoolManager, onRunnerEnd: () => Promise<void>) {
-    const finishedPages = new Set<Page>()
-
+  async boot(testPoolManager: TestPoolManager) {
     for (const name of this.#browserNames) {
       debug('launching browser: %s', name)
       let browser: Browser
@@ -46,25 +50,50 @@ export class BrowserManager {
         const commandsHandler = new CommandsHandler(page)
         await commandsHandler.boot()
 
-        await page.exposeFunction('__lupa_runner_end__', async () => {
-          finishedPages.add(page)
-          if (finishedPages.size === this.#pages.size) {
-            await onRunnerEnd()
-            finishedPages.clear() // Reset for next watch mode run
+        // Capture chunkId in the closure so each page knows its own identity.
+        const id = chunkId
+        await page.exposeFunction('__lupa_runner_end__', () => {
+          if (this.#currentWaveChunkIds.has(id)) {
+            this.#currentWaveFinished.add(id)
+            if (this.#currentWaveFinished.size >= this.#currentWaveChunkIds.size) {
+              this.#resolveWave?.()
+            }
           }
         })
       }
     }
   }
 
-  async goto(urlBase: string) {
+  /**
+   * Navigates a specific subset of pages (identified by chunkIds) to the runner URL
+   * and waits for all of them to signal completion before resolving.
+   *
+   * Called once per priority wave by the Orchestrator.
+   */
+  async navigateAndWait(urlBase: string, chunkIds: string[]): Promise<void> {
+    const targetIds = chunkIds.filter((id) => this.#pages.has(id))
+    if (targetIds.length === 0) return
+
+    this.#currentWaveChunkIds = new Set(targetIds)
+    this.#currentWaveFinished = new Set()
+
+    const waveComplete = new Promise<void>((resolve) => {
+      this.#resolveWave = resolve
+    })
+
     await Promise.all(
-      Array.from(this.#pages.entries()).map(([chunkId, page]) => {
+      targetIds.map((chunkId) => {
+        const page = this.#pages.get(chunkId)
+        if (!page) {
+          throw new Error(`Page for chunk ${chunkId} not found`)
+        }
         const url = new URL(urlBase)
         url.searchParams.set('chunkId', chunkId)
         return page.goto(url.href)
       })
     )
+
+    await waveComplete
   }
 
   async extractCoverage(coverageManager: CoverageManager) {
@@ -81,7 +110,7 @@ export class BrowserManager {
   async close() {
     for (const [name, browser] of this.#browsers.entries()) {
       try {
-        debug('closing browser: %s', name)
+        debug('closing browser %s', name)
         await Promise.race([browser.close(), new Promise((r) => setTimeout(r, 1000))])
       } catch (error) {
         debug('error closing browser %s: %O', name, error)
