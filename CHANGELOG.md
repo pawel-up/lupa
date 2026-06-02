@@ -1,3 +1,10 @@
+## [0.4.1](https://github.com/pawel-up/lupa/compare/v0.4.0...v0.4.1) (2026-06-02)
+
+
+### Bug Fixes
+
+* **coverage:** ignore class signatures and fields with initializers ([0e73444](https://github.com/pawel-up/lupa/commit/0e734444eca2d72c170717d57640978c425ded27))
+
 # [0.4.0](https://github.com/pawel-up/lupa/compare/v0.3.12...v0.4.0) (2026-06-02)
 
 
