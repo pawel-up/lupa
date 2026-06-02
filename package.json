@@ -67,7 +67,7 @@
     "assertion-error": "^2.0.1",
     "axe-core": "^4.11.4",
     "chai": "^6.2.2",
-    "commander": "^14.0.3",
+    "commander": "^15.0.0",
     "console-table-printer": "^2.15.0",
     "emittery": "^2.0.0",
     "error-stack-parser-es": "^1.0.5",
