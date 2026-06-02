@@ -50,8 +50,8 @@ export class Tracker {
   #failedTestsTitles: string[] = []
   #importErrors: { file: string; error: Error }[] = []
 
-  #getSuiteKey(payload: { browserId: string; file: string; name: string }) {
-    return `${payload.browserId}:${payload.file}:${payload.name}`
+  #getSuiteKey(payload: { browserId: string; name: string }) {
+    return `${payload.browserId}:${payload.name}`
   }
 
   #getGroupKey(payload: { browserId: string; file: string; title: string }) {
@@ -118,7 +118,7 @@ export class Tracker {
 
     if (group.errors.length > 0 || group.children.length > 0) {
       const suiteKey = payload.meta.suite
-        ? this.#getSuiteKey({ browserId: payload.browserId, file: payload.file, name: payload.meta.suite })
+        ? this.#getSuiteKey({ browserId: payload.browserId, name: payload.meta.suite })
         : null
       const suite = suiteKey ? this.#activeSuites.get(suiteKey) : null
       if (suite) {
@@ -199,7 +199,7 @@ export class Tracker {
       group.children.push(testPayload)
     } else {
       const suiteKey = payload.meta.suite
-        ? this.#getSuiteKey({ browserId: payload.browserId, file: payload.file, name: payload.meta.suite })
+        ? this.#getSuiteKey({ browserId: payload.browserId, name: payload.meta.suite })
         : null
       const suite = suiteKey ? this.#activeSuites.get(suiteKey) : null
 
