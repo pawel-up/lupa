@@ -1,3 +1,10 @@
+## [0.3.11](https://github.com/pawel-up/lupa/compare/v0.3.10...v0.3.11) (2026-06-02)
+
+
+### Bug Fixes
+
+* replace istanbul with c8 for native V8 coverage collection in browser tests ([934060d](https://github.com/pawel-up/lupa/commit/934060db924d9ea7f7cd8584c2fbff7943b0727a))
+
 ## [0.3.10](https://github.com/pawel-up/lupa/compare/v0.3.9...v0.3.10) (2026-06-02)
 
 
