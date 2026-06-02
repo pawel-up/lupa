@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import os from 'node:os'
 import { pathToFileURL } from 'node:url'
+import { createRequire } from 'node:module'
 import type { InlineConfig } from 'vite'
 import type { Page } from 'playwright'
 // @ts-expect-error - c8 does not provide types natively
@@ -9,6 +10,212 @@ import c8Report from 'c8/lib/report.js'
 import debug from './debug.js'
 import type { CoverageOptions } from './types.js'
 import type { ExceptionsManager } from './exceptions_manager.js'
+
+const requireModule = createRequire(import.meta.url)
+
+interface LineState {
+  insideComment: boolean
+  insideInterface: boolean
+  interfaceBraces: number
+  insideType: boolean
+  typeBraces: number
+  insideImport: boolean
+}
+
+function shouldIgnoreLine(lineStr: string, state: LineState): boolean {
+  const trimmed = lineStr.trim()
+  if (trimmed === '') return true
+
+  // 1. Comments
+  if (state.insideComment) {
+    if (trimmed.includes('*/')) {
+      state.insideComment = false
+    }
+    return true
+  }
+  if (trimmed.startsWith('/*')) {
+    if (!trimmed.includes('*/')) {
+      state.insideComment = true
+    }
+    return true
+  }
+  if (trimmed.startsWith('//') || trimmed.startsWith('*')) {
+    return true
+  }
+
+  // 2. Imports/Exports of types
+  if (state.insideImport) {
+    if (trimmed.includes('}')) {
+      state.insideImport = false
+    }
+    return true
+  }
+  if (trimmed.startsWith('import ') || trimmed.startsWith('import{')) {
+    if (trimmed.includes('{') && !trimmed.includes('}')) {
+      state.insideImport = true
+    }
+    return true
+  }
+
+  // export type/interface/ambient
+  if (
+    trimmed.startsWith('export type ') ||
+    trimmed.startsWith('type ') ||
+    trimmed.startsWith('export interface ') ||
+    trimmed.startsWith('interface ')
+  ) {
+    if (trimmed.includes('{')) {
+      if (trimmed.startsWith('interface') || trimmed.startsWith('export interface')) {
+        state.insideInterface = true
+        state.interfaceBraces = (trimmed.match(/\{/g) || []).length - (trimmed.match(/\}/g) || []).length
+      } else {
+        state.insideType = true
+        state.typeBraces = (trimmed.match(/\{/g) || []).length - (trimmed.match(/\}/g) || []).length
+      }
+    }
+    return true
+  }
+
+  if (state.insideInterface) {
+    state.interfaceBraces += (trimmed.match(/\{/g) || []).length - (trimmed.match(/\}/g) || []).length
+    if (state.interfaceBraces <= 0) {
+      state.insideInterface = false
+    }
+    return true
+  }
+
+  if (state.insideType) {
+    state.typeBraces += (trimmed.match(/\{/g) || []).length - (trimmed.match(/\}/g) || []).length
+    if (state.typeBraces <= 0) {
+      state.insideType = false
+    }
+    return true
+  }
+
+  // 3. Class field declarations without initializers
+  const hasColon = trimmed.includes(':')
+  const hasEquals = trimmed.includes('=')
+  const hasBrace = trimmed.includes('{')
+  const isClassOrFunction = trimmed.includes('class ') || trimmed.includes('function ') || trimmed.includes('=>')
+  const modifiers = ['public', 'private', 'protected', 'readonly', 'static', 'declare', 'accessor']
+  const startsWithModifier = modifiers.some((m) => trimmed.startsWith(m))
+  const isFieldDecl =
+    (startsWithModifier || /^[#a-zA-Z0-9_$]+\??\s*:/.test(trimmed)) &&
+    hasColon &&
+    !hasEquals &&
+    !hasBrace &&
+    !isClassOrFunction &&
+    !trimmed.startsWith('default:')
+
+  if (isFieldDecl) {
+    return true
+  }
+
+  // 4. Decorators
+  if (trimmed.startsWith('@')) {
+    return true
+  }
+
+  // 5. Brackets/closing braces on their own
+  if (
+    trimmed === '}' ||
+    trimmed === '};' ||
+    trimmed === ']' ||
+    trimmed === '];' ||
+    trimmed === ')' ||
+    trimmed === ');'
+  ) {
+    return true
+  }
+
+  // 6. Function/Method declaration lines (ending with `{` and contains `(' and `)`)
+  const isControlFlow =
+    trimmed.startsWith('if') ||
+    trimmed.startsWith('for') ||
+    trimmed.startsWith('while') ||
+    trimmed.startsWith('switch') ||
+    trimmed.startsWith('catch')
+  if (trimmed.endsWith('{') && trimmed.includes('(') && trimmed.includes(')') && !isControlFlow) {
+    return true
+  }
+
+  return false
+}
+
+interface CovLine {
+  line: number
+  startCol: number
+  endCol: number
+  count: number
+  ignore: boolean
+}
+
+interface CovSourceEntry {
+  path: string
+  source: {
+    lines: CovLine[]
+  }
+}
+
+interface V8ToIstanbulInstance {
+  covSources: CovSourceEntry[]
+  load(): Promise<void>
+}
+
+// Monkey-patch v8-to-istanbul's `load` method.
+//
+// WHY WE DO THIS:
+// Native V8 coverage operates on compiled JS files and maps results back to the original source.
+// Since TypeScript types, interfaces, comments, and uninitialized class fields do not emit
+// any executable JavaScript code, they map to no V8 execution blocks. V8 (and c8) defaults to
+// treating these unmapped source ranges as completely uncovered statements (0% hit count).
+// This is especially problematic when 'c8' is run in 'all: true' mode (triggered by inclusion glob config),
+// which scans files that were not fully executed and marks every unmapped line as uncovered.
+//
+// By intercepting `V8ToIstanbul.prototype.load`, we post-process the mapped line-by-line coverage
+// entries for all TypeScript files and flag non-executable lines as ignored (`line.ignore = true`),
+// preventing them from artificially bringing down the codebase's coverage report score.
+try {
+  const V8ToIstanbul = requireModule('v8-to-istanbul/lib/v8-to-istanbul')
+  const originalLoad = V8ToIstanbul.prototype.load as (this: V8ToIstanbulInstance) => Promise<void>
+
+  V8ToIstanbul.prototype.load = async function (this: V8ToIstanbulInstance): Promise<void> {
+    await originalLoad.call(this)
+
+    for (const covSourceEntry of this.covSources) {
+      const filePath = covSourceEntry.path
+      const isTypeScript = filePath && /\.(ts|tsx|mts|cts)$/.test(filePath)
+      if (isTypeScript && fs.existsSync(filePath)) {
+        try {
+          const rawSource = fs.readFileSync(filePath, 'utf8')
+          const lineStrings = rawSource.split(/(?<=\r?\n)/u)
+          const lines = covSourceEntry.source.lines
+
+          const state: LineState = {
+            insideComment: false,
+            insideInterface: false,
+            interfaceBraces: 0,
+            insideType: false,
+            typeBraces: 0,
+            insideImport: false,
+          }
+
+          lineStrings.forEach((lineStr, index) => {
+            if (shouldIgnoreLine(lineStr, state)) {
+              if (lines[index]) {
+                lines[index].ignore = true
+              }
+            }
+          })
+        } catch {
+          // Ignore failures to read file, keep original coverage unmodified
+        }
+      }
+    }
+  }
+} catch (e) {
+  debug('Failed to apply TypeScript coverage filter patch: %O', e)
+}
 
 export class CoverageManager {
   #coverageConfig: boolean | CoverageOptions | undefined
