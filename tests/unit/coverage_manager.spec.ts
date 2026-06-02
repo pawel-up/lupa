@@ -84,6 +84,7 @@ test('CoverageManager', async (t) => {
       '  static staticField: string',
       '  protected instanceField: number',
       '  public initializedField = 42',
+      "  protected renderAs: RenderAs = 'message'",
       '',
       '  constructor() {',
       '    console.log("hello")',
@@ -92,6 +93,10 @@ test('CoverageManager', async (t) => {
       '  myMethod(foo: string): void {',
       '    const x = foo.trim()',
       '  }',
+      '}',
+      '',
+      'export class ApplicationRenderer extends Renderer {',
+      '  render() {}',
       '}',
     ].join('\n')
 
@@ -135,24 +140,29 @@ test('CoverageManager', async (t) => {
       // 11: 'export type TestType = {' -> ignore = true
       assert.strictEqual(lines[11].ignore, true, 'type header ignored')
 
-      // 15: 'export class MockClass {' -> ignore = false (or undefined)
-      assert.ok(!lines[15]?.ignore, 'class declaration not ignored')
+      // 15: 'export class MockClass {' -> ignore = true
+      assert.strictEqual(lines[15].ignore, true, 'class declaration ignored')
       // 16: '  static staticField: string' -> ignore = true
       assert.strictEqual(lines[16].ignore, true, 'static property ignored')
       // 17: '  protected instanceField: number' -> ignore = true
       assert.strictEqual(lines[17].ignore, true, 'instance property ignored')
-      // 18: '  public initializedField = 42' -> ignore = false
-      assert.ok(!lines[18]?.ignore, 'initialized field not ignored')
+      // 18: '  public initializedField = 42' -> ignore = true
+      assert.strictEqual(lines[18].ignore, true, 'initialized field ignored')
+      // 19: '  protected renderAs: RenderAs = \'message\'' -> ignore = true
+      assert.strictEqual(lines[19].ignore, true, 'property with initializer ignored')
 
-      // 20: '  constructor() {' -> ignore = true
-      assert.strictEqual(lines[20].ignore, true, 'constructor header ignored')
-      // 21: '    console.log("hello")' -> ignore = false
-      assert.ok(!lines[21]?.ignore, 'constructor statement not ignored')
+      // 21: '  constructor() {' -> ignore = true
+      assert.strictEqual(lines[21].ignore, true, 'constructor header ignored')
+      // 22: '    console.log("hello")' -> ignore = false
+      assert.ok(!lines[22]?.ignore, 'constructor statement not ignored')
 
-      // 24: '  myMethod(foo: string): void {' -> ignore = true
-      assert.strictEqual(lines[24].ignore, true, 'method header ignored')
-      // 25: '    const x = foo.trim()' -> ignore = false
-      assert.ok(!lines[25]?.ignore, 'method statement not ignored')
+      // 25: '  myMethod(foo: string): void {' -> ignore = true
+      assert.strictEqual(lines[25].ignore, true, 'method header ignored')
+      // 26: '    const x = foo.trim()' -> ignore = false
+      assert.ok(!lines[26]?.ignore, 'method statement not ignored')
+
+      // 30: 'export class ApplicationRenderer extends Renderer {' -> ignore = true
+      assert.strictEqual(lines[30].ignore, true, 'extends class declaration ignored')
     } finally {
       if (fs.existsSync(tempFile)) {
         fs.unlinkSync(tempFile)

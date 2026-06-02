@@ -43,6 +43,21 @@ function shouldIgnoreLine(lineStr: string, state: LineState): boolean {
     return true
   }
 
+  // 1.5. Class Declarations
+  if (
+    trimmed.startsWith('class ') ||
+    trimmed.startsWith('export class ') ||
+    trimmed.startsWith('export default class ') ||
+    trimmed.startsWith('abstract class ') ||
+    trimmed.startsWith('export abstract class ') ||
+    trimmed.startsWith('declare class ') ||
+    trimmed.startsWith('export declare class ') ||
+    trimmed.startsWith('extends ') ||
+    trimmed.startsWith('implements ')
+  ) {
+    return true
+  }
+
   // 2. Imports/Exports of types
   if (state.insideImport) {
     if (trimmed.includes('}')) {
@@ -92,7 +107,7 @@ function shouldIgnoreLine(lineStr: string, state: LineState): boolean {
     return true
   }
 
-  // 3. Class field declarations without initializers
+  // 3. Class field declarations (with or without initializers)
   const hasColon = trimmed.includes(':')
   const hasEquals = trimmed.includes('=')
   const hasBrace = trimmed.includes('{')
@@ -101,11 +116,11 @@ function shouldIgnoreLine(lineStr: string, state: LineState): boolean {
   const startsWithModifier = modifiers.some((m) => trimmed.startsWith(m))
   const isFieldDecl =
     (startsWithModifier || /^[#a-zA-Z0-9_$]+\??\s*:/.test(trimmed)) &&
-    hasColon &&
-    !hasEquals &&
+    (hasColon || hasEquals) &&
     !hasBrace &&
     !isClassOrFunction &&
-    !trimmed.startsWith('default:')
+    !trimmed.startsWith('default:') &&
+    !trimmed.startsWith('case ')
 
   if (isFieldDecl) {
     return true
