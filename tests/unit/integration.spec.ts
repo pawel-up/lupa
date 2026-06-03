@@ -20,7 +20,7 @@ function forkSanitized(modulePath: string, args: string[], options: any = {}) {
 
 test('Integration: Lupa Framework End-to-End', async (t) => {
   // Give it a longer timeout since it boots Vite and Playwright
-  const TIMEOUT = 15000
+  const TIMEOUT = 25_000
 
   await t.test(
     'executes browser tests, reports telemetry, and exits with correct code',
