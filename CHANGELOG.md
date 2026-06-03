@@ -1,3 +1,12 @@
+## [0.4.4](https://github.com/pawel-up/lupa/compare/v0.4.3...v0.4.4) (2026-06-03)
+
+
+### Bug Fixes
+
+* a few improvements and optimizations ([0f6a72e](https://github.com/pawel-up/lupa/commit/0f6a72eaf9aa14d257f1b0cad6b834a2015bee4f))
+* fixing vite preload ([b4905f0](https://github.com/pawel-up/lupa/commit/b4905f06c6c2c186dae54582015d692dff86cc33))
+* sanitize process forked environments in integration tests ([1711672](https://github.com/pawel-up/lupa/commit/171167231b0e9224c8b2e96f17fa7503a67998f3))
+
 ## [0.4.2](https://github.com/pawel-up/lupa/compare/v0.4.1...v0.4.2) (2026-06-02)
 
 
