@@ -1,7 +1,7 @@
 import type { ConsoleMessage, JSHandle, Page, Response } from 'playwright'
 import type { Emitter } from '../testing/emitter.js'
 import type { RunnerEvents } from '../types.js'
-import { relative } from 'node:path'
+import { colors } from './helpers.js'
 
 /**
  * A class that specializes in collecting and processing browser logs.
@@ -31,6 +31,11 @@ export class BrowserLogs {
   emitter: Emitter<RunnerEvents>
 
   /**
+   * Keeps track of reported unoptimized libraries to avoid duplicate messages.
+   */
+  #reportedUnoptimizedLibraries = new Set<string>()
+
+  /**
    * Creates an instance of BrowserLogs.
    *
    * @param page - The Playwright page to capture logs from.
@@ -43,6 +48,7 @@ export class BrowserLogs {
 
     this.handleConsoleMessage = this.handleConsoleMessage.bind(this)
     this.handlePageError = this.handlePageError.bind(this)
+    this.handleResponse = this.handleResponse.bind(this)
   }
 
   /**
@@ -51,7 +57,7 @@ export class BrowserLogs {
   boot(): void {
     this.page.on('console', this.handleConsoleMessage)
     this.page.on('pageerror', this.handlePageError)
-    this.page.on('response', this.handleResponse.bind(this))
+    this.page.on('response', this.handleResponse)
   }
 
   protected canShow(message: string, type: string): boolean {
@@ -163,12 +169,16 @@ export class BrowserLogs {
             const underscoreIndex = packageName.indexOf('_')
             packageName = packageName.slice(0, underscoreIndex) + '/' + packageName.slice(underscoreIndex + 1)
           }
-          const relativeConfigPath = this.configPath ? relative(process.cwd(), this.configPath) : 'lupa.config.ts'
-          console.error(
-            `\n\x1b[31m⚠️ [Lupa Error] Library '${packageName}' caused an issue with dependency optimization.\x1b[0m\n` +
-              `\x1b[31mPlease add it to the 'optimizeDeps.include' list in your Lupa config file:\x1b[0m\n` +
-              `  \x1b[36m${relativeConfigPath}\x1b[0m\n`
-          )
+
+          if (this.#reportedUnoptimizedLibraries.has(packageName)) {
+            return
+          }
+          this.#reportedUnoptimizedLibraries.add(packageName)
+
+          const relativeConfigPath = this.configPath ?? 'lupa.config.ts'
+          let message = `⚠️  ${colors.red(`[Lupa Error] Library '${packageName}' caused an issue with dependency optimization.`)}\n`
+          message += `   ${colors.red(`Please add it to the 'optimizeDeps.include' list in your Lupa config file: ${relativeConfigPath}\n`)}\n`
+          console.error(message)
         } catch {
           // ignore parsing error
         }

@@ -1,5 +1,5 @@
 import { chromium, firefox, webkit, type Browser, type Page } from 'playwright'
-import { BrowserLogs } from './brower_logs.js'
+import { BrowserLogs } from './browser_logs.js'
 import { CommandsHandler } from '../commands/rpc_handler.js'
 import type { CoverageManager } from './coverage_manager.js'
 import type { TestPoolManager } from './test_pool_manager.js'

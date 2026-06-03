@@ -10,6 +10,7 @@ import debug from './debug.js'
 import { Cli } from './cli.js'
 import type { NormalizedConfig, CLIArgs } from './types.js'
 import type { NamedReporterContract } from '../types.js'
+import { Telemetry } from './telemetry.js'
 
 const DEFAULT_GLOBAL_TIMEOUT = 120_000
 
@@ -69,6 +70,9 @@ export class Orchestrator implements ServerTelemetryContract {
   /** Teardowns collected from plan and boot plugin phases */
   #pluginTeardowns: (() => void | Promise<void>)[] = []
 
+  /** Telemetry captures WSS events from the harness and processes them */
+  public telemetry: Telemetry
+
   /**
    * Constructs a new Orchestrator instance.
    *
@@ -90,6 +94,7 @@ export class Orchestrator implements ServerTelemetryContract {
     this.exceptionsManager = new ExceptionsManager()
 
     this.cli = new Cli(this)
+    this.telemetry = new Telemetry(this)
   }
 
   /**
@@ -159,7 +164,6 @@ export class Orchestrator implements ServerTelemetryContract {
       cwd: this.config.cwd || process.cwd(),
       config: this.config,
       testPoolManager: this.testPoolManager,
-      exceptionsManager: this.exceptionsManager,
     })
 
     this.serverUrl = await this.serverManager.boot()
@@ -400,7 +404,7 @@ export class Orchestrator implements ServerTelemetryContract {
         const remainingTiers = [...tiers.keys()].filter((p) => p < priority)
         const hasMoreReportingTiers = remainingTiers.some((p) => !excludedOnlyPriorities.has(p))
         if (!hasMoreReportingTiers && !this.#runnerEnded) {
-          await this.serverManager?.drainTelemetry()
+          await this.telemetry.drainTelemetry()
           this.#runnerEnded = true
           await this.activeNodeRunner.end()
         }
@@ -413,7 +417,7 @@ export class Orchestrator implements ServerTelemetryContract {
     }
 
     // Final drain + end in case all tiers were excluded-only (no reporting waves).
-    await this.serverManager?.drainTelemetry()
+    await this.telemetry.drainTelemetry()
 
     if (this.activeNodeRunner && !this.#runnerEnded) {
       this.#runnerEnded = true
@@ -452,12 +456,6 @@ export class Orchestrator implements ServerTelemetryContract {
       } else {
         await this.shutdown(1)
       }
-    }
-  }
-
-  async handleTelemetry<K extends keyof RunnerEvents>(event: K, data: RunnerEvents[K]): Promise<void> {
-    if (this.activeNodeEmitter) {
-      await this.activeNodeEmitter.emit(event, data)
     }
   }
 }

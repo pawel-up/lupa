@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import { test } from 'node:test'
 import assert from 'node:assert'
-import { BrowserLogs } from '../../../src/runner/brower_logs.js'
+import { BrowserLogs } from '../../../src/runner/browser_logs.js'
 
 test('BrowserLogs', async (t) => {
   const originalLog = console.log
