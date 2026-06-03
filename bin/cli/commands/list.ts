@@ -71,6 +71,8 @@ export const listCommand = new Command('list')
             'E_MISSING_CONFIG',
             `Could not load configuration file at ${configPath}.\nRun 'npx lupa init' to scaffold a new project.`
           )
+        } else {
+          config.configPath = configPath
         }
 
         if (options.filesOnly || options.searchFiles) {

@@ -236,11 +236,17 @@ export async function runProgrammatic<T>(
     // We explicitly call waitForCompletion to set up the promise before booting
     const completionPromise = orchestrator.waitForCompletion()
 
-    await orchestrator.boot()
-    await orchestrator.executeTests()
+    const bootAndRun = (async (): Promise<number> => {
+      await orchestrator.boot()
+      await orchestrator.executeTests()
+      return completionPromise
+    })()
 
-    // Wait for the tests to finish and get the exit code
-    const exitCode = await completionPromise
+    // Catch any error on bootAndRun to prevent unhandled promise rejections if completionPromise rejects first
+    bootAndRun.catch(() => undefined)
+
+    // Wait for either the completion/rejection or the boot/execution sequence
+    const exitCode = await Promise.race([completionPromise, bootAndRun])
 
     // Shut down gracefully without calling process.exit()
     await orchestrator.shutdown(exitCode, { preventExit: true })

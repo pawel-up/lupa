@@ -19,7 +19,7 @@ const DEFAULTS = {
   get reporters() {
     return {
       activated:
-        !process.stdout.isTTY || process.env.CI === 'true'
+        !process.stdout.isTTY || process.env.CI === 'true' || process.env.CI === '1'
           ? ['dot'].concat(process.env.GITHUB_ACTIONS === 'true' ? ['github'] : [])
           : ['progress'],
       list: [ndjson(), dot(), github(), progress(), json()],
@@ -183,6 +183,7 @@ export class ConfigManager {
 
     const baseConfig: NormalizedBaseConfig = {
       cwd: this.#config.cwd ?? process.cwd(),
+      configPath: this.#config.configPath,
       exclude: this.#config.exclude || ['node_modules/**', '.git/**', 'coverage/**'],
       filters: Object.assign({}, this.#config.filters ?? {}, cliFilters),
       refiner: this.#config.refiner ?? new Refiner(),

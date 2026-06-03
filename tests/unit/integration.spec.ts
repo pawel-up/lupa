@@ -7,9 +7,20 @@ const BROWSER_TESTS_COUNT = 79
 const BROWSER_PASSED_TESTS_COUNT = 78
 const BROWSER_SKIPPED_TESTS_COUNT = 1
 
+function forkSanitized(modulePath: string, args: string[], options: any = {}) {
+  const env = { ...process.env, ...options.env }
+  delete env.NODE_TEST_CONTEXT
+  delete env.NODE_TEST_WORKER_ID
+  delete env.NODE_OPTIONS
+  return fork(modulePath, args, {
+    ...options,
+    env,
+  })
+}
+
 test('Integration: Lupa Framework End-to-End', async (t) => {
   // Give it a longer timeout since it boots Vite and Playwright
-  const TIMEOUT = 60000
+  const TIMEOUT = 15000
 
   await t.test(
     'executes browser tests, reports telemetry, and exits with correct code',
@@ -22,7 +33,7 @@ test('Integration: Lupa Framework End-to-End', async (t) => {
         stdout: string
         stderr: string
       }>((resolve, reject) => {
-        const child = fork(runnerPath, ['test'], {
+        const child = forkSanitized(runnerPath, ['test'], {
           execArgv: ['--import', 'tsx'],
           cwd: process.cwd(),
           env: {
@@ -35,10 +46,16 @@ test('Integration: Lupa Framework End-to-End', async (t) => {
 
         let out = ''
         let err = ''
-        child.stdout?.on('data', (data) => (out += data))
-        child.stderr?.on('data', (data) => (err += data))
+        child.stdout?.on('data', (data) => {
+          out += data
+          process.stdout.write(data)
+        })
+        child.stderr?.on('data', (data) => {
+          err += data
+          process.stderr.write(data)
+        })
 
-        child.on('exit', (code) => {
+        child.on('close', (code) => {
           resolve({ exitCode: code, stdout: out, stderr: err })
         })
 
@@ -67,7 +84,7 @@ test('Integration: Lupa Framework End-to-End', async (t) => {
       stdout: string
       stderr: string
     }>((resolve, reject) => {
-      const child = fork(runnerPath, ['list'], {
+      const child = forkSanitized(runnerPath, ['list'], {
         execArgv: ['--import', 'tsx'],
         cwd: process.cwd(),
         env: {
@@ -83,7 +100,7 @@ test('Integration: Lupa Framework End-to-End', async (t) => {
       child.stdout?.on('data', (data) => (out += data))
       child.stderr?.on('data', (data) => (err += data))
 
-      child.on('exit', (code) => {
+      child.on('close', (code) => {
         resolve({ exitCode: code, stdout: out, stderr: err })
       })
 
@@ -108,7 +125,7 @@ test('Integration: Lupa Framework End-to-End', async (t) => {
         stdout: string
         stderr: string
       }>((resolve, reject) => {
-        const child = fork(runnerPath, [], {
+        const child = forkSanitized(runnerPath, [], {
           execArgv: ['--import', 'tsx'],
           cwd: process.cwd(),
           env: {
@@ -124,7 +141,7 @@ test('Integration: Lupa Framework End-to-End', async (t) => {
         child.stdout?.on('data', (data) => (out += data))
         child.stderr?.on('data', (data) => (err += data))
 
-        child.on('exit', (code) => {
+        child.on('close', (code) => {
           resolve({ exitCode: code, stdout: out, stderr: err })
         })
 
@@ -161,7 +178,7 @@ test('Integration: Lupa Framework End-to-End', async (t) => {
         stdout: string
         stderr: string
       }>((resolve, reject) => {
-        const child = fork(runnerPath, [], {
+        const child = forkSanitized(runnerPath, [], {
           execArgv: ['--import', 'tsx'],
           cwd: process.cwd(),
           env: {
@@ -177,7 +194,7 @@ test('Integration: Lupa Framework End-to-End', async (t) => {
         child.stdout?.on('data', (data) => (out += data))
         child.stderr?.on('data', (data) => (err += data))
 
-        child.on('exit', (code) => {
+        child.on('close', (code) => {
           resolve({ exitCode: code, stdout: out, stderr: err })
         })
 
@@ -193,7 +210,7 @@ test('Integration: Lupa Framework End-to-End', async (t) => {
 
       assert.ok(
         lineWithError,
-        'Could not find the programmatic error marker in stderr. The promise might not have rejected.'
+        `Could not find the programmatic error marker in stderr. The promise might not have rejected.\nStdout:\n${stdout}\nStderr:\n${stderr}`
       )
       assert.ok(
         lineWithError.includes('Simulated Vite Compilation Error Boom'),
@@ -213,7 +230,7 @@ test('Integration: Lupa Framework End-to-End', async (t) => {
         stdout: string
         stderr: string
       }>((resolve, reject) => {
-        const child = fork(runnerPath, ['list', '--groups', 'Dummy Group'], {
+        const child = forkSanitized(runnerPath, ['list', '--groups', 'Dummy Group'], {
           execArgv: ['--import', 'tsx'],
           cwd: process.cwd(),
           env: {
@@ -230,7 +247,7 @@ test('Integration: Lupa Framework End-to-End', async (t) => {
         child.stdout?.on('data', (data) => (out += data))
         child.stderr?.on('data', (data) => (err += data))
 
-        child.on('exit', (code) => {
+        child.on('close', (code) => {
           resolve({ exitCode: code, stdout: out, stderr: err })
         })
 
@@ -259,7 +276,7 @@ test('Integration: Lupa Framework End-to-End', async (t) => {
         stdout: string
         stderr: string
       }>((resolve, reject) => {
-        const child = fork(runnerPath, ['list', '--tags', '@dummy-tag'], {
+        const child = forkSanitized(runnerPath, ['list', '--tags', '@dummy-tag'], {
           execArgv: ['--import', 'tsx'],
           cwd: process.cwd(),
           env: {
@@ -276,7 +293,7 @@ test('Integration: Lupa Framework End-to-End', async (t) => {
         child.stdout?.on('data', (data) => (out += data))
         child.stderr?.on('data', (data) => (err += data))
 
-        child.on('exit', (code) => {
+        child.on('close', (code) => {
           resolve({ exitCode: code, stdout: out, stderr: err })
         })
 
@@ -308,7 +325,7 @@ test('Integration: Lupa Framework End-to-End', async (t) => {
         stdout: string
         stderr: string
       }>((resolve, reject): void => {
-        const child = fork(runnerPath, ['list', '--files', 'dummy2.spec.ts'], {
+        const child = forkSanitized(runnerPath, ['list', '--files', 'dummy2.spec.ts'], {
           execArgv: ['--import', 'tsx'],
           cwd: process.cwd(),
           env: {
@@ -325,7 +342,7 @@ test('Integration: Lupa Framework End-to-End', async (t) => {
         child.stdout?.on('data', (data) => (out += data))
         child.stderr?.on('data', (data) => (err += data))
 
-        child.on('exit', (code) => {
+        child.on('close', (code) => {
           resolve({ exitCode: code, stdout: out, stderr: err })
         })
 
@@ -357,7 +374,7 @@ test('Integration: Lupa Framework End-to-End', async (t) => {
         stdout: string
         stderr: string
       }>((resolve, reject): void => {
-        const child = fork(runnerPath, ['list', '--files-only'], {
+        const child = forkSanitized(runnerPath, ['list', '--files-only'], {
           execArgv: ['--import', 'tsx'],
           cwd: process.cwd(),
           env: {
@@ -374,7 +391,7 @@ test('Integration: Lupa Framework End-to-End', async (t) => {
         child.stdout?.on('data', (data) => (out += data))
         child.stderr?.on('data', (data) => (err += data))
 
-        child.on('exit', (code) => {
+        child.on('close', (code) => {
           resolve({ exitCode: code, stdout: out, stderr: err })
         })
 
@@ -401,7 +418,7 @@ test('Integration: Lupa Framework End-to-End', async (t) => {
         stdout: string
         stderr: string
       }>((resolve, reject): void => {
-        const child = fork(runnerPath, ['list', '--search-files', 'dummy2', 'assert-dom'], {
+        const child = forkSanitized(runnerPath, ['list', '--search-files', 'dummy2', 'assert-dom'], {
           execArgv: ['--import', 'tsx'],
           cwd: process.cwd(),
           env: {
@@ -418,7 +435,7 @@ test('Integration: Lupa Framework End-to-End', async (t) => {
         child.stdout?.on('data', (data) => (out += data))
         child.stderr?.on('data', (data) => (err += data))
 
-        child.on('exit', (code) => {
+        child.on('close', (code) => {
           resolve({ exitCode: code, stdout: out, stderr: err })
         })
 
@@ -449,7 +466,7 @@ test('Integration: Lupa Framework End-to-End', async (t) => {
         stdout: string
         stderr: string
       }>((resolve, reject): void => {
-        const child = fork(runnerPath, ['list', '--search-tests', 'should pass', 'add two numbers'], {
+        const child = forkSanitized(runnerPath, ['list', '--search-tests', 'should pass', 'add two numbers'], {
           execArgv: ['--import', 'tsx'],
           cwd: process.cwd(),
           env: {
@@ -466,7 +483,7 @@ test('Integration: Lupa Framework End-to-End', async (t) => {
         child.stdout?.on('data', (data) => (out += data))
         child.stderr?.on('data', (data) => (err += data))
 
-        child.on('exit', (code) => {
+        child.on('close', (code) => {
           resolve({ exitCode: code, stdout: out, stderr: err })
         })
 
@@ -496,7 +513,7 @@ test('Integration: Lupa Framework End-to-End', async (t) => {
         stdout: string
         stderr: string
       }>((resolve, reject): void => {
-        const child = fork(runnerPath, ['list', 'Unit Tests', '--config', 'lupa.suites.config.ts'], {
+        const child = forkSanitized(runnerPath, ['list', 'Unit Tests', '--config', 'lupa.suites.config.ts'], {
           execArgv: ['--import', 'tsx'],
           cwd: process.cwd(),
           env: {
@@ -513,7 +530,7 @@ test('Integration: Lupa Framework End-to-End', async (t) => {
         child.stdout?.on('data', (data) => (out += data))
         child.stderr?.on('data', (data) => (err += data))
 
-        child.on('exit', (code) => {
+        child.on('close', (code) => {
           resolve({ exitCode: code, stdout: out, stderr: err })
         })
 
@@ -542,16 +559,20 @@ test('Integration: Lupa Framework End-to-End', async (t) => {
         stdout: string
         stderr: string
       }>((resolve, reject): void => {
-        const child = fork(runnerPath, ['list', '--suites', 'Unit Tests', '--config', 'lupa.suites.config.ts'], {
-          execArgv: ['--import', 'tsx'],
-          cwd: process.cwd(),
-          env: {
-            ...process.env,
-            FORCE_COLOR: '0',
-            CI: '1',
-          },
-          stdio: 'pipe',
-        })
+        const child = forkSanitized(
+          runnerPath,
+          ['list', '--suites', 'Unit Tests', '--config', 'lupa.suites.config.ts'],
+          {
+            execArgv: ['--import', 'tsx'],
+            cwd: process.cwd(),
+            env: {
+              ...process.env,
+              FORCE_COLOR: '0',
+              CI: '1',
+            },
+            stdio: 'pipe',
+          }
+        )
 
         let out = ''
         let err = ''
@@ -559,7 +580,7 @@ test('Integration: Lupa Framework End-to-End', async (t) => {
         child.stdout?.on('data', (data) => (out += data))
         child.stderr?.on('data', (data) => (err += data))
 
-        child.on('exit', (code) => {
+        child.on('close', (code) => {
           resolve({ exitCode: code, stdout: out, stderr: err })
         })
 

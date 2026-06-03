@@ -1,12 +1,18 @@
-import type { ConsoleMessage, JSHandle, Page } from 'playwright'
+import type { ConsoleMessage, JSHandle, Page, Response } from 'playwright'
 import type { Emitter } from '../testing/emitter.js'
 import type { RunnerEvents } from '../types.js'
+import { relative } from 'node:path'
 
 /**
  * A class that specializes in collecting and processing browser logs.
  */
 export class BrowserLogs {
   protected readonly page: Page
+
+  /**
+   * Path to the Lupa configuration file.
+   */
+  configPath?: string
 
   /**
    * When not set, all messages are suppressed, only errors are reported.
@@ -29,10 +35,11 @@ export class BrowserLogs {
    *
    * @param page - The Playwright page to capture logs from.
    */
-  constructor(page: Page, verbose = false, emitter: Emitter<RunnerEvents>) {
+  constructor(page: Page, verbose = false, emitter: Emitter<RunnerEvents>, configPath?: string) {
     this.page = page
     this.verbose = verbose
     this.emitter = emitter
+    this.configPath = configPath
 
     this.handleConsoleMessage = this.handleConsoleMessage.bind(this)
     this.handlePageError = this.handlePageError.bind(this)
@@ -44,9 +51,13 @@ export class BrowserLogs {
   boot(): void {
     this.page.on('console', this.handleConsoleMessage)
     this.page.on('pageerror', this.handlePageError)
+    this.page.on('response', this.handleResponse.bind(this))
   }
 
-  protected canShow(message: string): boolean {
+  protected canShow(message: string, type: string): boolean {
+    if (type === 'error') {
+      return true
+    }
     if (!this.verbose) {
       return false
     }
@@ -63,7 +74,7 @@ export class BrowserLogs {
       return
     }
     const text = message.text()
-    if (!this.canShow(text)) return
+    if (!this.canShow(text, type)) return
 
     const args = message.args()
 
@@ -137,6 +148,31 @@ export class BrowserLogs {
       return result
     } catch {
       return arg.toString()
+    }
+  }
+
+  protected handleResponse(response: Response): void {
+    if (response.status() === 504) {
+      const url = response.url()
+      if (url.includes('/node_modules/.vite/deps/')) {
+        try {
+          const urlObj = new URL(url)
+          const filename = urlObj.pathname.split('/').pop() || ''
+          let packageName = filename.replace(/\.js$/, '')
+          if (packageName.startsWith('@') && packageName.includes('_')) {
+            const underscoreIndex = packageName.indexOf('_')
+            packageName = packageName.slice(0, underscoreIndex) + '/' + packageName.slice(underscoreIndex + 1)
+          }
+          const relativeConfigPath = this.configPath ? relative(process.cwd(), this.configPath) : 'lupa.config.ts'
+          console.error(
+            `\n\x1b[31m⚠️ [Lupa Error] Library '${packageName}' caused an issue with dependency optimization.\x1b[0m\n` +
+              `\x1b[31mPlease add it to the 'optimizeDeps.include' list in your Lupa config file:\x1b[0m\n` +
+              `  \x1b[36m${relativeConfigPath}\x1b[0m\n`
+          )
+        } catch {
+          // ignore parsing error
+        }
+      }
     }
   }
 }

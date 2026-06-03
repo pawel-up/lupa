@@ -267,6 +267,11 @@ export interface BaseConfig {
   cwd?: string
 
   /**
+   * Path to the Lupa configuration file.
+   */
+  configPath?: string
+
+  /**
    * Whether to run tests in watch mode
    */
   watch?: boolean
@@ -486,8 +491,13 @@ export interface TestSuite {
  * BaseConfig after normalized by the config manager
  */
 export type NormalizedBaseConfig = Required<
-  Omit<BaseConfig, 'reporters' | 'viteConfig' | 'vite' | 'coverage' | 'harness'>
+  Omit<BaseConfig, 'reporters' | 'viteConfig' | 'vite' | 'coverage' | 'harness' | 'configPath'>
 > & {
+  /**
+   * Path to the Lupa configuration file.
+   */
+  configPath?: string
+
   /**
    * Activated reporters
    */

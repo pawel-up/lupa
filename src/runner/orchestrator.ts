@@ -172,7 +172,12 @@ export class Orchestrator implements ServerTelemetryContract {
       }
     })
 
-    this.browserManager = new BrowserManager(this.browserNames, !!this.cliArgs.verbose, this.browserEmitter)
+    this.browserManager = new BrowserManager(
+      this.browserNames,
+      !!this.cliArgs.verbose,
+      this.browserEmitter,
+      this.config.configPath
+    )
 
     await this.browserManager.boot(this.testPoolManager, this.serverManager?.coverageManager)
   }
@@ -361,7 +366,7 @@ export class Orchestrator implements ServerTelemetryContract {
     this.#runWaves().catch((err) => this.exceptionsManager.notifyException(err))
   }
 
-  async #runWaves() {
+  async #runWaves(): Promise<void> {
     if (!this.testPoolManager || !this.browserManager || !this.activeNodeRunner) {
       return
     }
@@ -377,10 +382,17 @@ export class Orchestrator implements ServerTelemetryContract {
     const excludedOnlyPriorities = testPoolManager.getExcludedOnlyPriorities()
 
     for (const [priority] of tiers) {
+      if (this.isShuttingDown) {
+        break
+      }
       const allBrowserChunkIds = this.browserNames.flatMap(
         (b) => testPoolManager.getChunkIdsByTier(b).get(priority) ?? []
       )
       await browserManager.navigateAndWait(`${this.serverUrl}__lupa__/runner.html`, allBrowserChunkIds)
+
+      if (this.isShuttingDown) {
+        break
+      }
 
       // After the last reporting wave completes, drain telemetry and end the runner
       // so the reporter prints its summary before any excluded (e.g. benchmark) waves run.

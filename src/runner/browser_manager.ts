@@ -16,6 +16,7 @@ export class BrowserManager {
   #browserNames: BrowserName[]
   #verboseLogs: boolean
   #emitter: Emitter<RunnerEvents>
+  #configPath?: string
 
   // The set of chunk IDs expected to finish in the current wave,
   // and the resolve function for the current wave's completion promise.
@@ -23,10 +24,11 @@ export class BrowserManager {
   #currentWaveFinished = new Set<string>()
   #resolveWave?: () => void
 
-  constructor(browserNames: BrowserName[], verboseLogs: boolean, emitter: Emitter<RunnerEvents>) {
+  constructor(browserNames: BrowserName[], verboseLogs: boolean, emitter: Emitter<RunnerEvents>, configPath?: string) {
     this.#browserNames = browserNames
     this.#verboseLogs = verboseLogs
     this.#emitter = emitter
+    this.#configPath = configPath
   }
 
   async boot(testPoolManager: TestPoolManager, coverageManager?: CoverageManager) {
@@ -55,7 +57,7 @@ export class BrowserManager {
           await coverageManager.startCoverage(page, name)
         }
 
-        const logs = new BrowserLogs(page, this.#verboseLogs, this.#emitter)
+        const logs = new BrowserLogs(page, this.#verboseLogs, this.#emitter, this.#configPath)
         logs.boot()
 
         const commandsHandler = new CommandsHandler(page)

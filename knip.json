@@ -20,8 +20,8 @@
     "src/runner/coverage_manager.ts",
     "src/runner/summary_builder.ts"
   ],
-  "ignoreDependencies": ["nyc"],
   "playwright": true,
+  "ignoreDependencies": ["es-module-lexer", "magic-string"],
   "semantic-release": {
     "entry": ["@semantic-release/changelog", "@semantic-release/git"]
   },

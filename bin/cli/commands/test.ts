@@ -95,6 +95,8 @@ export const testCommand = new Command('test')
         process.exit(1)
       }
 
+      config.configPath = configPath
+
       // 3. Configure and execute tests
       console.log(
         `\n  🔎 ${colors.magenta(colors.bold('LUPA'))} ${colors.dim('The modern browser testing framework')}\n`

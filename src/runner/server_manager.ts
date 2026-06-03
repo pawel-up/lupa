@@ -1,4 +1,4 @@
-import { resolve, dirname, join } from 'node:path'
+import { resolve, dirname, join, relative } from 'node:path'
 import { existsSync } from 'node:fs'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { createServer, createLogger, mergeConfig, type ViteDevServer, type InlineConfig } from 'vite'
@@ -57,6 +57,7 @@ export class ServerManager {
   #options: ServerManagerOptions
   #telemetryQueue: Promise<void> = Promise.resolve()
   #coverageManager?: CoverageManager
+  #discoveredDeps = new Set<string>()
 
   constructor(orchestrator: Orchestrator, options: ServerManagerOptions) {
     this.#orchestrator = orchestrator
@@ -79,6 +80,19 @@ export class ServerManager {
       _error.call(logger, msg, options)
       const err = (options?.error || new Error(msg)) as Error
       this.#orchestrator.handleCompilationError(err, !config.watch)
+    }
+
+    const _info = logger.info
+    logger.info = (msg, options) => {
+      if (msg.includes('new dependencies optimized')) {
+        const esc = String.fromCharCode(27)
+        const cleanMsg = msg.replace(new RegExp(esc + '\\[\\d+m', 'g'), '')
+        const depsPart = cleanMsg.split('optimized:').pop()?.trim() || ''
+        if (depsPart) {
+          depsPart.split(',').forEach((dep) => this.#discoveredDeps.add(dep.trim()))
+        }
+      }
+      _info.call(logger, msg, options)
     }
 
     const resolvedPlugins: (JsonSerializable | undefined)[][] = await Promise.all(
@@ -111,7 +125,17 @@ export class ServerManager {
         },
       },
       optimizeDeps: {
-        include: ['axe-core', 'lit-html', 'lit'],
+        holdUntilCrawlEnd: false,
+        include: [
+          'axe-core',
+          'lit-html',
+          'lit',
+          'chai',
+          'assertion-error',
+          'emittery',
+          '@poppinss/macroable',
+          '@jarrodek/debug',
+        ],
         exclude: ['@pawel-up/lupa'],
       },
       plugins: [lupaHarnessPlugin(testPoolManager, resolvedPlugins, config, harnessPath)],
@@ -126,7 +150,6 @@ export class ServerManager {
       throw new Error('Lupa cannot run with server.middlewareMode enabled in your Vite configuration.')
     }
 
-    // Start Vite Server
     this.#vite = await createServer(finalViteConfig)
 
     // Intercept full-reload events to detect optimizeDeps invalidations.
@@ -135,13 +158,22 @@ export class ServerManager {
     // does not emit a server-side event for this, so patching send() is the
     // only way to intercept it.
     const originalWsSend = this.#vite.ws.send
+    const discoveredDeps = this.#discoveredDeps
+    const configPath = config.configPath
     this.#vite.ws.send = function (payload: any, ...rest: any[]) {
-      if (payload.type === 'full-reload') {
+      if (payload?.type === 'full-reload') {
         if (!config.watch) {
+          const depsList = Array.from(discoveredDeps).join(', ')
+          const depName = depsList || 'newly discovered libraries'
+          const relativeConfigPath = configPath ? relative(process.cwd(), configPath) : 'lupa.config.ts'
+
           console.warn(
-            `\n${colors.yellow('⚠️ Vite discovered new dependencies mid-run. This will cause a 504 error in headless mode.')}`
+            `\n${colors.red(`⚠️ [Lupa Error] Library '${depName}' caused an issue with dependency optimization.`)}`
           )
-          console.warn(`${colors.yellow('Please add these explicitly to optimizeDeps.include in lupa.config.ts.')}\n`)
+          console.warn(
+            `${colors.red(`Please add it to the 'optimizeDeps.include' list in your Lupa config file:`)}\n` +
+              `  ${colors.cyan(relativeConfigPath)}\n`
+          )
         }
       }
       originalWsSend.call(this, payload, ...rest)
@@ -222,6 +254,31 @@ export class ServerManager {
     })
 
     await this.#vite.listen()
+
+    interface ViteDevServerWithInternalOptimizer {
+      environments?: {
+        client?: {
+          depsOptimizer?: {
+            init(): Promise<void>
+            scanProcessing?: Promise<void>
+          }
+        }
+      }
+      depsOptimizer?: {
+        init(): Promise<void>
+        scanProcessing?: Promise<void>
+      }
+    }
+
+    const depsOptimizer =
+      this.#vite.environments?.client?.depsOptimizer ||
+      (this.#vite as unknown as ViteDevServerWithInternalOptimizer).depsOptimizer
+    if (depsOptimizer) {
+      await depsOptimizer.init()
+      if (depsOptimizer.scanProcessing) {
+        await depsOptimizer.scanProcessing
+      }
+    }
 
     // Pre-warm plugin files so their modules are in Vite's cache before
     // Playwright opens the browser. Without this, a cold node_modules/.vite

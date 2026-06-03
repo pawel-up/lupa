@@ -1,6 +1,6 @@
 import { type WebPluginFn } from '../testing/web_plugin.js'
 import { TestContext } from '../testing/test_context.js'
-import { toRegistryKey } from './plugin.js'
+import { toRegistryKey } from './utils.js'
 
 declare global {
   interface Window {

@@ -2,24 +2,9 @@ import fs from 'node:fs'
 import { init, parse } from 'es-module-lexer'
 import MagicString from 'magic-string'
 import type { Plugin } from 'vite'
+import { toRegistryKey } from './utils.js'
 
 const MOCK_ID_PARAM = 'lupa-mock-id'
-
-/**
- * Normalize a path to the canonical registry key used by both fixture.ts (browser)
- * and plugin.ts (Node/Vite load hook).
- *
- * The browser's `new URL(path, import.meta.url).pathname` on a `/@fs/…` base URL
- * produces the absolute FS path (e.g. `/Users/…/src/calculator.js`).
- * The Vite load hook receives the resolved absolute FS path (e.g. `/Users/…/src/calculator.ts`).
- * Both sides normalize .ts/.tsx → .js so they always agree.
- */
-export function toRegistryKey(filePath: string): string {
-  // Strip /@fs only if it appears as a URL prefix before an absolute path —
-  // the browser pathname already includes it in some Vite setups.
-  const withoutFs = filePath.startsWith('/@fs/') ? filePath.slice(4) : filePath
-  return withoutFs.replace(/\.tsx?$/, '.js')
-}
 
 /**
  * Extract the lupa-mock-id query param from a module id, or return null.
