@@ -128,12 +128,18 @@ export class ServerManager {
       throw new Error('Lupa cannot run with server.middlewareMode enabled in your Vite configuration.')
     }
 
-    this.#vite = await createServer(finalViteConfig)
+    try {
+      this.#vite = await createServer(finalViteConfig)
 
-    // Set up WebSocket telemetry interception
-    this.#vite.ws.on('lupa:telemetry', this.#orchestrator.telemetry.handleLupaTelemetryEvent)
+      // Set up WebSocket telemetry interception
+      this.#vite.ws.on('lupa:telemetry', this.#orchestrator.telemetry.handleLupaTelemetryEvent)
 
-    await this.#vite.listen()
+      await this.#vite.listen()
+    } catch (err: any) {
+      console.error(`\n${colors.red('[Vite Startup Error]')} ${err.message || err}`)
+      this.#orchestrator.handleCompilationError(err, true)
+      throw err
+    }
 
     interface ViteDevServerWithInternalOptimizer {
       depsOptimizer?: {
