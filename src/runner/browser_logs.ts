@@ -60,10 +60,12 @@ export class BrowserLogs {
     this.page.on('response', this.handleResponse)
   }
 
-  protected canShow(message: string, type: string): boolean {
-    if (type === 'error') {
-      return true
-    }
+  protected canShow(message: string, _type: string): boolean {
+    // We do not want that. There are plenty of situations where tests intentionally
+    // cause errors (like network errors) and printing them by default is confusing.
+    // if (type === 'error') {
+    //   return true
+    // }
     if (!this.verbose) {
       return false
     }

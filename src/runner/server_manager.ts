@@ -110,16 +110,10 @@ export class ServerManager {
         holdUntilCrawlEnd: true,
         force: true,
         noDiscovery: true,
-        include: [
-          'axe-core',
-          'lit-html',
-          'lit',
-          'chai',
-          'assertion-error',
-          'emittery',
-          '@poppinss/macroable',
-          '@jarrodek/debug',
-        ],
+        // Note, I (pawel) removed `emittery` from this list because it caused issues if the target project
+        // had `emittery` as a dependency. Version 1 has a different `.on()` signature, which caused issues.
+        // I don't think we need it here anyway.
+        include: ['axe-core', 'lit-html', 'lit', 'chai', 'assertion-error', '@poppinss/macroable', '@jarrodek/debug'],
         exclude: ['@pawel-up/lupa'],
       },
       plugins: [lupaHarnessPlugin(testPoolManager, resolvedPlugins, config, harnessPath)],
