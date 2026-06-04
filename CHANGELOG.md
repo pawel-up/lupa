@@ -1,3 +1,12 @@
+## [0.4.6](https://github.com/pawel-up/lupa/compare/v0.4.5...v0.4.6) (2026-06-04)
+
+
+### Bug Fixes
+
+* add error handling and orchestrator notification for Vite server startup failures ([f9e2f51](https://github.com/pawel-up/lupa/commit/f9e2f51ee469511767459b28d549e5eb9f8706b9))
+* implement automatic page reload for 504 errors in browser manager with a 3-attempt limit ([b0ee386](https://github.com/pawel-up/lupa/commit/b0ee38616114f2e776a158a8382018f81129f0fa))
+* remove emittery from dependency include list ([f59f080](https://github.com/pawel-up/lupa/commit/f59f0806bd5461414b99c19f31a1baeef6a9525d))
+
 ## [0.4.4](https://github.com/pawel-up/lupa/compare/v0.4.3...v0.4.4) (2026-06-03)
 
 
