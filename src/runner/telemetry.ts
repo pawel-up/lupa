@@ -73,6 +73,12 @@ export class Telemetry {
   async #processTelemetryEvent({ event, data }: TelemetryPayload): Promise<void> {
     const vite = this.#orchestrator.serverManager?.vite
     try {
+      if (event === 'suite:start') {
+        if (data?.browserId) {
+          this.#orchestrator.browserManager?.markChunkAsStarted(data.browserId)
+        }
+      }
+
       if (event === 'group:end' || event === 'suite:end' || event === 'test:end') {
         if (data.errors && data.errors.length) {
           for (const e of data.errors) {

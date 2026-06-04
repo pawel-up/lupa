@@ -30,6 +30,9 @@ test('BrowserLogs', async (t) => {
 
     const dummyEmitter = {
       emit: (_event: string, payload: any) => logs.push([payload.file, payload.type, payload.messages]),
+      on: (_event: string, _handler: any) => {
+        // noop
+      },
     }
     const browserLogs = new BrowserLogs(dummyPage as any, false, dummyEmitter as any)
     browserLogs.boot()
@@ -57,6 +60,9 @@ test('BrowserLogs', async (t) => {
 
     const dummyEmitter = {
       emit: (_event: string, payload: any) => logs.push([payload.file, payload.type, payload.messages]),
+      on: (_event: string, _handler: any) => {
+        // noop
+      },
     }
     const browserLogs = new BrowserLogs(dummyPage as any, true, dummyEmitter as any)
     browserLogs.boot()
@@ -85,6 +91,9 @@ test('BrowserLogs', async (t) => {
 
     const dummyEmitter = {
       emit: (_event: string, payload: any) => logs.push([payload.file, payload.type, payload.messages]),
+      on: (_event: string, _handler: any) => {
+        // noop
+      },
     }
     const browserLogs = new BrowserLogs(dummyPage as any, true, dummyEmitter as any)
     browserLogs.boot()
@@ -117,6 +126,9 @@ test('BrowserLogs', async (t) => {
 
     const dummyEmitter = {
       emit: (_event: string, payload: any) => logs.push([payload.file, payload.type, payload.messages]),
+      on: (_event: string, _handler: any) => {
+        // noop
+      },
     }
     const browserLogs = new BrowserLogs(dummyPage as any, true, dummyEmitter as any)
     browserLogs.boot()
@@ -152,6 +164,9 @@ test('BrowserLogs', async (t) => {
 
     const dummyEmitter = {
       emit: (_event: string, payload: any) => logs.push([payload.file, payload.type, payload.messages]),
+      on: (_event: string, _handler: any) => {
+        // noop
+      },
     }
     const browserLogs = new BrowserLogs(dummyPage as any, true, dummyEmitter as any)
     browserLogs.boot()

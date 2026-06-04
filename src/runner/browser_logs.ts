@@ -1,7 +1,6 @@
-import type { ConsoleMessage, JSHandle, Page, Response } from 'playwright'
+import type { ConsoleMessage, JSHandle, Page } from 'playwright'
 import type { Emitter } from '../testing/emitter.js'
 import type { RunnerEvents } from '../types.js'
-import { colors } from './helpers.js'
 
 /**
  * A class that specializes in collecting and processing browser logs.
@@ -31,11 +30,6 @@ export class BrowserLogs {
   emitter: Emitter<RunnerEvents>
 
   /**
-   * Keeps track of reported unoptimized libraries to avoid duplicate messages.
-   */
-  #reportedUnoptimizedLibraries = new Set<string>()
-
-  /**
    * Creates an instance of BrowserLogs.
    *
    * @param page - The Playwright page to capture logs from.
@@ -48,7 +42,6 @@ export class BrowserLogs {
 
     this.handleConsoleMessage = this.handleConsoleMessage.bind(this)
     this.handlePageError = this.handlePageError.bind(this)
-    this.handleResponse = this.handleResponse.bind(this)
   }
 
   /**
@@ -57,7 +50,6 @@ export class BrowserLogs {
   boot(): void {
     this.page.on('console', this.handleConsoleMessage)
     this.page.on('pageerror', this.handlePageError)
-    this.page.on('response', this.handleResponse)
   }
 
   protected canShow(message: string, _type: string): boolean {
@@ -156,35 +148,6 @@ export class BrowserLogs {
       return result
     } catch {
       return arg.toString()
-    }
-  }
-
-  protected handleResponse(response: Response): void {
-    if (response.status() === 504) {
-      const url = response.url()
-      if (url.includes('/node_modules/.vite/deps/')) {
-        try {
-          const urlObj = new URL(url)
-          const filename = urlObj.pathname.split('/').pop() || ''
-          let packageName = filename.replace(/\.js$/, '')
-          if (packageName.startsWith('@') && packageName.includes('_')) {
-            const underscoreIndex = packageName.indexOf('_')
-            packageName = packageName.slice(0, underscoreIndex) + '/' + packageName.slice(underscoreIndex + 1)
-          }
-
-          if (this.#reportedUnoptimizedLibraries.has(packageName)) {
-            return
-          }
-          this.#reportedUnoptimizedLibraries.add(packageName)
-
-          const relativeConfigPath = this.configPath ?? 'lupa.config.ts'
-          let message = `⚠️  ${colors.red(`[Lupa Error] Library '${packageName}' caused an issue with dependency optimization.`)}\n`
-          message += `   ${colors.red(`Please add it to the 'optimizeDeps.include' list in your Lupa config file: ${relativeConfigPath}\n`)}\n`
-          console.error(message)
-        } catch {
-          // ignore parsing error
-        }
-      }
     }
   }
 }

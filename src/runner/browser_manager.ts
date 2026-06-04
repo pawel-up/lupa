@@ -1,4 +1,4 @@
-import { chromium, firefox, webkit, type Browser, type Page } from 'playwright'
+import { chromium, firefox, webkit, type Browser, type Page, type Response } from 'playwright'
 import { BrowserLogs } from './browser_logs.js'
 import { CommandsHandler } from '../commands/rpc_handler.js'
 import type { CoverageManager } from './coverage_manager.js'
@@ -18,6 +18,11 @@ export class BrowserManager {
   #emitter: Emitter<RunnerEvents>
   #configPath?: string
 
+  #testStartedChunks = new Set<string>()
+  #reportedUnoptimizedLibraries = new Set<string>()
+  #reloadingChunks = new Set<string>()
+  #reloadCounts = new Map<string, number>()
+
   // The set of chunk IDs expected to finish in the current wave,
   // and the resolve function for the current wave's completion promise.
   #currentWaveChunkIds = new Set<string>()
@@ -31,7 +36,7 @@ export class BrowserManager {
     this.#configPath = configPath
   }
 
-  async boot(testPoolManager: TestPoolManager, coverageManager?: CoverageManager) {
+  async boot(testPoolManager: TestPoolManager, coverageManager?: CoverageManager): Promise<void> {
     for (const name of this.#browserNames) {
       if (name !== 'chromium' && coverageManager?.isEnabled) {
         console.warn(
@@ -60,6 +65,10 @@ export class BrowserManager {
         const logs = new BrowserLogs(page, this.#verboseLogs, this.#emitter, this.#configPath)
         logs.boot()
 
+        page.on('response', async (response) => {
+          await this.#handleResponse(page, chunkId, response)
+        })
+
         const commandsHandler = new CommandsHandler(page)
         await commandsHandler.boot()
 
@@ -87,6 +96,11 @@ export class BrowserManager {
     const targetIds = chunkIds.filter((id) => this.#pages.has(id))
     if (targetIds.length === 0) return
 
+    for (const chunkId of targetIds) {
+      this.#testStartedChunks.delete(chunkId)
+      this.#reloadCounts.delete(chunkId)
+    }
+
     this.#currentWaveChunkIds = new Set(targetIds)
     this.#currentWaveFinished = new Set()
 
@@ -109,7 +123,7 @@ export class BrowserManager {
     await waveComplete
   }
 
-  async extractCoverage(coverageManager: CoverageManager) {
+  async extractCoverage(coverageManager: CoverageManager): Promise<void> {
     for (const [chunkId, page] of this.#pages.entries()) {
       try {
         debug('extracting coverage for chunk %s', chunkId)
@@ -121,7 +135,7 @@ export class BrowserManager {
     }
   }
 
-  async close() {
+  async close(): Promise<void> {
     for (const [name, browser] of this.#browsers.entries()) {
       try {
         debug('closing browser %s', name)
@@ -132,5 +146,70 @@ export class BrowserManager {
     }
     this.#browsers.clear()
     this.#pages.clear()
+  }
+
+  /**
+   * Marks a chunk as started so the browser manager can detect unoptimized libraries.
+   * This is called by the telemetry when a suite starts.
+   */
+  markChunkAsStarted(chunkId: string): void {
+    this.#testStartedChunks.add(chunkId)
+  }
+
+  async #handleResponse(page: Page, chunkId: string, response: Response): Promise<void> {
+    if (response.status() === 504) {
+      const url = response.url()
+      if (url.includes('/node_modules/.vite/deps/')) {
+        const isStarted = this.#testStartedChunks.has(chunkId)
+        if (!isStarted) {
+          await this.#reloadPage(page, chunkId)
+          return
+        }
+        this.#reportUnoptimizedLibrary(url)
+      }
+    }
+  }
+
+  async #reloadPage(page: Page, chunkId: string): Promise<void> {
+    if (this.#reloadingChunks.has(chunkId)) {
+      return
+    }
+    const count = this.#reloadCounts.get(chunkId) || 0
+    if (count >= 3) {
+      return
+    }
+    this.#reloadingChunks.add(chunkId)
+    this.#reloadCounts.set(chunkId, count + 1)
+    try {
+      await page.reload()
+    } catch {
+      // Suppress navigation aborted / page closed errors
+    } finally {
+      this.#reloadingChunks.delete(chunkId)
+    }
+  }
+
+  #reportUnoptimizedLibrary(url: string): void {
+    try {
+      const urlObj = new URL(url)
+      const filename = urlObj.pathname.split('/').pop() || ''
+      let packageName = filename.replace(/\.js$/, '')
+      if (packageName.startsWith('@') && packageName.includes('_')) {
+        const underscoreIndex = packageName.indexOf('_')
+        packageName = packageName.slice(0, underscoreIndex) + '/' + packageName.slice(underscoreIndex + 1)
+      }
+
+      if (this.#reportedUnoptimizedLibraries.has(packageName)) {
+        return
+      }
+      this.#reportedUnoptimizedLibraries.add(packageName)
+
+      const relativeConfigPath = this.#configPath ?? 'lupa.config.ts'
+      let message = `⚠️  ${colors.red(`[Lupa Error] Library '${packageName}' caused an issue with dependency optimization.`)}\n`
+      message += `   ${colors.red(`Please add it to the 'optimizeDeps.include' list in your Lupa config file: ${relativeConfigPath}\n`)}\n`
+      console.error(message)
+    } catch {
+      // ignore parsing error
+    }
   }
 }
