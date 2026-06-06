@@ -594,6 +594,55 @@ test('Integration: Lupa Framework End-to-End', async (t) => {
         output.includes('unit 1 - no suite'),
         `Expected output to include 'unit 1 - no suite'. Output:\n${output}`
       )
+    }
+  )
+
+  await t.test(
+    'executes list command with --pinned option and correctly outputs only pinned tests',
+    { timeout: TIMEOUT },
+    async (): Promise<void> => {
+      const runnerPath = path.join(process.cwd(), 'bin', 'lupa.ts')
+
+      const { exitCode, stdout, stderr } = await new Promise<{
+        exitCode: number | null
+        stdout: string
+        stderr: string
+      }>((resolve, reject): void => {
+        const child = forkSanitized(runnerPath, ['list', '--config', 'lupa.pinned.config.ts', '--pinned'], {
+          execArgv: ['--import', 'tsx'],
+          cwd: process.cwd(),
+          env: {
+            ...process.env,
+            FORCE_COLOR: '0',
+            CI: '1',
+          },
+          stdio: 'pipe',
+        })
+
+        let out = ''
+        let err = ''
+
+        child.stdout?.on('data', (data) => (out += data))
+        child.stderr?.on('data', (data) => (err += data))
+
+        child.on('close', (code) => {
+          resolve({ exitCode: code, stdout: out, stderr: err })
+        })
+
+        child.on('error', reject)
+      })
+
+      const output = stdout + '\n' + stderr
+
+      assert.strictEqual(exitCode, 0, `Expected runner to exit with code 0. Output:\n${output}`)
+      assert.ok(
+        output.includes('this is a pinned test'),
+        `Expected output to include 'this is a pinned test'. Output:\n${output}`
+      )
+      assert.ok(
+        !output.includes('this is a regular test'),
+        `Expected output NOT to include 'this is a regular test'. Output:\n${output}`
+      )
       assert.ok(output.includes('Total tests: 1'), `Expected output to show Total tests: 1. Output:\n${output}`)
     }
   )

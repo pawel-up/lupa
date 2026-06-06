@@ -203,7 +203,7 @@ test('ConfigManager', async (t) => {
     assert.deepStrictEqual(hydrated.coverage, { enabled: true, thresholds: { lines: 80 } })
   })
 
-  await t.test('enables coverage if config coverage is defined but CLI requested coverage', () => {
+  await t.test('enables config coverage if config coverage is defined but CLI requested coverage', () => {
     const config: Config = { files: [], coverage: { thresholds: { lines: 80 } } }
     const cliArgs: CLIArgs = { _: [], coverage: true }
 

@@ -2,7 +2,6 @@ import type { ViteDevServer } from 'vite'
 import type { RunnerEvents } from '../types.js'
 import type { Orchestrator } from './orchestrator.js'
 import { transformBrowserStack } from './stack_transformer.js'
-import { formatPinnedTest, printPinnedTests } from './helpers.js'
 
 export type TelemetryPayload = {
   [K in keyof RunnerEvents]: { event: K; data: RunnerEvents[K] }
@@ -94,17 +93,6 @@ export class Telemetry {
       } else if (event === 'runner:import_error') {
         if (data && data.error) {
           data.error = await deserializeError(data.error, this.#cwd, vite)
-        }
-      } else if (event === 'runner:pinned_tests') {
-        if (data && data.tests) {
-          const formatted = await Promise.all(
-            data.tests.map(async (t: { title: string; stack: string }) => {
-              const transformed = vite ? await transformBrowserStack(vite, this.#cwd, t.stack) : t.stack
-              return formatPinnedTest(t.title, transformed)
-            })
-          )
-          printPinnedTests(formatted)
-          return
         }
       }
 

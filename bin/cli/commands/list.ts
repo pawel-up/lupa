@@ -31,6 +31,7 @@ export const listCommand = new Command('list')
   .option('--files-only', 'List only the test files after applying configuration and CLI filters')
   .option('--search-files <queries...>', 'Search for test files with text search queries')
   .option('--search-tests <queries...>', 'Search for test titles with text search queries')
+  .option('--pinned', 'List only pinned tests')
   .addOption(new Option('--format <format>', 'Output format for the list').choices(['table', 'json']).default('table'))
   .action(
     async (
@@ -48,6 +49,7 @@ export const listCommand = new Command('list')
         filesOnly?: boolean
         searchFiles?: string[]
         searchTests?: string[]
+        pinned?: boolean
       },
       command
     ) => {
@@ -110,30 +112,32 @@ export const listCommand = new Command('list')
 
         const result = await runProgrammatic(json())
 
-        if (!options.searchTests || options.searchTests.length === 0) {
+        let list = 'list' in result && result.success ? result.list : null
+        if (!list) {
+          console.error(colors.red('Failed to discover tests or unexpected result format.'))
+          process.exit(1)
+        }
+
+        if (options.pinned) {
+          list = filterPinnedListNode(list)
+        }
+
+        if (options.searchTests && options.searchTests.length > 0) {
+          list = filterListNode(list, options.searchTests)
+        }
+
+        if (options.pinned || (options.searchTests && options.searchTests.length > 0)) {
+          if (options.format === 'json') {
+            console.log(JSON.stringify({ success: true, list }, null, 2))
+            return
+          }
+          printTable(list)
+        } else {
           if (options.format === 'json') {
             console.log(JSON.stringify(result, null, 2))
             return
           }
-
-          if ('list' in result && result.success) {
-            printTable(result.list)
-          } else {
-            console.error(colors.red('Failed to discover tests or unexpected result format.'))
-            process.exit(1)
-          }
-        } else {
-          if ('list' in result && result.success) {
-            const list = filterListNode(result.list, options.searchTests)
-            if (options.format === 'json') {
-              console.log(JSON.stringify({ success: true, list }, null, 2))
-              return
-            }
-            printTable(list)
-          } else {
-            console.error(colors.red('Failed to discover tests or unexpected result format.'))
-            process.exit(1)
-          }
+          printTable(list)
         }
       } catch (err) {
         renderCriticalError('E_TEST_LIST_FAILED', 'Failed to list tests.', err)
@@ -232,6 +236,42 @@ function filterListNode(listNode: RunnerListNode, queries: string[]): RunnerList
     if (matchedTests.length > 0 || matchedGroups.length > 0) {
       return {
         ...suite,
+        tests: matchedTests,
+        groups: matchedGroups,
+      }
+    }
+    return null
+  }
+
+  const matchedSuites = listNode.suites.map(filterSuite).filter((s): s is RunnerListSuiteNode => s !== null)
+
+  return {
+    suites: matchedSuites,
+  }
+}
+
+function filterPinnedListNode(listNode: RunnerListNode): RunnerListNode {
+  const filterSuite = (suite: RunnerListSuiteNode): RunnerListSuiteNode | null => {
+    const matchedTests = suite.tests.filter((test) => test.isPinned)
+    const matchedGroups = suite.groups.map(filterGroup).filter((g): g is RunnerListGroupNode => g !== null)
+
+    if (matchedTests.length > 0 || matchedGroups.length > 0) {
+      return {
+        ...suite,
+        tests: matchedTests,
+        groups: matchedGroups,
+      }
+    }
+    return null
+  }
+
+  const filterGroup = (group: RunnerListGroupNode): RunnerListGroupNode | null => {
+    const matchedTests = group.tests.filter((test) => test.isPinned)
+    const matchedGroups = group.groups.map(filterGroup).filter((g): g is RunnerListGroupNode => g !== null)
+
+    if (matchedTests.length > 0 || matchedGroups.length > 0) {
+      return {
+        ...group,
         tests: matchedTests,
         groups: matchedGroups,
       }

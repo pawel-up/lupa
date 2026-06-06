@@ -540,6 +540,7 @@ export class Test<TestData extends DataSetNode = undefined> extends Macroable {
       isSkipped: !!this.options.isSkipped,
       isTodo: !!this.options.isTodo,
       meta: this.options.meta,
+      isPinned: this.isPinned,
     }
   }
 }

@@ -65,7 +65,6 @@ export const testCommand = new Command('test')
       'suite',
     ])
   )
-  .option('--list-pinned', 'List pinned tests')
   .option('--watch', 'Watch for file changes and re-run tests')
   .option('--verbose', 'Enable verbose logging')
   .option('--force-exit', 'Forcefully exit the process')

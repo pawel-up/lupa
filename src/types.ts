@@ -570,6 +570,8 @@ export interface RunnerListTestNode {
   isTodo: boolean
   /** Metadata associated with the test, such as its location. */
   meta: TestMetadata
+  /** Whether the test is pinned. */
+  isPinned?: boolean
 }
 
 /**
@@ -606,25 +608,6 @@ export interface RunnerListSuiteNode {
 export interface RunnerListNode {
   /** A collection of all suites discovered during the dry-run. */
   suites: RunnerListSuiteNode[]
-}
-
-/**
- * Runner pinned tests
- */
-export interface RunnerPinnedTestsNode {
-  /**
-   * Pinned tests metadata
-   */
-  tests: {
-    /**
-     * Test title
-     */
-    title: string
-    /**
-     * Test stack trace
-     */
-    stack: string
-  }[]
 }
 
 /**
@@ -680,10 +663,6 @@ export interface FrameworkEvents extends CustomRunnerEvents {
    * Emitted when an uncaught exception occurs.
    */
   'uncaught:exception': UncaughtExceptionNode
-  /**
-   * Emitted when the runner finds pinned tests.
-   */
-  'runner:pinned_tests': RunnerPinnedTestsNode
   /**
    * Emitted when the runner is in list mode and dumps the test tree
    */
@@ -744,10 +723,6 @@ export interface BrowserTelemetryEvents {
    * Emitted when an uncaught exception occurs.
    */
   'uncaught:exception': UncaughtExceptionNode & Partial<CorrelationIds>
-  /**
-   * Emitted when the runner finds pinned tests.
-   */
-  'runner:pinned_tests': RunnerPinnedTestsNode & Partial<CorrelationIds>
   /**
    * Emitted when the runner is in list mode and dumps the test tree
    */

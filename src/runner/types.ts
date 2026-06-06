@@ -57,10 +57,6 @@ export type CLIArgs = {
    */
   matchAll?: boolean
   /**
-   * Whether to list pinned tests
-   */
-  listPinned?: boolean
-  /**
    * Stop executing further tests as soon as a single test failure occurs.
    * When enabled, subsequent suites, groups, and tests will be skipped.
    */
