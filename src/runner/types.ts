@@ -61,13 +61,16 @@ export type CLIArgs = {
    */
   listPinned?: boolean
   /**
-   * Whether to bail
+   * Stop executing further tests as soon as a single test failure occurs.
+   * When enabled, subsequent suites, groups, and tests will be skipped.
    */
   bail?: boolean
   /**
-   * Bail layer
+   * The granularity or layer at which the runner bails on failure (e.g., 'test', 'group', 'suite').
+   * Allows control over whether bailing skips only the remaining tests in the current group/suite,
+   * or halts the entire runner process.
    */
-  bailLayer?: string
+  bailLayer?: 'test' | 'group' | 'suite'
   /**
    * Whether to enable verbose mode
    */
@@ -93,13 +96,13 @@ export type CLIArgs = {
    */
   coverageDir?: string
   /**
-   * Whether to disable parallel execution
+   * Whether to enable parallel execution
    */
   parallel?: boolean
   /**
    * Concurrency level
    */
-  concurrency?: string | number
+  concurrency?: number | 'auto'
   /**
    * Whether to output the list of suites and tests
    */

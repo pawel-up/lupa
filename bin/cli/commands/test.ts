@@ -46,7 +46,6 @@ export const testCommand = new Command('test')
   .option('--timeout <duration>', 'Define default timeout for all tests')
   .option('--retries <count>', 'Define default retries for all tests')
   .option('--reporters <names...>', 'Activate one or more test reporters')
-  .option('--bail-layer <layer>', 'Specify at which layer to enable the bail mode')
   .addOption(
     new Option('--browser <browser...>', 'Specify the browser to run tests in').choices([
       'chromium',
@@ -58,14 +57,20 @@ export const testCommand = new Command('test')
   .option('--vite-config <path>', 'Path to a custom Vite configuration file')
   .option('--match-all', 'Run tests that matches all the supplied tags')
   .option('--failed', 'Run tests failed during the last run')
-  .option('--bail', 'Exit early when a test fails')
+  .option('--bail', 'Stop executing further tests as soon as a single test fails')
+  .addOption(
+    new Option('--bail-layer <layer>', 'Specify at which layer to enable the bail mode').choices([
+      'test',
+      'group',
+      'suite',
+    ])
+  )
   .option('--list-pinned', 'List pinned tests')
   .option('--watch', 'Watch for file changes and re-run tests')
   .option('--verbose', 'Enable verbose logging')
   .option('--force-exit', 'Forcefully exit the process')
-  // .option('--parallel', 'Enable parallel execution')
-  // .option('--no-parallel', 'Disable parallel execution')
-  // .option('--concurrency <concurrency>', 'Number of concurrent pages per browser')
+  .option('--parallel', 'Enable parallel execution')
+  .option('--concurrency <concurrency>', 'Number of concurrent pages per browser')
   .option('--coverage', 'Enable code coverage reporting')
   .option('--coverage-reporters <reporters...>', 'Specify coverage reporters (e.g. text, html, lcov)')
   .option('--coverage-dir <dir>', 'Specify the directory to write coverage reports to')
