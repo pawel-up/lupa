@@ -1,4 +1,4 @@
-import type { Locator, Page, Disposable } from 'playwright'
+import type { Locator, Page, Disposable, FileChooser } from 'playwright'
 import type {
   CommandNames,
   DownPayload,
@@ -38,9 +38,11 @@ import type {
   SelectOptionOptions,
   PressSequentiallyOptions,
   ElementScreenshotOptions,
+  SetInputFilesOptions,
 } from './locator.js'
 import type { PageScreenshotOptions } from './screenshot.js'
 import type { Geolocation, GrantPermissionsOptions } from './emulation.js'
+import type { FileChooserSetFilesOptions } from './file_chooser.js'
 import debuglog from '../runner/debug.js'
 import { NetworkCommand } from '../network/network_command.js'
 import { registry } from '../module-mock/registry.js'
@@ -85,6 +87,7 @@ export class CommandsHandler {
   protected page: Page
   private closeHandler?: Disposable
   private network: NetworkCommand
+  private activeFileChoosers = new Map<string, FileChooser>()
 
   constructor(page: Page) {
     this.page = page
@@ -164,6 +167,11 @@ export class CommandsHandler {
           case 'cookies:clear':
             await this.page.context().clearCookies(payload.options)
             break
+          case 'fileChooser:waitForEvent':
+            return await this.handleFileChooserWaitForEvent(payload)
+          case 'fileChooser:setFiles':
+            await this.handleFileChooserSetFiles(payload)
+            break
           case 'module:mock:register':
             registry.register(payload.testId, payload.path)
             break
@@ -184,6 +192,7 @@ export class CommandsHandler {
       this.closeHandler = undefined
     }
     this.network.reset()
+    this.activeFileChoosers.clear()
   }
 
   /**
@@ -492,9 +501,44 @@ export class CommandsHandler {
         await locator.screenshot(args as ElementScreenshotOptions)
         return
       }
+      case 'setInputFiles': {
+        const payload = args as { files: string | string[]; options?: SetInputFilesOptions }
+        return await locator.setInputFiles(payload.files, payload.options)
+      }
       default:
         throw new Error(`Unknown lupa command: ${action}`)
     }
+  }
+
+  /**
+   * Handle fileChooser:waitForEvent command.
+   */
+  protected async handleFileChooserWaitForEvent(options?: {
+    timeout?: number
+  }): Promise<{ id: string; isMultiple: boolean }> {
+    const fileChooser = await this.page.waitForEvent('filechooser', options)
+    const id = Math.random().toString(36).substring(2)
+    this.activeFileChoosers.set(id, fileChooser)
+    return {
+      id,
+      isMultiple: fileChooser.isMultiple(),
+    }
+  }
+
+  /**
+   * Handle fileChooser:setFiles command.
+   */
+  protected async handleFileChooserSetFiles(payload: {
+    id: string
+    files: string | string[]
+    options?: FileChooserSetFilesOptions
+  }): Promise<void> {
+    const fileChooser = this.activeFileChoosers.get(payload.id)
+    if (!fileChooser) {
+      throw new Error(`No active file chooser found with ID: ${payload.id}`)
+    }
+    this.activeFileChoosers.delete(payload.id)
+    await fileChooser.setFiles(payload.files, payload.options)
   }
 
   private getLocator(query: LocatorQuery): Locator {

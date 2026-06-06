@@ -23,6 +23,7 @@ export {
   type SelectOptionValues,
   type SelectOptionOptions,
   type ElementScreenshotOptions,
+  type SetInputFilesOptions,
 } from './locator.js'
 
 /**
@@ -121,6 +122,7 @@ export { screenshot, Screenshot, type PageScreenshotOptions } from './screenshot
 export { emulation, Emulation, type Geolocation, type GrantPermissionsOptions } from './emulation.js'
 export { cookies, Cookies } from './cookies.js'
 export { type Cookie, type ClearCookiesOptions } from './types.js'
+export { fileChooser, FileChooser, type FileChooserSetFilesOptions } from './file_chooser.js'
 
 export {
   mouse,

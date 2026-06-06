@@ -254,4 +254,21 @@ describe('Locator', () => {
     await assert.rejects(() => loc.screenshot({}), /Screenshot path is required/)
     assert.strictEqual(rpcCalls.length, 0)
   })
+
+  test('setInputFiles', async () => {
+    const loc = query({ css: 'input[type=file]' })
+    await loc.setInputFiles('myfile.png', { timeout: 1000 })
+    assert.strictEqual(rpcCalls.length, 1)
+    assert.deepStrictEqual(rpcCalls[0], {
+      command: 'locator',
+      payload: {
+        action: 'setInputFiles',
+        query: { css: 'input[type=file]' },
+        args: {
+          files: 'myfile.png',
+          options: { timeout: 1000 },
+        },
+      },
+    })
+  })
 })

@@ -231,3 +231,5 @@ export type CommandNames =
   | 'cookies:add'
   | 'cookies:getAll'
   | 'cookies:clear'
+  | 'fileChooser:waitForEvent'
+  | 'fileChooser:setFiles'

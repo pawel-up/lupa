@@ -132,6 +132,7 @@ export type SupportedLocatorAction =
   | 'dragTo'
   | 'selectOption'
   | 'screenshot'
+  | 'setInputFiles'
 
 /**
  * Payload for locator actions.
@@ -420,6 +421,16 @@ export interface ElementScreenshotOptions {
    * Maximum time in milliseconds. Defaults to 30000.
    */
   timeout?: number
+}
+
+/**
+ * Options for the setInputFiles action on a locator.
+ */
+export interface SetInputFilesOptions extends TimeoutOption {
+  /**
+   * Actions that initiate navigations are waiting for the navigation to finish and to return its result.
+   */
+  noWaitAfter?: boolean
 }
 
 /**
@@ -764,5 +775,30 @@ export class Locator {
    */
   async selectOption(values: SelectOptionValues, options?: SelectOptionOptions): Promise<string[]> {
     return await this.executeAction<string[]>('selectOption', { values, options })
+  }
+
+  /**
+   * Sets the value of a file input to the specified file paths.
+   *
+   * @use when
+   * - Setting files on a native HTML `<input type="file">` element.
+   *
+   * @dont use when
+   * - Interacting with custom file upload buttons that trigger a native dialog rather than exposing the
+   *   underlying file input directly. In those cases, use the `fileChooser` API instead.
+   *
+   * @example
+   * ```typescript
+   * import { query } from '@pawel-up/lupa/commands'
+   *
+   * await query({ css: 'input[type=file]' }).setInputFiles('myfile.png')
+   * ```
+   *
+   * @param files - A file path or array of file paths.
+   * @param options - Optional settings to modify the action.
+   * @returns A promise that resolves when the file paths have been set.
+   */
+  async setInputFiles(files: string | string[], options?: SetInputFilesOptions): Promise<void> {
+    await this.executeAction('setInputFiles', { files, options })
   }
 }

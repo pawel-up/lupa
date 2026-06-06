@@ -23,6 +23,7 @@ describe('CommandsHandler - locator', () => {
       dragTo: async () => {},
       selectOption: async () => {},
       screenshot: async () => {},
+      setInputFiles: async () => {},
     }
 
     mockPage = {
@@ -260,6 +261,28 @@ describe('CommandsHandler - locator', () => {
     assert.deepStrictEqual(calledArgs[0], ['val1', 'val2'])
     assert.deepStrictEqual(calledArgs[1], { force: true })
     assert.deepStrictEqual(result, ['val1', 'val2'])
+  })
+
+  test('calls setInputFiles', async () => {
+    let calledArgs: any[] = []
+    mockLocator.setInputFiles = async (...args: any[]) => {
+      calledArgs = args
+    }
+    const handler = new CommandsHandler(mockPage as Page)
+    await handler.boot()
+
+    await exposedFn('locator', {
+      action: 'setInputFiles',
+      query: { css: 'input[type=file]' },
+      args: {
+        files: 'file.txt',
+        options: { timeout: 1000 },
+      },
+    })
+
+    assert.strictEqual(calledArgs.length, 2)
+    assert.deepStrictEqual(calledArgs[0], 'file.txt')
+    assert.deepStrictEqual(calledArgs[1], { timeout: 1000 })
   })
 
   test('calls pressSequentially', async () => {
@@ -646,5 +669,76 @@ describe('CommandsHandler - cookies', () => {
       method: 'clearCookies',
       args: [clearOptions],
     })
+  })
+})
+
+describe('CommandsHandler - fileChooser', () => {
+  let mockPage: any
+  let exposedFn: (...args: any[]) => any
+  let pageEvents: { event: string; options: any }[] = []
+  let mockFileChooser: any
+
+  beforeEach(() => {
+    pageEvents = []
+    mockFileChooser = {
+      isMultiple: () => true,
+      setFiles: async () => {},
+    }
+    mockPage = {
+      exposeFunction: async (name: string, fn: (...args: any[]) => any) => {
+        if (name === '__lupa_command__') {
+          exposedFn = fn
+        }
+        return { dispose: async () => {} }
+      },
+      waitForEvent: async (event: string, options: any) => {
+        pageEvents.push({ event, options })
+        return mockFileChooser
+      },
+    }
+  })
+
+  test('calls waitForEvent and handles fileChooser events', async () => {
+    const handler = new CommandsHandler(mockPage as Page)
+    await handler.boot()
+
+    // 1. Wait for file chooser
+    const result = await exposedFn('fileChooser:waitForEvent', { timeout: 5000 })
+    assert.strictEqual(pageEvents.length, 1)
+    assert.strictEqual(pageEvents[0].event, 'filechooser')
+    assert.deepStrictEqual(pageEvents[0].options, { timeout: 5000 })
+    assert.strictEqual(typeof result.id, 'string')
+    assert.strictEqual(result.isMultiple, true)
+
+    // 2. Set files
+    let calledFiles: any = null
+    let calledOptions: any = null
+    mockFileChooser.setFiles = async (files: string | string[], options: any) => {
+      calledFiles = files
+      calledOptions = options
+    }
+
+    await exposedFn('fileChooser:setFiles', {
+      id: result.id,
+      files: 'upload.png',
+      options: { timeout: 1000 },
+    })
+
+    assert.strictEqual(calledFiles, 'upload.png')
+    assert.deepStrictEqual(calledOptions, { timeout: 1000 })
+  })
+
+  test('fileChooser:setFiles throws error if ID is invalid', async () => {
+    const handler = new CommandsHandler(mockPage as Page)
+    await handler.boot()
+
+    await assert.rejects(
+      () =>
+        exposedFn('fileChooser:setFiles', {
+          id: 'invalid-id',
+          files: 'upload.png',
+        }),
+      /No active file chooser found with ID: invalid-id/
+    )
   })
 })

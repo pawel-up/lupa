@@ -12,6 +12,7 @@ import {
   screenshot,
   emulation,
   cookies,
+  fileChooser,
 } from '../../../src/commands/index.js'
 
 test.group('Browser Commands', (group) => {
@@ -239,5 +240,50 @@ test.group('Browser Commands', (group) => {
     await cookies.clear()
     const listAfterAllClear = await cookies.getAll()
     assert.isUndefined(listAfterAllClear.find((c) => c.name === 'test_cookie2'))
+  })
+
+  test('locator.setInputFiles uploads files directly', async ({ assert }) => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.id = 'direct-file-input'
+    document.body.appendChild(input)
+
+    let changeCalled = false
+    input.addEventListener('change', () => {
+      changeCalled = true
+    })
+
+    try {
+      await query({ css: '#direct-file-input' }).setInputFiles('package.json')
+      assert.isTrue(changeCalled)
+      assert.strictEqual(input.files?.length, 1)
+      assert.strictEqual(input.files?.[0]?.name, 'package.json')
+    } finally {
+      input.remove()
+    }
+  })
+
+  test('fileChooser intercepts native file chooser event', async ({ assert }) => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.id = 'custom-file-input'
+    document.body.appendChild(input)
+
+    let changeCalled = false
+    input.addEventListener('change', () => {
+      changeCalled = true
+    })
+
+    try {
+      const [fc] = await Promise.all([fileChooser.waitForEvent(), query({ css: '#custom-file-input' }).click()])
+
+      assert.isFalse(fc.isMultiple)
+      await fc.setFiles('package.json')
+      assert.isTrue(changeCalled)
+      assert.strictEqual(input.files?.length, 1)
+      assert.strictEqual(input.files?.[0]?.name, 'package.json')
+    } finally {
+      input.remove()
+    }
   })
 })
