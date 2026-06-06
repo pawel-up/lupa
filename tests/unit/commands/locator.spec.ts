@@ -134,6 +134,20 @@ describe('Locator', () => {
     })
   })
 
+  test('pressSequentially', async () => {
+    const loc = query({ css: 'input' })
+    await loc.pressSequentially('hello', { delay: 10 })
+    assert.strictEqual(rpcCalls.length, 1)
+    assert.deepStrictEqual(rpcCalls[0], {
+      command: 'locator',
+      payload: {
+        action: 'pressSequentially',
+        query: { css: 'input' },
+        args: { text: 'hello', options: { delay: 10 } },
+      },
+    })
+  })
+
   test('tap', async () => {
     const loc = query({ xpath: '//div' })
     await loc.tap({ position: { x: 10, y: 20 } })

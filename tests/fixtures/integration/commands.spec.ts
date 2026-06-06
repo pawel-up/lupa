@@ -7,6 +7,7 @@ import {
   resetMouse,
   selectOption,
   mouse,
+  keyboard,
   query,
 } from '../../../src/commands/index.js'
 
@@ -58,6 +59,29 @@ test.group('Browser Commands', (group) => {
     // Test backspace using press
     await sendKeys({ press: 'Backspace' })
     assert.equal(input.value, 'Hell')
+  })
+
+  test('keyboard class types, inserts text, and presses keys on the focused element', async ({ assert }) => {
+    const input = document.getElementById('test-input') as HTMLInputElement
+    input.value = ''
+    input.focus()
+
+    await keyboard.type('Hello')
+    assert.equal(input.value, 'Hello')
+
+    await keyboard.press('Backspace')
+    assert.equal(input.value, 'Hell')
+
+    await keyboard.insertText('嗨')
+    assert.equal(input.value, 'Hell嗨')
+  })
+
+  test('locator pressSequentially types text into the targeted element', async ({ assert }) => {
+    const input = document.getElementById('test-input') as HTMLInputElement
+    input.value = ''
+
+    await query({ css: '#test-input' }).pressSequentially('Hello Lupa', { delay: 10 })
+    assert.equal(input.value, 'Hello Lupa')
   })
 
   test('sendMouse triggers click events on target', async ({ assert }) => {

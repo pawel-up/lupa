@@ -11,6 +11,7 @@ export {
   type CheckOptions,
   type FillOptions,
   type TypeOptions,
+  type PressSequentiallyOptions,
   type DoubleClickOptions,
   type HoverOptions,
   type PressOptions,
@@ -105,10 +106,13 @@ export function emulateMedia(media: Media): Promise<void> {
  *
  * @param payload - The keys to send.
  * @returns A promise that resolves when the keys are sent.
+ * @deprecated Use the `keyboard` instance instead (e.g., `await keyboard.type(...)`).
  */
 export function sendKeys(payload: SendKeysPayload): Promise<void> {
   return executeCommand('sendKeys', payload)
 }
+
+export { keyboard, Keyboard, type KeyboardPressOptions, type KeyboardTypeOptions } from './keyboard.js'
 
 export {
   mouse,

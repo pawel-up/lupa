@@ -126,6 +126,7 @@ export type SupportedLocatorAction =
   | 'fill'
   | 'hover'
   | 'press'
+  | 'pressSequentially'
   | 'tap'
   | 'uncheck'
   | 'dragTo'
@@ -278,6 +279,21 @@ export interface TypeOptions extends TimeoutOption, ForceOption, ModifiersOption
 }
 
 /**
+ * Options for the pressSequentially action.
+ */
+export interface PressSequentiallyOptions extends TimeoutOption {
+  /**
+   * Time to wait between key presses in milliseconds. Defaults to 0.
+   */
+  delay?: number
+
+  /**
+   * Actions that initiate navigations are waiting for the navigation to finish and to return its result.
+   */
+  noWaitAfter?: boolean
+}
+
+/**
  * Options for the double click action.
  */
 export interface DoubleClickOptions extends TimeoutOption, ForceOption, TrialOption, ModifiersOption, PositionOption {
@@ -328,13 +344,6 @@ export interface UncheckOptions extends TimeoutOption, ForceOption, TrialOption,
  */
 export interface DragToOptions extends TimeoutOption, ForceOption, TrialOption {
   /**
-   * Actions that perform navigations are waiting for the navigations to happen and for the pages to start loading. You
-   * can opt out of waiting via setting this option to `true`. You would only need this option in the exceptional cases
-   * such as navigating to inaccessible pages. Defaults to `false`.
-   */
-  noWaitAfter?: boolean
-
-  /**
    * A point to use relative to the top-left corner of element padding box. If not specified, uses some visible point of
    * the element.
    */
@@ -380,12 +389,7 @@ export type SelectOptionValues = SelectOptionValue | SelectOptionValue[] | null
 /**
  * Options for the selectOption action.
  */
-export interface SelectOptionOptions extends TimeoutOption, ForceOption {
-  /**
-   * Deprecated. Playwright has deprecated this option and it has no effect.
-   */
-  noWaitAfter?: boolean
-}
+export interface SelectOptionOptions extends TimeoutOption, ForceOption {}
 
 /**
  * Creates a locator that can execute multiple actions like click, type, etc.
@@ -575,6 +579,32 @@ export class Locator {
    */
   async press(key: string, options?: PressOptions): Promise<void> {
     await this.executeAction('press', { key, options })
+  }
+
+  /**
+   * Focuses the element, and then sends a keydown, keypress/input, and keyup event for each character in the text.
+   *
+   * @use when
+   * - Typing characters one by one into an element when the page has special keyboard handling
+   *   (e.g. custom autocomplete, real-time input validation, or keyboard shortcuts).
+   *
+   * @dont use when
+   * - In most cases, you should use `locator.fill()` instead. `fill()` is faster, more reliable, and
+   *   automatically clears the input.
+   *
+   * @example
+   * ```typescript
+   * import { query } from '@pawel-up/lupa/commands'
+   *
+   * await query({ css: 'input' }).pressSequentially('Hello World', { delay: 100 })
+   * ```
+   *
+   * @param text - Value to type character by character.
+   * @param options - Optional settings to control the key press.
+   * @returns A promise that resolves when the action is completed.
+   */
+  async pressSequentially(text: string, options?: PressSequentiallyOptions): Promise<void> {
+    await this.executeAction('pressSequentially', { text, options })
   }
 
   /**

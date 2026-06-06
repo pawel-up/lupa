@@ -260,6 +260,28 @@ describe('CommandsHandler - locator', () => {
     assert.deepStrictEqual(calledArgs[1], { force: true })
     assert.deepStrictEqual(result, ['val1', 'val2'])
   })
+
+  test('calls pressSequentially', async () => {
+    let calledArgs: any[] = []
+    mockLocator.pressSequentially = async (...args: any[]) => {
+      calledArgs = args
+    }
+    const handler = new CommandsHandler(mockPage as Page)
+    await handler.boot()
+
+    await exposedFn('locator', {
+      action: 'pressSequentially',
+      query: { text: 'input' },
+      args: {
+        text: 'hello',
+        options: { delay: 10 },
+      },
+    })
+
+    assert.strictEqual(calledArgs.length, 2)
+    assert.strictEqual(calledArgs[0], 'hello')
+    assert.deepStrictEqual(calledArgs[1], { delay: 10 })
+  })
 })
 
 describe('CommandsHandler - mouse', () => {
@@ -429,5 +451,78 @@ describe('CommandsHandler - mouse', () => {
       { method: 'down', args: [{ button: 'left' }] },
       { method: 'up', args: [{ button: 'left' }] },
     ])
+  })
+})
+
+describe('CommandsHandler - keyboard', () => {
+  let mockPage: any
+  let exposedFn: (...args: any[]) => any
+  let keyboardCalls: { method: string; args: any[] }[]
+
+  beforeEach(() => {
+    keyboardCalls = []
+
+    mockPage = {
+      exposeFunction: async (name: string, fn: (...args: any[]) => any) => {
+        if (name === '__lupa_command__') {
+          exposedFn = fn
+        }
+        return { dispose: async () => {} }
+      },
+      keyboard: {
+        down: async (...args: any[]) => {
+          keyboardCalls.push({ method: 'down', args })
+        },
+        up: async (...args: any[]) => {
+          keyboardCalls.push({ method: 'up', args })
+        },
+        insertText: async (...args: any[]) => {
+          keyboardCalls.push({ method: 'insertText', args })
+        },
+        press: async (...args: any[]) => {
+          keyboardCalls.push({ method: 'press', args })
+        },
+        type: async (...args: any[]) => {
+          keyboardCalls.push({ method: 'type', args })
+        },
+      },
+    }
+  })
+
+  test('calls keyboard down and up', async () => {
+    const handler = new CommandsHandler(mockPage as Page)
+    await handler.boot()
+
+    await exposedFn('keyboard', { action: 'down', key: 'Shift' })
+    await exposedFn('keyboard', { action: 'up', key: 'Shift' })
+
+    assert.deepStrictEqual(keyboardCalls, [
+      { method: 'down', args: ['Shift'] },
+      { method: 'up', args: ['Shift'] },
+    ])
+  })
+
+  test('calls keyboard insertText', async () => {
+    const handler = new CommandsHandler(mockPage as Page)
+    await handler.boot()
+
+    await exposedFn('keyboard', { action: 'insertText', text: '嗨' })
+    assert.deepStrictEqual(keyboardCalls, [{ method: 'insertText', args: ['嗨'] }])
+  })
+
+  test('calls keyboard press', async () => {
+    const handler = new CommandsHandler(mockPage as Page)
+    await handler.boot()
+
+    await exposedFn('keyboard', { action: 'press', key: 'Control+A', options: { delay: 100 } })
+    assert.deepStrictEqual(keyboardCalls, [{ method: 'press', args: ['Control+A', { delay: 100 }] }])
+  })
+
+  test('calls keyboard type', async () => {
+    const handler = new CommandsHandler(mockPage as Page)
+    await handler.boot()
+
+    await exposedFn('keyboard', { action: 'type', text: 'Hello', options: { delay: 50 } })
+    assert.deepStrictEqual(keyboardCalls, [{ method: 'type', args: ['Hello', { delay: 50 }] }])
   })
 })

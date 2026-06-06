@@ -36,6 +36,7 @@ import type {
   DragToOptions,
   SelectOptionValues,
   SelectOptionOptions,
+  PressSequentiallyOptions,
 } from './locator.js'
 import debuglog from '../runner/debug.js'
 import { NetworkCommand } from '../network/network_command.js'
@@ -55,6 +56,13 @@ function isDownPayload(payload: SendKeysPayload): payload is DownPayload {
 
 function isUpPayload(payload: SendKeysPayload): payload is UpPayload {
   return 'up' in payload
+}
+
+interface KeyboardActionPayload {
+  action: 'down' | 'insertText' | 'press' | 'type' | 'up'
+  key?: string
+  text?: string
+  options?: { delay?: number }
 }
 
 /**
@@ -101,6 +109,9 @@ export class CommandsHandler {
             break
           case 'mouse':
             await this.handleMouse(payload)
+            break
+          case 'keyboard':
+            await this.handleKeyboard(payload as KeyboardActionPayload)
             break
 
           case 'selectOption':
@@ -308,6 +319,42 @@ export class CommandsHandler {
   }
 
   /**
+   * Handle keyboard command.
+   */
+  protected async handleKeyboard(payload: KeyboardActionPayload): Promise<void> {
+    const { action, key, text, options } = payload
+    switch (action) {
+      case 'down':
+        if (key) {
+          await this.page.keyboard.down(key)
+        }
+        break
+      case 'insertText':
+        if (text) {
+          await this.page.keyboard.insertText(text)
+        }
+        break
+      case 'press':
+        if (key) {
+          await this.page.keyboard.press(key, options)
+        }
+        break
+      case 'type':
+        if (text) {
+          await this.page.keyboard.type(text, options)
+        }
+        break
+      case 'up':
+        if (key) {
+          await this.page.keyboard.up(key)
+        }
+        break
+      default:
+        throw new Error(`Unsupported keyboard action: ${action}`)
+    }
+  }
+
+  /**
    * Handle selectOption command.
    */
   protected async handleSelectOption(payload: SelectOptionPayload) {
@@ -338,6 +385,10 @@ export class CommandsHandler {
       case 'press': {
         const payload = args as { key: string; options?: PressOptions }
         return await locator.press(payload.key, payload.options as PressOptions)
+      }
+      case 'pressSequentially': {
+        const payload = args as { text: string; options?: PressSequentiallyOptions }
+        return await locator.pressSequentially(payload.text, payload.options)
       }
       case 'tap':
         return await locator.tap(args as TapOptions)

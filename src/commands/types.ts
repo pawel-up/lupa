@@ -142,3 +142,4 @@ export type CommandNames =
   | 'module:mock:register'
   | 'module:mock:clear'
   | 'mouse'
+  | 'keyboard'
