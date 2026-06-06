@@ -20,6 +20,7 @@ describe('CommandsHandler - locator', () => {
       press: async () => {},
       tap: async () => {},
       uncheck: async () => {},
+      dragTo: async () => {},
     }
 
     mockPage = {
@@ -211,5 +212,27 @@ describe('CommandsHandler - locator', () => {
 
     assert.strictEqual(calledArgs.length, 1)
     assert.deepStrictEqual(calledArgs[0], { clickCount: 2 })
+  })
+
+  test('calls dragTo with target and options', async () => {
+    let calledArgs: any[] = []
+    mockLocator.dragTo = async (...args: any[]) => {
+      calledArgs = args
+    }
+    const handler = new CommandsHandler(mockPage as Page)
+    await handler.boot()
+
+    await exposedFn('locator', {
+      action: 'dragTo',
+      query: { text: 'draggable' },
+      args: {
+        targetQuery: { text: 'droppable' },
+        options: { timeout: 300 },
+      },
+    })
+
+    assert.strictEqual(calledArgs.length, 2)
+    assert.strictEqual(calledArgs[0], mockLocator)
+    assert.deepStrictEqual(calledArgs[1], { timeout: 300 })
   })
 })

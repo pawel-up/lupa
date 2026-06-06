@@ -1,5 +1,5 @@
 import { test } from '../../../src/testing/index.js'
-import { aTimeout, nextFrame, oneEvent, waitUntil } from '../../../src/testing/helpers.js'
+import { aTimeout, nextFrame, oneEvent, waitUntil, createFileDragEvent } from '../../../src/testing/helpers.js'
 
 test.group('Testing Helpers', () => {
   test('aTimeout resolves after specified time', async ({ assert }) => {
@@ -45,5 +45,14 @@ test.group('Testing Helpers', () => {
     } catch (err: any) {
       assert.equal(err.message, 'Timeout: should timeout')
     }
+  })
+
+  test('createFileDragEvent creates a drag event with files', async ({ assert }) => {
+    const file = new File(['hello'], 'hello.txt', { type: 'text/plain' })
+    const event = createFileDragEvent('drop', [file])
+    assert.equal(event.type, 'drop')
+    assert.isNotNull(event.dataTransfer)
+    assert.equal(event.dataTransfer?.files.length, 1)
+    assert.equal(event.dataTransfer?.files[0].name, 'hello.txt')
   })
 })

@@ -128,6 +128,7 @@ export type SupportedLocatorAction =
   | 'press'
   | 'tap'
   | 'uncheck'
+  | 'dragTo'
 
 /**
  * Payload for locator actions.
@@ -320,6 +321,50 @@ export interface TapOptions extends TimeoutOption, ForceOption, TrialOption, Mod
  * Options for the uncheck action.
  */
 export interface UncheckOptions extends TimeoutOption, ForceOption, TrialOption, PositionOption {}
+
+/**
+ * Options for the dragTo action.
+ */
+export interface DragToOptions extends TimeoutOption, ForceOption, TrialOption {
+  /**
+   * Actions that perform navigations are waiting for the navigations to happen and for the pages to start loading. You
+   * can opt out of waiting via setting this option to `true`. You would only need this option in the exceptional cases
+   * such as navigating to inaccessible pages. Defaults to `false`.
+   */
+  noWaitAfter?: boolean
+
+  /**
+   * A point to use relative to the top-left corner of element padding box. If not specified, uses some visible point of
+   * the element.
+   */
+  sourcePosition?: {
+    /**
+     * X coordinate
+     */
+    x: number
+
+    /**
+     * Y coordinate
+     */
+    y: number
+  }
+
+  /**
+   * A point to use relative to the top-left corner of element padding box. If not specified, uses some visible point of
+   * the element.
+   */
+  targetPosition?: {
+    /**
+     * X coordinate
+     */
+    x: number
+
+    /**
+     * Y coordinate
+     */
+    y: number
+  }
+}
 
 /**
  * Creates a locator that can execute multiple actions like click, type, etc.
@@ -543,5 +588,32 @@ export class Locator {
    */
   async uncheck(options?: UncheckOptions): Promise<void> {
     await this.executeAction('uncheck', options)
+  }
+
+  /**
+   * Drags the element to another target element or locator query.
+   *
+   * @use when
+   * - Performing a drag and drop interaction between two elements on the page (e.g., drag an item
+   *   into a dropzone/trash bin).
+   *
+   * @dont use when
+   * - You want to simulate file drag events from the operating system. In those cases, use browser-side
+   *   helpers like `createFileDragEvent`.
+   *
+   * @example
+   * ```typescript
+   * import { query } from '@pawel-up/lupa/commands'
+   *
+   * await query({ testId: 'draggable-item' }).dragTo(query({ testId: 'trash-bin' }))
+   * ```
+   *
+   * @param target - The target locator or locator query to drag to.
+   * @param options - Optional settings to customize the drag-and-drop interaction.
+   * @returns A promise that resolves when the drag action is completed.
+   */
+  async dragTo(target: Locator | LocatorQuery, options?: DragToOptions): Promise<void> {
+    const targetQuery = target instanceof Locator ? target.query : target
+    await this.executeAction('dragTo', { targetQuery, options })
   }
 }

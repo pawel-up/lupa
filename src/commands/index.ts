@@ -16,6 +16,7 @@ export {
   type PressOptions,
   type TapOptions,
   type UncheckOptions,
+  type DragToOptions,
   type LocatorQuery,
 } from './locator.js'
 

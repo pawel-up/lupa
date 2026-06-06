@@ -133,3 +133,45 @@ export function oneDefaultPreventedEvent<T = any, E extends Event = CustomEvent<
     eventTarget.addEventListener(eventName, listener as EventListener)
   })
 }
+
+/**
+ * Type representing all standard drag-and-drop event names.
+ */
+export type DragEventType = 'drag' | 'dragend' | 'dragenter' | 'dragleave' | 'dragover' | 'dragstart' | 'drop'
+
+/**
+ * Creates a browser-side custom file DragEvent that can be dispatched to elements.
+ *
+ * @use when
+ * - Testing drag-and-drop file upload zones inside tests.
+ *
+ * @dont use when
+ * - Simulating user mouse drag-and-drop of elements on the page (use `query().dragTo()` instead).
+ *
+ * @example
+ * ```typescript
+ * import { createFileDragEvent } from '@pawel-up/lupa/testing'
+ *
+ * const file = new File(['hello'], 'hello.txt', { type: 'text/plain' })
+ * const event = createFileDragEvent('drop', [file])
+ * dropzone.dispatchEvent(event)
+ * ```
+ *
+ * @param type - Standard drag event name (e.g. 'dragover', 'drop').
+ * @param files - Array of standard DOM Files to attach to the dataTransfer property.
+ * @param options - Custom event init options to merge.
+ * @returns A standard DOM DragEvent populated with the files.
+ */
+export function createFileDragEvent(type: DragEventType, files: File[], options?: DragEventInit): DragEvent {
+  const dataTransfer = new DataTransfer()
+  for (const file of files) {
+    dataTransfer.items.add(file)
+  }
+  return new DragEvent(type, {
+    dataTransfer,
+    cancelable: true,
+    composed: true,
+    bubbles: true,
+    ...options,
+  })
+}

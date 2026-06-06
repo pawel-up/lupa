@@ -33,6 +33,7 @@ import type {
   QueryByXPath,
   TapOptions,
   UncheckOptions,
+  DragToOptions,
 } from './locator.js'
 import debuglog from '../runner/debug.js'
 import { NetworkCommand } from '../network/network_command.js'
@@ -269,6 +270,13 @@ export class CommandsHandler {
         break
       case 'uncheck':
         await locator.uncheck(args as UncheckOptions)
+        break
+      case 'dragTo':
+        {
+          const payload = args as { targetQuery: LocatorQuery; options?: DragToOptions }
+          const targetLocator = this.getLocator(payload.targetQuery)
+          await locator.dragTo(targetLocator, payload.options)
+        }
         break
       default:
         throw new Error(`Unknown locator action: ${action}`)

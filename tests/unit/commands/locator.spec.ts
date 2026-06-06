@@ -161,4 +161,39 @@ describe('Locator', () => {
       },
     })
   })
+
+  test('dragTo with locator', async () => {
+    const loc = query({ testId: 'draggable' })
+    const target = query({ testId: 'droppable' })
+    await loc.dragTo(target, { timeout: 300 })
+    assert.strictEqual(rpcCalls.length, 1)
+    assert.deepStrictEqual(rpcCalls[0], {
+      command: 'locator',
+      payload: {
+        action: 'dragTo',
+        query: { testId: 'draggable' },
+        args: {
+          targetQuery: { testId: 'droppable' },
+          options: { timeout: 300 },
+        },
+      },
+    })
+  })
+
+  test('dragTo with query', async () => {
+    const loc = query({ testId: 'draggable' })
+    await loc.dragTo({ testId: 'droppable' }, { timeout: 300 })
+    assert.strictEqual(rpcCalls.length, 1)
+    assert.deepStrictEqual(rpcCalls[0], {
+      command: 'locator',
+      payload: {
+        action: 'dragTo',
+        query: { testId: 'draggable' },
+        args: {
+          targetQuery: { testId: 'droppable' },
+          options: { timeout: 300 },
+        },
+      },
+    })
+  })
 })
