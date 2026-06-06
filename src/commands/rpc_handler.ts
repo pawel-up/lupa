@@ -34,6 +34,8 @@ import type {
   TapOptions,
   UncheckOptions,
   DragToOptions,
+  SelectOptionValues,
+  SelectOptionOptions,
 } from './locator.js'
 import debuglog from '../runner/debug.js'
 import { NetworkCommand } from '../network/network_command.js'
@@ -105,8 +107,7 @@ export class CommandsHandler {
             await this.handleSelectOption(payload)
             break
           case 'locator':
-            await this.handleLocator(payload)
-            break
+            return await this.handleLocator(payload)
           case 'network:mock:enable':
             await this.handleNetworkEnable()
             break
@@ -313,56 +314,49 @@ export class CommandsHandler {
     await this.page.selectOption(payload.selector, payload.value)
   }
 
-  protected async handleLocator(payload: LocatorActionPayload) {
+  protected async handleLocator(payload: LocatorActionPayload): Promise<unknown> {
     const { action, query, args } = payload
     // before performing any action, we need to obtain the locator.
     const locator = this.getLocator(query)
     switch (action) {
       case 'blur':
-        await locator.blur(args as BlurOptions)
-        break
+        return await locator.blur(args as BlurOptions)
       case 'clear':
-        await locator.clear(args as ClearOptions)
-        break
+        return await locator.clear(args as ClearOptions)
       case 'check':
-        await locator.check(args as CheckOptions)
-        break
+        return await locator.check(args as CheckOptions)
       case 'click':
-        await locator.click(args as ClickOptions)
-        break
-      case 'fill':
-        {
-          const payload = args as { text: string; options?: FillOptions }
-          await locator.fill(payload.text, payload.options as FillOptions)
-        }
-        break
+        return await locator.click(args as ClickOptions)
+      case 'fill': {
+        const payload = args as { text: string; options?: FillOptions }
+        return await locator.fill(payload.text, payload.options as FillOptions)
+      }
       case 'dblclick':
-        await locator.dblclick(args as DoubleClickOptions)
-        break
+        return await locator.dblclick(args as DoubleClickOptions)
       case 'hover':
-        await locator.hover(args as HoverOptions)
-        break
-      case 'press':
-        {
-          const payload = args as { key: string; options?: PressOptions }
-          await locator.press(payload.key, payload.options as PressOptions)
-        }
-        break
+        return await locator.hover(args as HoverOptions)
+      case 'press': {
+        const payload = args as { key: string; options?: PressOptions }
+        return await locator.press(payload.key, payload.options as PressOptions)
+      }
       case 'tap':
-        await locator.tap(args as TapOptions)
-        break
+        return await locator.tap(args as TapOptions)
       case 'uncheck':
-        await locator.uncheck(args as UncheckOptions)
-        break
-      case 'dragTo':
-        {
-          const payload = args as { targetQuery: LocatorQuery; options?: DragToOptions }
-          const targetLocator = this.getLocator(payload.targetQuery)
-          await locator.dragTo(targetLocator, payload.options)
-        }
-        break
+        return await locator.uncheck(args as UncheckOptions)
+      case 'dragTo': {
+        const payload = args as { targetQuery: LocatorQuery; options?: DragToOptions }
+        const targetLocator = this.getLocator(payload.targetQuery)
+        return await locator.dragTo(targetLocator, payload.options)
+      }
+      case 'selectOption': {
+        const selectPayload = args as { values: SelectOptionValues; options?: SelectOptionOptions }
+        return await locator.selectOption(
+          selectPayload.values as Parameters<typeof locator.selectOption>[0],
+          selectPayload.options
+        )
+      }
       default:
-        throw new Error(`Unknown locator action: ${action}`)
+        throw new Error(`Unknown lupa command: ${action}`)
     }
   }
 

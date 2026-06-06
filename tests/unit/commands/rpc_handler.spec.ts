@@ -21,6 +21,7 @@ describe('CommandsHandler - locator', () => {
       tap: async () => {},
       uncheck: async () => {},
       dragTo: async () => {},
+      selectOption: async () => {},
     }
 
     mockPage = {
@@ -234,6 +235,30 @@ describe('CommandsHandler - locator', () => {
     assert.strictEqual(calledArgs.length, 2)
     assert.strictEqual(calledArgs[0], mockLocator)
     assert.deepStrictEqual(calledArgs[1], { timeout: 300 })
+  })
+
+  test('calls selectOption and returns the result', async () => {
+    let calledArgs: any[] = []
+    mockLocator.selectOption = async (...args: any[]) => {
+      calledArgs = args
+      return ['val1', 'val2']
+    }
+    const handler = new CommandsHandler(mockPage as Page)
+    await handler.boot()
+
+    const result = await exposedFn('locator', {
+      action: 'selectOption',
+      query: { text: 'select' },
+      args: {
+        values: ['val1', 'val2'],
+        options: { force: true },
+      },
+    })
+
+    assert.strictEqual(calledArgs.length, 2)
+    assert.deepStrictEqual(calledArgs[0], ['val1', 'val2'])
+    assert.deepStrictEqual(calledArgs[1], { force: true })
+    assert.deepStrictEqual(result, ['val1', 'val2'])
   })
 })
 

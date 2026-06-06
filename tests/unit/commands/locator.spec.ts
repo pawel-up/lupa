@@ -196,4 +196,27 @@ describe('Locator', () => {
       },
     })
   })
+
+  test('selectOption', async () => {
+    globalThis.window.__lupa_command__ = (async <R = void>(command: string, payload?: unknown): Promise<R> => {
+      rpcCalls.push({ command, payload })
+      return ['value1', 'value2'] as unknown as R
+    }) as typeof globalThis.window.__lupa_command__
+
+    const loc = query({ css: '#test-select' })
+    const result = await loc.selectOption(['value1', 'value2'], { force: true })
+    assert.strictEqual(rpcCalls.length, 1)
+    assert.deepStrictEqual(rpcCalls[0], {
+      command: 'locator',
+      payload: {
+        action: 'selectOption',
+        query: { css: '#test-select' },
+        args: {
+          values: ['value1', 'value2'],
+          options: { force: true },
+        },
+      },
+    })
+    assert.deepStrictEqual(result, ['value1', 'value2'])
+  })
 })

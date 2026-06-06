@@ -7,6 +7,7 @@ import {
   resetMouse,
   selectOption,
   mouse,
+  query,
 } from '../../../src/commands/index.js'
 
 test.group('Browser Commands', (group) => {
@@ -117,5 +118,18 @@ test.group('Browser Commands', (group) => {
 
     await selectOption({ selector: '#test-select', value: '3' })
     assert.equal(select.value, '3')
+  })
+
+  test('locator selectOption selects an option and returns selected values', async ({ assert }) => {
+    const select = document.getElementById('test-select') as HTMLSelectElement
+    const loc = query({ css: '#test-select' })
+
+    const result1 = await loc.selectOption('2')
+    assert.equal(select.value, '2')
+    assert.deepEqual(result1, ['2'])
+
+    const result2 = await loc.selectOption('3')
+    assert.equal(select.value, '3')
+    assert.deepEqual(result2, ['3'])
   })
 })

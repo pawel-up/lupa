@@ -18,6 +18,9 @@ export {
   type UncheckOptions,
   type DragToOptions,
   type LocatorQuery,
+  type SelectOptionValue,
+  type SelectOptionValues,
+  type SelectOptionOptions,
 } from './locator.js'
 
 /**
@@ -203,6 +206,7 @@ export function resetMouse(): Promise<void> {
  *
  * @param payload - The option to select.
  * @returns A promise that resolves when the option is selected.
+ * @deprecated Use `query(...).selectOption(...)` instead.
  */
 export function selectOption(payload: SelectOptionPayload): Promise<void> {
   return executeCommand('selectOption', payload)

@@ -129,6 +129,7 @@ export type SupportedLocatorAction =
   | 'tap'
   | 'uncheck'
   | 'dragTo'
+  | 'selectOption'
 
 /**
  * Payload for locator actions.
@@ -367,6 +368,26 @@ export interface DragToOptions extends TimeoutOption, ForceOption, TrialOption {
 }
 
 /**
+ * Representation of option selection values for matching options.
+ */
+export type SelectOptionValue = string | { value?: string; label?: string; index?: number }
+
+/**
+ * Values to select in the element. Can be a single value, an array of values, or null.
+ */
+export type SelectOptionValues = SelectOptionValue | SelectOptionValue[] | null
+
+/**
+ * Options for the selectOption action.
+ */
+export interface SelectOptionOptions extends TimeoutOption, ForceOption {
+  /**
+   * Deprecated. Playwright has deprecated this option and it has no effect.
+   */
+  noWaitAfter?: boolean
+}
+
+/**
  * Creates a locator that can execute multiple actions like click, type, etc.
  * It interacts with the Playwright's Page object, but via RPC calls.
  *
@@ -414,8 +435,8 @@ export class Locator {
    */
   constructor(protected query: LocatorQuery) {}
 
-  protected async executeAction(action: SupportedLocatorAction, args?: unknown): Promise<void> {
-    await executeCommand('locator', { action, query: this.query, args })
+  protected async executeAction<R = void>(action: SupportedLocatorAction, args?: unknown): Promise<R> {
+    return await executeCommand<R>('locator', { action, query: this.query, args })
   }
 
   /**
@@ -615,5 +636,46 @@ export class Locator {
   async dragTo(target: Locator | LocatorQuery, options?: DragToOptions): Promise<void> {
     const targetQuery = target instanceof Locator ? target.query : target
     await this.executeAction('dragTo', { targetQuery, options })
+  }
+
+  /**
+   * Selects one or multiple options in a `<select>` element.
+   *
+   * @use when
+   * - Interacting with standard `<select>` dropdown controls in the UI.
+   * - Setting selection on a single or multi-select HTML `<select>` element.
+   *
+   * @dont use when
+   * - Interacting with custom UI select/dropdown component libraries (e.g. Material Select,
+   *   custom divs/buttons dropdowns) that do not use native `<select>` and `<option>` elements.
+   *   For those, click on the dropdown button and select options via standard click.
+   *
+   * @example Selecting single option by value
+   * ```typescript
+   * import { query } from '@pawel-up/lupa/commands'
+   *
+   * const selected = await query({ css: '#test-select' }).selectOption('2')
+   * ```
+   *
+   * @example Selecting single option by label
+   * ```typescript
+   * import { query } from '@pawel-up/lupa/commands'
+   *
+   * const selected = await query({ css: '#test-select' }).selectOption({ label: 'Two' })
+   * ```
+   *
+   * @example Selecting multiple options in a `<select multiple>` dropdown
+   * ```typescript
+   * import { query } from '@pawel-up/lupa/commands'
+   *
+   * const selected = await query({ css: '#multi-select' }).selectOption(['1', '3'])
+   * ```
+   *
+   * @param values - Single value/object or array of values/objects to select.
+   * @param options - Optional settings to control actionability checks or timeouts.
+   * @returns A promise that resolves to an array of option values that were successfully selected.
+   */
+  async selectOption(values: SelectOptionValues, options?: SelectOptionOptions): Promise<string[]> {
+    return await this.executeAction<string[]>('selectOption', { values, options })
   }
 }
