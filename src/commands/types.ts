@@ -141,3 +141,4 @@ export type CommandNames =
   | 'network:mock:ignoreCors'
   | 'module:mock:register'
   | 'module:mock:clear'
+  | 'mouse'

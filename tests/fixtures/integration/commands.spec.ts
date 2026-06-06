@@ -6,6 +6,7 @@ import {
   sendMouse,
   resetMouse,
   selectOption,
+  mouse,
 } from '../../../src/commands/index.js'
 
 test.group('Browser Commands', (group) => {
@@ -75,6 +76,37 @@ test.group('Browser Commands', (group) => {
 
     // Clean up
     await resetMouse()
+  })
+
+  test('mouse class triggers events on target', async ({ assert }) => {
+    let clickCount = 0
+    let lastEvent: MouseEvent | null = null
+    const target = document.getElementById('mouse-target') as HTMLDivElement
+    target.addEventListener('mousedown', (e) => {
+      lastEvent = e
+    })
+    target.addEventListener('click', () => clickCount++)
+
+    const rect = target.getBoundingClientRect()
+    const x = rect.left + rect.width / 2
+    const y = rect.top + rect.height / 2
+
+    // Set position and click using mouse object
+    await mouse.setPosition({ x, y })
+    await mouse.click({ x, y })
+
+    assert.equal(clickCount, 1)
+    assert.isNotNull(lastEvent)
+    assert.equal(lastEvent!.button, 0) // left click
+
+    // Shift click using press
+    lastEvent = null
+    await mouse.press({ x, y }, { button: 'left', key: 'Shift' })
+    assert.isNotNull(lastEvent)
+    assert.isTrue(lastEvent!.shiftKey)
+
+    // Reset mouse
+    await mouse.reset()
   })
 
   test('selectOption selects an option in a select element', async ({ assert }) => {

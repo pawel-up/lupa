@@ -97,6 +97,10 @@ export class CommandsHandler {
           case 'resetMouse':
             await this.handleResetMouse()
             break
+          case 'mouse':
+            await this.handleMouse(payload)
+            break
+
           case 'selectOption':
             await this.handleSelectOption(payload)
             break
@@ -221,6 +225,85 @@ export class CommandsHandler {
   protected async handleResetMouse() {
     await this.page.mouse.move(0, 0)
     await this.page.mouse.up()
+  }
+
+  /**
+   * Handle mouse command gestures.
+   */
+  protected async handleMouse(payload: any) {
+    const action = payload.action
+    const options = payload.options
+
+    switch (action) {
+      case 'reset':
+        await this.page.mouse.move(0, 0)
+        await this.page.mouse.up()
+        break
+
+      case 'move':
+        if (options?.button) {
+          await this.page.mouse.down({ button: options.button })
+        }
+        await this.page.mouse.move(payload.x, payload.y, { steps: options?.steps })
+        if (options?.button) {
+          await this.page.mouse.up({ button: options.button })
+        }
+        break
+
+      case 'moveBetween':
+        await this.page.mouse.move(payload.fromX, payload.fromY)
+        if (options?.button) {
+          await this.page.mouse.down({ button: options.button })
+        }
+        await this.page.mouse.move(payload.toX, payload.toY, { steps: options?.steps })
+        if (options?.button) {
+          await this.page.mouse.up({ button: options.button })
+        }
+        break
+
+      case 'down':
+        await this.page.mouse.down({ button: options?.button, clickCount: options?.clickCount })
+        break
+
+      case 'up':
+        await this.page.mouse.up({ button: options?.button, clickCount: options?.clickCount })
+        break
+
+      case 'click':
+        await this.page.mouse.click(payload.x, payload.y, {
+          button: options?.button,
+          clickCount: options?.clickCount,
+          delay: options?.delay,
+        })
+        break
+
+      case 'dblclick':
+        await this.page.mouse.dblclick(payload.x, payload.y, {
+          button: options?.button,
+          delay: options?.delay,
+        })
+        break
+
+      case 'press': {
+        const keys = options?.key ? options.key.split('+') : []
+        for (const k of keys) {
+          await this.page.keyboard.down(k)
+        }
+        await this.page.mouse.move(payload.x, payload.y)
+        await this.page.mouse.down({ button: options?.button })
+        if (options?.delay && options.delay > 0) {
+          await new Promise((resolve) => setTimeout(resolve, options.delay))
+        }
+        await this.page.mouse.up({ button: options?.button })
+        for (const k of [...keys].reverse()) {
+          await this.page.keyboard.up(k)
+        }
+        break
+      }
+
+      default:
+        throw new Error(`Unknown mouse action: ${action}`)
+    }
   }
 
   /**

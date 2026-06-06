@@ -236,3 +236,173 @@ describe('CommandsHandler - locator', () => {
     assert.deepStrictEqual(calledArgs[1], { timeout: 300 })
   })
 })
+
+describe('CommandsHandler - mouse', () => {
+  let mockPage: any
+  let exposedFn: (...args: any[]) => any
+  let mouseCalls: { method: string; args: any[] }[]
+  let keyboardCalls: { method: string; args: any[] }[]
+
+  beforeEach(() => {
+    mouseCalls = []
+    keyboardCalls = []
+
+    mockPage = {
+      exposeFunction: async (name: string, fn: (...args: any[]) => any) => {
+        if (name === '__lupa_command__') {
+          exposedFn = fn
+        }
+        return { dispose: async () => {} }
+      },
+      mouse: {
+        move: async (...args: any[]) => {
+          mouseCalls.push({ method: 'move', args })
+        },
+        down: async (...args: any[]) => {
+          mouseCalls.push({ method: 'down', args })
+        },
+        up: async (...args: any[]) => {
+          mouseCalls.push({ method: 'up', args })
+        },
+        click: async (...args: any[]) => {
+          mouseCalls.push({ method: 'click', args })
+        },
+        dblclick: async (...args: any[]) => {
+          mouseCalls.push({ method: 'dblclick', args })
+        },
+      },
+      keyboard: {
+        down: async (...args: any[]) => {
+          keyboardCalls.push({ method: 'down', args })
+        },
+        up: async (...args: any[]) => {
+          keyboardCalls.push({ method: 'up', args })
+        },
+      },
+    }
+  })
+
+  test('calls mouse reset', async () => {
+    const handler = new CommandsHandler(mockPage as Page)
+    await handler.boot()
+
+    await exposedFn('mouse', { action: 'reset' })
+    assert.deepStrictEqual(mouseCalls, [
+      { method: 'move', args: [0, 0] },
+      { method: 'up', args: [] },
+    ])
+  })
+
+  test('calls mouse move without dragging', async () => {
+    const handler = new CommandsHandler(mockPage as Page)
+    await handler.boot()
+
+    await exposedFn('mouse', { action: 'move', x: 100, y: 200, options: { steps: 5 } })
+    assert.deepStrictEqual(mouseCalls, [{ method: 'move', args: [100, 200, { steps: 5 }] }])
+  })
+
+  test('calls mouse move with dragging', async () => {
+    const handler = new CommandsHandler(mockPage as Page)
+    await handler.boot()
+
+    await exposedFn('mouse', { action: 'move', x: 100, y: 200, options: { button: 'left', steps: 5 } })
+    assert.deepStrictEqual(mouseCalls, [
+      { method: 'down', args: [{ button: 'left' }] },
+      { method: 'move', args: [100, 200, { steps: 5 }] },
+      { method: 'up', args: [{ button: 'left' }] },
+    ])
+  })
+
+  test('calls mouse moveBetween without dragging', async () => {
+    const handler = new CommandsHandler(mockPage as Page)
+    await handler.boot()
+
+    await exposedFn('mouse', {
+      action: 'moveBetween',
+      fromX: 10,
+      fromY: 20,
+      toX: 30,
+      toY: 40,
+      options: { steps: 2 },
+    })
+    assert.deepStrictEqual(mouseCalls, [
+      { method: 'move', args: [10, 20] },
+      { method: 'move', args: [30, 40, { steps: 2 }] },
+    ])
+  })
+
+  test('calls mouse moveBetween with dragging', async () => {
+    const handler = new CommandsHandler(mockPage as Page)
+    await handler.boot()
+
+    await exposedFn('mouse', {
+      action: 'moveBetween',
+      fromX: 10,
+      fromY: 20,
+      toX: 30,
+      toY: 40,
+      options: { button: 'right', steps: 2 },
+    })
+    assert.deepStrictEqual(mouseCalls, [
+      { method: 'move', args: [10, 20] },
+      { method: 'down', args: [{ button: 'right' }] },
+      { method: 'move', args: [30, 40, { steps: 2 }] },
+      { method: 'up', args: [{ button: 'right' }] },
+    ])
+  })
+
+  test('calls mouse down and up', async () => {
+    const handler = new CommandsHandler(mockPage as Page)
+    await handler.boot()
+
+    await exposedFn('mouse', { action: 'down', options: { button: 'middle', clickCount: 2 } })
+    await exposedFn('mouse', { action: 'up', options: { button: 'middle', clickCount: 2 } })
+
+    assert.deepStrictEqual(mouseCalls, [
+      { method: 'down', args: [{ button: 'middle', clickCount: 2 }] },
+      { method: 'up', args: [{ button: 'middle', clickCount: 2 }] },
+    ])
+  })
+
+  test('calls mouse click', async () => {
+    const handler = new CommandsHandler(mockPage as Page)
+    await handler.boot()
+
+    await exposedFn('mouse', { action: 'click', x: 50, y: 60, options: { button: 'left', delay: 10 } })
+    assert.deepStrictEqual(mouseCalls, [
+      { method: 'click', args: [50, 60, { button: 'left', clickCount: undefined, delay: 10 }] },
+    ])
+  })
+
+  test('calls mouse dblclick', async () => {
+    const handler = new CommandsHandler(mockPage as Page)
+    await handler.boot()
+
+    await exposedFn('mouse', { action: 'dblclick', x: 70, y: 80, options: { button: 'right', delay: 20 } })
+    assert.deepStrictEqual(mouseCalls, [{ method: 'dblclick', args: [70, 80, { button: 'right', delay: 20 }] }])
+  })
+
+  test('calls mouse press with key modifiers', async () => {
+    const handler = new CommandsHandler(mockPage as Page)
+    await handler.boot()
+
+    await exposedFn('mouse', {
+      action: 'press',
+      x: 100,
+      y: 110,
+      options: { button: 'left', key: 'Shift+Control', delay: 5 },
+    })
+
+    assert.deepStrictEqual(keyboardCalls, [
+      { method: 'down', args: ['Shift'] },
+      { method: 'down', args: ['Control'] },
+      { method: 'up', args: ['Control'] },
+      { method: 'up', args: ['Shift'] },
+    ])
+    assert.deepStrictEqual(mouseCalls, [
+      { method: 'move', args: [100, 110] },
+      { method: 'down', args: [{ button: 'left' }] },
+      { method: 'up', args: [{ button: 'left' }] },
+    ])
+  })
+})

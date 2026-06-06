@@ -107,6 +107,18 @@ export function sendKeys(payload: SendKeysPayload): Promise<void> {
   return executeCommand('sendKeys', payload)
 }
 
+export {
+  mouse,
+  Mouse,
+  type Point,
+  type MouseMoveOptions,
+  type MouseClickOptions,
+  type MouseDblClickOptions,
+  type MousePressOptions,
+  type MouseDownOptions,
+  type MouseUpOptions,
+} from './mouse.js'
+
 /**
  * Sends an action for the mouse to move it to a specific position or click a mouse button (left, middle, or right).
  *
@@ -144,6 +156,7 @@ export function sendKeys(payload: SendKeysPayload): Promise<void> {
  *
  * @param payload - The mouse events to send.
  * @returns A promise that resolves when the mouse events are sent.
+ * @deprecated Use the `mouse` instance instead (e.g., `await mouse.move(...)`).
  */
 export function sendMouse(payload: SendMousePayload): Promise<void> {
   return executeCommand('sendMouse', payload)
@@ -167,6 +180,7 @@ export function sendMouse(payload: SendMousePayload): Promise<void> {
  * ```
  *
  * @returns A promise that resolves when the mouse state is reset.
+ * @deprecated Use the `mouse` instance instead (`await mouse.reset()`).
  */
 export function resetMouse(): Promise<void> {
   return executeCommand('resetMouse')
