@@ -1,7 +1,14 @@
 import util from 'node:util'
 import logUpdate from 'log-update'
 import { BaseReporter } from './base.js'
-import type { RunnerEvents, TestEndNode, RunnerStartNode, WithCorrelation, FileEndNode } from '../types.js'
+import type {
+  RunnerEvents,
+  TestEndNode,
+  RunnerStartNode,
+  WithCorrelation,
+  FileEndNode,
+  FileStartNode,
+} from '../types.js'
 import { colors, icons } from '../runner/helpers.js'
 
 const PROGRESS_BLOCKS = [' ', '▏', '▎', '▍', '▌', '▋', '▊', '▉', '█']
@@ -28,11 +35,12 @@ export class ProgressReporter extends BaseReporter {
    * We use this to calculate progress, and also to know which files had logs/errors for grouping them in the output.
    */
   #executedFiles = new Set<string>()
+  #startedFiles = new Set<string>()
   #lastRenderTime = 0
 
   #logs: { file: string; type: string; messages: any[] }[] = []
 
-  protected override onTestEnd(payload: WithCorrelation<TestEndNode>) {
+  protected override onTestEnd(payload: WithCorrelation<TestEndNode>): void {
     if (payload.isSkipped || payload.isTodo) {
       this.#skippedTests++
     } else if (payload.hasError) {
@@ -44,7 +52,7 @@ export class ProgressReporter extends BaseReporter {
     this.render()
   }
 
-  protected override start(node: RunnerStartNode) {
+  protected override start(node: RunnerStartNode): void {
     this.#totalFiles = node.estimatedTotalFiles
 
     this.#passedTests = 0
@@ -52,18 +60,26 @@ export class ProgressReporter extends BaseReporter {
     this.#skippedTests = 0
     this.#logs = []
     this.#executedFiles.clear()
+    this.#startedFiles.clear()
     this.#lastRenderTime = Date.now()
 
     this.render()
   }
 
-  protected onFileEnd(node: WithCorrelation<FileEndNode>): void {
-    this.#executedFiles.add(node.file)
+  protected override onFileStart(node: WithCorrelation<FileStartNode>): void {
+    this.#startedFiles.add(node.file)
     this.render()
   }
 
-  protected override onImportError(payload: RunnerEvents['runner:import_error']) {
+  protected override onFileEnd(node: WithCorrelation<FileEndNode>): void {
+    this.#executedFiles.add(node.file)
+    this.#startedFiles.add(node.file)
+    this.render()
+  }
+
+  protected override onImportError(payload: RunnerEvents['runner:import_error']): void {
     this.#executedFiles.add(payload.file)
+    this.#startedFiles.add(payload.file)
     this.#logs.push({
       file: payload.file,
       type: 'error',
@@ -151,14 +167,26 @@ export class ProgressReporter extends BaseReporter {
 
   #getProgressBar(): string {
     const completedFiles = this.#executedFiles.size
-    const totalExpected = Math.max(completedFiles, this.#totalFiles)
+    const startedFiles = Math.max(completedFiles, this.#startedFiles.size)
+    const totalExpected = Math.max(startedFiles, this.#totalFiles)
 
-    const progressBlocks = createProgressBlocks(completedFiles, totalExpected)
-    const finishedBlockCount = totalExpected === 0 ? 0 : Math.floor((PROGRESS_WIDTH * completedFiles) / totalExpected)
+    const completedBlocks = createProgressBlocks(completedFiles, totalExpected)
+    const startedBlocks = createProgressBlocks(startedFiles, totalExpected)
 
-    const finishedBlocks = colors.white(progressBlocks.slice(0, finishedBlockCount))
-    const scheduledBlocks = colors.gray(progressBlocks.slice(finishedBlockCount))
-    const bar = `|${finishedBlocks}${scheduledBlocks}|`
+    const barChars: string[] = []
+    for (let i = 0; i < PROGRESS_WIDTH; i++) {
+      const completedChar = completedBlocks[i]
+      const startedChar = startedBlocks[i]
+
+      if (completedChar !== ' ') {
+        barChars.push(colors.white(completedChar))
+      } else if (startedChar !== ' ') {
+        barChars.push(colors.gray(startedChar))
+      } else {
+        barChars.push(' ')
+      }
+    }
+    const bar = `|${barChars.join('')}|`
 
     const message: string[] = [bar, `${completedFiles}/${totalExpected}`, 'test files |']
 
