@@ -2,9 +2,10 @@ import { test } from 'node:test'
 import assert from 'node:assert'
 import { fork } from 'node:child_process'
 import path from 'node:path'
+import { unlink } from 'node:fs/promises'
 
-const BROWSER_TESTS_COUNT = 84
-const BROWSER_PASSED_TESTS_COUNT = 83
+const BROWSER_TESTS_COUNT = 87
+const BROWSER_PASSED_TESTS_COUNT = 86
 const BROWSER_SKIPPED_TESTS_COUNT = 1
 
 function forkSanitized(modulePath: string, args: string[], options: any = {}) {
@@ -73,6 +74,15 @@ test('Integration: Lupa Framework End-to-End', async (t) => {
         ),
         `Summary should report ${BROWSER_PASSED_TESTS_COUNT} passed and ${BROWSER_SKIPPED_TESTS_COUNT} skipped. Actual output: ${output}`
       )
+
+      // Clean up integration screenshots
+      await Promise.all([
+        unlink(path.join(process.cwd(), 'page-screenshot.png')),
+        unlink(path.join(process.cwd(), 'element-screenshot.png')),
+        unlink(path.join(process.cwd(), 'locator-screenshot.png')),
+      ]).catch(() => {
+        // Ignore errors if files do not exist
+      })
     }
   )
 
@@ -110,7 +120,7 @@ test('Integration: Lupa Framework End-to-End', async (t) => {
     const output = stdout + '\n' + stderr
 
     assert.strictEqual(exitCode, 0, `Expected runner to exit with code 0. Output:\n${output}`)
-    assert.ok(output.includes('Total tests: 68'), `Expected list output to show 68 tests. Actual output: ${output}`)
+    assert.ok(output.includes('Total tests: 71'), `Expected list output to show 71 tests. Actual output: ${output}`)
     assert.ok(output.includes('Suite'), 'Expected list output to contain a table with Suite column.')
   })
 

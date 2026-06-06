@@ -143,3 +143,4 @@ export type CommandNames =
   | 'module:mock:clear'
   | 'mouse'
   | 'keyboard'
+  | 'screenshot'

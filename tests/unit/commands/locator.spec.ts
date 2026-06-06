@@ -233,4 +233,25 @@ describe('Locator', () => {
     })
     assert.deepStrictEqual(result, ['value1', 'value2'])
   })
+
+  test('screenshot with path', async () => {
+    const loc = query({ css: '#target' })
+    await loc.screenshot({ path: 'test.png', type: 'png' })
+    assert.strictEqual(rpcCalls.length, 1)
+    assert.deepStrictEqual(rpcCalls[0], {
+      command: 'locator',
+      payload: {
+        action: 'screenshot',
+        query: { css: '#target' },
+        args: { path: 'test.png', type: 'png' },
+      },
+    })
+  })
+
+  test('screenshot throws error without path', async () => {
+    const loc = query({ css: '#target' })
+    // @ts-expect-error - testing missing path
+    await assert.rejects(() => loc.screenshot({}), /Screenshot path is required/)
+    assert.strictEqual(rpcCalls.length, 0)
+  })
 })

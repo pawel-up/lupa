@@ -22,6 +22,7 @@ describe('CommandsHandler - locator', () => {
       uncheck: async () => {},
       dragTo: async () => {},
       selectOption: async () => {},
+      screenshot: async () => {},
     }
 
     mockPage = {
@@ -282,6 +283,24 @@ describe('CommandsHandler - locator', () => {
     assert.strictEqual(calledArgs[0], 'hello')
     assert.deepStrictEqual(calledArgs[1], { delay: 10 })
   })
+
+  test('calls screenshot', async () => {
+    let calledArgs: any[] = []
+    mockLocator.screenshot = async (...args: any[]) => {
+      calledArgs = args
+    }
+    const handler = new CommandsHandler(mockPage as Page)
+    await handler.boot()
+
+    await exposedFn('locator', {
+      action: 'screenshot',
+      query: { text: 'button' },
+      args: { path: 'el.png', type: 'png' },
+    })
+
+    assert.strictEqual(calledArgs.length, 1)
+    assert.deepStrictEqual(calledArgs[0], { path: 'el.png', type: 'png' })
+  })
 })
 
 describe('CommandsHandler - mouse', () => {
@@ -524,5 +543,35 @@ describe('CommandsHandler - keyboard', () => {
 
     await exposedFn('keyboard', { action: 'type', text: 'Hello', options: { delay: 50 } })
     assert.deepStrictEqual(keyboardCalls, [{ method: 'type', args: ['Hello', { delay: 50 }] }])
+  })
+})
+
+describe('CommandsHandler - page screenshot', () => {
+  let mockPage: any
+  let exposedFn: (...args: any[]) => any
+  let screenshotCalls: any[] = []
+
+  beforeEach(() => {
+    screenshotCalls = []
+    mockPage = {
+      exposeFunction: async (name: string, fn: (...args: any[]) => any) => {
+        if (name === '__lupa_command__') {
+          exposedFn = fn
+        }
+        return { dispose: async () => {} }
+      },
+      screenshot: async (options: any) => {
+        screenshotCalls.push(options)
+      },
+    }
+  })
+
+  test('calls page.screenshot', async () => {
+    const handler = new CommandsHandler(mockPage as Page)
+    await handler.boot()
+
+    await exposedFn('screenshot', { action: 'take', options: { path: 'page.png', fullPage: true } })
+    assert.strictEqual(screenshotCalls.length, 1)
+    assert.deepStrictEqual(screenshotCalls[0], { path: 'page.png', fullPage: true })
   })
 })

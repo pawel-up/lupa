@@ -131,6 +131,7 @@ export type SupportedLocatorAction =
   | 'uncheck'
   | 'dragTo'
   | 'selectOption'
+  | 'screenshot'
 
 /**
  * Payload for locator actions.
@@ -392,6 +393,36 @@ export type SelectOptionValues = SelectOptionValue | SelectOptionValue[] | null
 export interface SelectOptionOptions extends TimeoutOption, ForceOption {}
 
 /**
+ * Options for the screenshot action on a locator.
+ */
+export interface ElementScreenshotOptions {
+  /**
+   * The file path to save the screenshot to.
+   */
+  path: string
+
+  /**
+   * The image format. Defaults to 'png'.
+   */
+  type?: 'png' | 'jpeg'
+
+  /**
+   * The quality of the image, between 0-100. Only for jpeg.
+   */
+  quality?: number
+
+  /**
+   * Hides default white background and allows capturing screenshots with transparency.
+   */
+  omitBackground?: boolean
+
+  /**
+   * Maximum time in milliseconds. Defaults to 30000.
+   */
+  timeout?: number
+}
+
+/**
  * Creates a locator that can execute multiple actions like click, type, etc.
  * It interacts with the Playwright's Page object, but via RPC calls.
  *
@@ -605,6 +636,32 @@ export class Locator {
    */
   async pressSequentially(text: string, options?: PressSequentiallyOptions): Promise<void> {
     await this.executeAction('pressSequentially', { text, options })
+  }
+
+  /**
+   * Captures a screenshot of the element.
+   *
+   * @use when
+   * - You want to capture the visual state of a specific DOM element (e.g. a button, modal, or form).
+   *
+   * @dont use when
+   * - You want to capture the entire page or viewport. Use `screenshot.take(...)` instead.
+   *
+   * @example
+   * ```typescript
+   * import { query } from '@pawel-up/lupa/commands'
+   *
+   * await query({ text: 'Submit' }).screenshot({ path: 'screenshots/submit-button.png' })
+   * ```
+   *
+   * @param options - Options for the screenshot, requires `path`.
+   * @returns A promise that resolves when the screenshot is saved.
+   */
+  async screenshot(options: ElementScreenshotOptions): Promise<void> {
+    if (!options || !options.path) {
+      throw new Error('Screenshot path is required')
+    }
+    await this.executeAction('screenshot', options)
   }
 
   /**

@@ -9,6 +9,7 @@ import {
   mouse,
   keyboard,
   query,
+  screenshot,
 } from '../../../src/commands/index.js'
 
 test.group('Browser Commands', (group) => {
@@ -155,5 +156,18 @@ test.group('Browser Commands', (group) => {
     const result2 = await loc.selectOption('3')
     assert.equal(select.value, '3')
     assert.deepEqual(result2, ['3'])
+  })
+
+  test('screenshot.take takes page screenshot without throwing', async () => {
+    await screenshot.take({ path: 'page-screenshot.png' })
+  })
+
+  test('screenshot.takeOf takes element screenshot without throwing', async () => {
+    await screenshot.takeOf({ css: '#test-container' }, { path: 'element-screenshot.png' })
+  })
+
+  test('locator.screenshot takes element screenshot without throwing', async () => {
+    const loc = query({ css: '#test-container' })
+    await loc.screenshot({ path: 'locator-screenshot.png' })
   })
 })

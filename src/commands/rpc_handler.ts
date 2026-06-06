@@ -37,7 +37,9 @@ import type {
   SelectOptionValues,
   SelectOptionOptions,
   PressSequentiallyOptions,
+  ElementScreenshotOptions,
 } from './locator.js'
+import type { PageScreenshotOptions } from './screenshot.js'
 import debuglog from '../runner/debug.js'
 import { NetworkCommand } from '../network/network_command.js'
 import { registry } from '../module-mock/registry.js'
@@ -112,6 +114,9 @@ export class CommandsHandler {
             break
           case 'keyboard':
             await this.handleKeyboard(payload as KeyboardActionPayload)
+            break
+          case 'screenshot':
+            await this.handleScreenshot(payload)
             break
 
           case 'selectOption':
@@ -355,9 +360,21 @@ export class CommandsHandler {
   }
 
   /**
+   * Handle screenshot command.
+   */
+  protected async handleScreenshot(payload: { action: 'take'; options: PageScreenshotOptions }): Promise<void> {
+    const { action, options } = payload
+    if (action === 'take') {
+      await this.page.screenshot(options)
+    } else {
+      throw new Error(`Unsupported screenshot action: ${action}`)
+    }
+  }
+
+  /**
    * Handle selectOption command.
    */
-  protected async handleSelectOption(payload: SelectOptionPayload) {
+  protected async handleSelectOption(payload: SelectOptionPayload): Promise<void> {
     await this.page.selectOption(payload.selector, payload.value)
   }
 
@@ -405,6 +422,10 @@ export class CommandsHandler {
           selectPayload.values as Parameters<typeof locator.selectOption>[0],
           selectPayload.options
         )
+      }
+      case 'screenshot': {
+        await locator.screenshot(args as ElementScreenshotOptions)
+        return
       }
       default:
         throw new Error(`Unknown lupa command: ${action}`)

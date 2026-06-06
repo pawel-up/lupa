@@ -22,6 +22,7 @@ export {
   type SelectOptionValue,
   type SelectOptionValues,
   type SelectOptionOptions,
+  type ElementScreenshotOptions,
 } from './locator.js'
 
 /**
@@ -113,6 +114,8 @@ export function sendKeys(payload: SendKeysPayload): Promise<void> {
 }
 
 export { keyboard, Keyboard, type KeyboardPressOptions, type KeyboardTypeOptions } from './keyboard.js'
+
+export { screenshot, Screenshot, type PageScreenshotOptions } from './screenshot.js'
 
 export {
   mouse,
