@@ -483,4 +483,147 @@ test('Assert', async (t) => {
       })
     }
   })
+
+  await t.test('rejectsNetworkError succeeds for mock browser environments', async () => {
+    const assert = new Assert()
+
+    await assert.rejectsNetworkError(async () => {
+      throw new TypeError('Failed to fetch')
+    })
+
+    const assertFirefox = new Assert()
+    const mockWindow = {
+      __lupa__: {
+        browserName: 'firefox',
+        suites: [],
+        config: {},
+      },
+    }
+    globalThis.window = mockWindow as unknown as Window & typeof globalThis
+
+    await assertFirefox.rejectsNetworkError(async () => {
+      throw new TypeError('NetworkError when attempting to fetch resource.')
+    })
+
+    const assertWebKit = new Assert()
+    mockWindow.__lupa__.browserName = 'webkit'
+    await assertWebKit.rejectsNetworkError(async () => {
+      throw new TypeError('Load failed')
+    })
+
+    // Clean up
+    const globalObj = globalThis as unknown as { window?: unknown }
+    delete globalObj.window
+  })
+
+  await t.test('rejects supports browser map patterns', async () => {
+    const assert = new Assert()
+
+    const mockWindow = {
+      __lupa__: {
+        browserName: 'firefox',
+        suites: [],
+        config: {},
+      },
+    }
+    globalThis.window = mockWindow as unknown as Window & typeof globalThis
+
+    // firefox rejects correctly
+    await assert.rejects(
+      async () => {
+        throw new Error('Firefox connection failed')
+      },
+      {
+        chromium: 'Chrome connection failed',
+        firefox: /Firefox/,
+        webkit: 'WebKit connection failed',
+      }
+    )
+
+    // firefox rejects incorrectly
+    await assertNode.rejects(async () => {
+      await assert.rejects(
+        async () => {
+          throw new Error('Chrome connection failed')
+        },
+        {
+          chromium: 'Chrome connection failed',
+          firefox: 'WebKit connection failed',
+          webkit: 'WebKit connection failed',
+        }
+      )
+    }, /expected \[AsyncFunction\] to throw error including 'WebKit connection failed'/)
+
+    // Clean up
+    const globalObj = globalThis as unknown as { window?: unknown }
+    delete globalObj.window
+  })
+
+  await t.test('rejects supports array of patterns', async () => {
+    const assert = new Assert()
+
+    await assert.rejects(async () => {
+      throw new Error('failed validation')
+    }, ['success', /validation/, 'another'])
+
+    await assertNode.rejects(async () => {
+      await assert.rejects(async () => {
+        throw new Error('failed completely')
+      }, ['success', /validation/, 'another'])
+    }, /expected \[AsyncFunction\] to throw error matching 'one of/)
+  })
+
+  await t.test('doesNotReject supports browser map patterns', async () => {
+    const assert = new Assert()
+
+    const mockWindow = {
+      __lupa__: {
+        browserName: 'webkit',
+        suites: [],
+        config: {},
+      },
+    }
+    globalThis.window = mockWindow as unknown as Window & typeof globalThis
+
+    // webkit error does not match chromium pattern, so doesNotReject passes
+    await assert.doesNotReject(
+      async () => {
+        throw new Error('WebKit failed')
+      },
+      {
+        chromium: 'WebKit failed',
+        firefox: 'Firefox failed',
+      }
+    )
+
+    // webkit error matches webkit pattern, so doesNotReject fails
+    await assertNode.rejects(async () => {
+      await assert.doesNotReject(
+        async () => {
+          throw new Error('WebKit failed')
+        },
+        {
+          webkit: 'WebKit failed',
+        }
+      )
+    }, /expected \[AsyncFunction\] to throw error not including 'WebKit failed'/)
+
+    // Clean up
+    const globalObj = globalThis as unknown as { window?: unknown }
+    delete globalObj.window
+  })
+
+  await t.test('doesNotReject supports array of patterns', async () => {
+    const assert = new Assert()
+
+    await assert.doesNotReject(async () => {
+      throw new Error('failed completely')
+    }, ['success', /validation/])
+
+    await assertNode.rejects(async () => {
+      await assert.doesNotReject(async () => {
+        throw new Error('failed validation')
+      }, ['success', /validation/])
+    }, /expected \[AsyncFunction\] to throw error not matching 'one of/)
+  })
 })

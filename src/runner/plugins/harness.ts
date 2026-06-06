@@ -28,6 +28,7 @@ export default function harnessPlugin(
 
         const configPayload = JSON.stringify({
           chunkId,
+          browserName: chunk?.browserName,
           suites: suitesToRun.map((s) => {
             const allowedFiles = runnerConfig?.filters?.files
             let filteredUrls = s.filesURLs

@@ -182,9 +182,10 @@ test.group('Network Interception', () => {
 
   test('simulates network error: {$self}')
     .with(Object.values(NetworkError))
-    .run(async ({ network, assert }, error) => {
+    .run(async ({ network, assert, browserName }, error) => {
+      assert.equal(assert.getBrowserName(), browserName)
       const mock = await network.mock('/api/error', { error })
-      await assert.rejects(async () => await fetch('/api/error'), TypeError, 'Failed to fetch')
+      await assert.rejectsNetworkError(async () => await fetch('/api/error'))
       await mock.assert.calledOnce()
     })
 

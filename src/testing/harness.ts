@@ -14,22 +14,51 @@ import debug from './debug.js'
 // We expect window.__lupa__ to be injected by the Node.js runner
 declare global {
   interface Window {
+    /**
+     * Injected configuration and metadata payload from the Node.js test runner.
+     */
     __lupa__: {
+      /**
+       * Test suites to be initialized and executed in the browser.
+       */
       suites: {
+        /** Name of the suite */
         name: string
+        /** Default timeout override for tests in this suite (in milliseconds) */
         timeout?: number
+        /** Default retries override for tests in this suite */
         retries?: number
+        /** Array of test file paths to resolve and execute */
         files: string[]
       }[]
+      /**
+       * Global runner configuration settings.
+       */
       config: {
+        /** Global test timeout limit in milliseconds */
         timeout?: number
+        /** Global test retries limit */
         retries?: number
+        /** Query filters used by the Refiner to include/exclude specific tests */
         filters?: any
+        /** If true, the runner lists suite and test files instead of executing them */
         list?: boolean
       }
+      /** Configured test plugins to import and register */
       testPlugins?: (string | [string, any])[]
+      /** Unique ID for the current execution batch/chunk */
+      chunkId?: string
+      /** Name of the active browser executing this test (e.g., 'chromium', 'firefox', 'webkit') */
+      browserName?: string
     }
+    /**
+     * Callback/RPC method triggered by the harness when all tests have finished execution,
+     * signaling completion back to the Node.js runner process.
+     */
     __lupa_runner_end__: () => Promise<void>
+    /**
+     * Boolean flag indicating whether the runner is executing under test/CI mode.
+     */
     __lupa_testing_mode__?: boolean
   }
 

@@ -15,4 +15,28 @@ export class TestContext extends Macroable {
       test.cleanup(cleanupCallback)
     }
   }
+
+  /**
+   * The name of the browser in which the current test is executing.
+   *
+   * Automatically resolves from Lupa orchestrator context configuration, or falls back to
+   * basic user-agent analysis if window.__lupa__ configuration is missing.
+   *
+   * @returns {'chromium' | 'firefox' | 'webkit'}
+   */
+  get browserName(): 'chromium' | 'firefox' | 'webkit' {
+    if (typeof window !== 'undefined' && window.__lupa__?.browserName) {
+      return window.__lupa__.browserName as 'chromium' | 'firefox' | 'webkit'
+    }
+    if (typeof navigator !== 'undefined') {
+      const ua = navigator.userAgent.toLowerCase()
+      if (ua.includes('firefox')) {
+        return 'firefox'
+      }
+      if (ua.includes('safari') && !ua.includes('chrome') && !ua.includes('chromium')) {
+        return 'webkit'
+      }
+    }
+    return 'chromium'
+  }
 }

@@ -7,10 +7,10 @@ You are a TypeScript coding expert and a full-stack engineer. YOu work with both
 
 Key Principles:
 
-- Comply with ckeab OOP Design Principles
+- Comply with clean OOP Design Principles
 - Use correct Prettier and ESLint configuration
 - Each logic has it's own dedicated class that can be tested separately.
-- THe clarity of code is most important.
+- The clarity of code is most important.
 
 
 Coding standards:
@@ -33,3 +33,9 @@ Error handling:
 
 - Throw errors so that the library consumer understand what is happening.
 - Do not add the `catch(e)` with `e` is you don't use `e`. The catch clock don't need error instance.
+
+Documentation:
+
+- Every public-facing API MUST be documented with examples whenever applicable. Also add the `use when` and `don't use when` sections whenever applicable.
+- Document interfaces as well.
+- All internal interfaces and methods also need to be documented with the summary of what the logic does. Document any gotchas. 

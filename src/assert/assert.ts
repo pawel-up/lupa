@@ -22,6 +22,21 @@ import type axe from 'axe-core'
 export type Constructor<T> = new (...args: any[]) => T
 
 /**
+ * Defines a pattern to match against raised exception messages.
+ *
+ * It supports:
+ * - A simple `string` (checking if the message includes the string)
+ * - A `RegExp` (checking if the message matches the expression)
+ * - An object mapping browser names (`chromium`, `firefox`, `webkit`) to their respective expected patterns
+ * - An array containing any combination of strings, RegExps, or browser mapping objects
+ */
+export type ExpectedErrorPattern =
+  | string
+  | RegExp
+  | Record<string, string | RegExp | (string | RegExp)[]>
+  | (string | RegExp | Record<string, string | RegExp>)[]
+
+/**
  * The Assert class is derived from chai.assert to allow support
  * for additional assertion methods and assertion planning.
  *
@@ -2589,7 +2604,7 @@ export class Assert extends Macroable implements AssertContract {
    */
   async rejects<T = any>(
     fn: () => unknown | Promise<unknown>,
-    errType: RegExp | AnyErrorConstructor,
+    errType: ExpectedErrorPattern | AnyErrorConstructor,
     errMessage?: string
   ): Promise<T>
   /**
@@ -2610,7 +2625,7 @@ export class Assert extends Macroable implements AssertContract {
   async rejects<T = any>(
     fn: () => unknown | Promise<unknown>,
     constructor: AnyErrorConstructor,
-    regExp: RegExp | string,
+    regExp: ExpectedErrorPattern,
     errMessage?: string
   ): Promise<T>
   /**
@@ -2630,8 +2645,8 @@ export class Assert extends Macroable implements AssertContract {
    */
   async rejects(
     fn: () => unknown | Promise<unknown>,
-    errType?: RegExp | AnyErrorConstructor | string,
-    regExp?: RegExp | string,
+    errType?: ExpectedErrorPattern | AnyErrorConstructor,
+    regExp?: ExpectedErrorPattern,
     errMessage?: string
   ): Promise<any> {
     let raisedException: any = null
@@ -2663,14 +2678,11 @@ export class Assert extends Macroable implements AssertContract {
      * Normalizing values
      */
     const expectedExceptionClass = errType && typeof errType === 'function' ? errType : null
-    let expectedErrorMessageRegex = regExp && regExp instanceof RegExp ? regExp : null
-    let expectedErrorMessage = regExp && typeof regExp === 'string' ? regExp : null
-    if (!expectedErrorMessageRegex && !expectedErrorMessage && errType) {
-      if (errType instanceof RegExp) {
-        expectedErrorMessageRegex = errType
-      } else if (typeof errType === 'string') {
-        expectedErrorMessage = errType
-      }
+    let pattern: unknown = undefined
+    if (regExp !== undefined) {
+      pattern = regExp
+    } else if (errType !== undefined && typeof errType !== 'function') {
+      pattern = errType
     }
 
     /**
@@ -2700,32 +2712,69 @@ export class Assert extends Macroable implements AssertContract {
     }
 
     /**
-     * Message doesn't match the expected regex
+     * Message pattern checks
      */
-    if (expectedErrorMessageRegex && !expectedErrorMessageRegex.test(raisedException.message)) {
-      return this.evaluate(false, 'expected #{this} to throw error matching #{exp} but got #{act}', {
-        thisObject: fn,
-        expected: expectedErrorMessageRegex,
-        actual: raisedException.message,
-        prefix: errMessage,
-        operator: 'rejects',
-      })
-    }
-
-    /**
-     * Message doesn't match the expected message
-     */
-    if (expectedErrorMessage && raisedException.message !== expectedErrorMessage) {
-      return this.evaluate(false, 'expected #{this} to throw error including #{exp} but got #{act}', {
-        thisObject: fn,
-        expected: expectedErrorMessage,
-        actual: raisedException.message,
-        prefix: errMessage,
-        operator: 'rejects',
-      })
+    if (pattern !== undefined) {
+      const matchResult = this.#matchExpectedMessage(raisedException.message, pattern)
+      if (matchResult.hasBrowserValue !== false && !matchResult.matches) {
+        const template = matchResult.isRegex
+          ? 'expected #{this} to throw error matching #{exp} but got #{act}'
+          : 'expected #{this} to throw error including #{exp} but got #{act}'
+        return this.evaluate(false, template, {
+          thisObject: fn,
+          expected: matchResult.expectedDescription,
+          actual: raisedException.message,
+          prefix: errMessage,
+          operator: 'rejects',
+        })
+      }
     }
 
     return raisedException
+  }
+
+  /**
+   * Returns the current browser name ('chromium', 'firefox', or 'webkit') based on
+   * Lupa context or user-agent detection.
+   */
+  getBrowserName(): 'chromium' | 'firefox' | 'webkit' {
+    if (typeof window !== 'undefined' && window.__lupa__?.browserName) {
+      return window.__lupa__.browserName as 'chromium' | 'firefox' | 'webkit'
+    }
+    if (typeof navigator !== 'undefined') {
+      const ua = navigator.userAgent.toLowerCase()
+      if (ua.includes('firefox')) {
+        return 'firefox'
+      }
+      if (ua.includes('safari') && !ua.includes('chrome') && !ua.includes('chromium')) {
+        return 'webkit'
+      }
+    }
+    return 'chromium'
+  }
+
+  /**
+   * Assert that a promise or function rejects with a standard browser fetch network error.
+   *
+   * Accounts for cross-browser differences:
+   * - Chromium: TypeError "Failed to fetch"
+   * - Firefox: TypeError containing "NetworkError"
+   * - WebKit: TypeError "Load failed"
+   *
+   * @param fn - The function or promise expected to reject
+   * @param errMessage - Custom assertion failure message
+   */
+  async rejectsNetworkError(fn: () => unknown | Promise<unknown>, errMessage?: string): Promise<unknown> {
+    return this.rejects(
+      fn,
+      TypeError,
+      {
+        chromium: 'Failed to fetch',
+        firefox: /NetworkError/,
+        webkit: 'Load failed',
+      },
+      errMessage
+    )
   }
 
   /**
@@ -2782,7 +2831,7 @@ export class Assert extends Macroable implements AssertContract {
    */
   async doesNotReject(
     fn: () => unknown | Promise<unknown>,
-    errType: RegExp | AnyErrorConstructor,
+    errType: ExpectedErrorPattern | AnyErrorConstructor,
     message?: string
   ): Promise<void>
   /**
@@ -2815,7 +2864,7 @@ export class Assert extends Macroable implements AssertContract {
   async doesNotReject(
     fn: () => unknown | Promise<unknown>,
     constructor: AnyErrorConstructor,
-    regExp: RegExp | string,
+    regExp: ExpectedErrorPattern,
     message?: string
   ): Promise<void>
   /**
@@ -2847,8 +2896,8 @@ export class Assert extends Macroable implements AssertContract {
    */
   async doesNotReject(
     fn: () => unknown | Promise<unknown>,
-    errType?: RegExp | AnyErrorConstructor | string,
-    regExp?: RegExp | string,
+    errType?: ExpectedErrorPattern | AnyErrorConstructor,
+    regExp?: ExpectedErrorPattern,
     message?: string
   ): Promise<void> {
     this.incrementAssertionsCount()
@@ -2886,23 +2935,20 @@ export class Assert extends Macroable implements AssertContract {
     /**
      * Normalizing values
      */
-    const expectedExceptionClass = errType && typeof errType === 'function' ? errType : undefined
-    let expectedErrorMessageRegex = regExp && regExp instanceof RegExp ? regExp : undefined
-    let expectedErrorMessage = regExp && typeof regExp === 'string' ? regExp : undefined
-    const hasMatchingErrorClass = expectedExceptionClass && raisedException instanceof expectedExceptionClass
-
-    if (!expectedErrorMessageRegex && expectedErrorMessage === undefined && errType) {
-      if (errType instanceof RegExp) {
-        expectedErrorMessageRegex = errType
-      } else if (typeof errType === 'string') {
-        expectedErrorMessage = errType
-      }
+    const expectedExceptionClass = errType && typeof errType === 'function' ? errType : null
+    let pattern: unknown = undefined
+    if (regExp !== undefined) {
+      pattern = regExp
+    } else if (errType !== undefined && typeof errType !== 'function') {
+      pattern = errType
     }
+
+    const hasMatchingErrorClass = expectedExceptionClass && raisedException instanceof expectedExceptionClass
 
     /**
      * Exception was raised and caller is not trying to narrow down the exception
      */
-    if (!expectedErrorMessage && !expectedErrorMessageRegex && !expectedExceptionClass) {
+    if (pattern === undefined && !expectedExceptionClass) {
       return this.evaluate(false, 'expected #{this} to not throw an error but #{act} was thrown', {
         thisObject: fn,
         expected: expectedExceptionClass,
@@ -2913,9 +2959,9 @@ export class Assert extends Macroable implements AssertContract {
     }
 
     /**
-     * An exception was raised for not the expected error constructor
+     * An exception was raised for the expected error constructor, and no pattern check was requested
      */
-    if (hasMatchingErrorClass && !expectedErrorMessage && !expectedErrorMessageRegex) {
+    if (hasMatchingErrorClass && pattern === undefined) {
       return this.evaluate(false, 'expected #{this} to not throw #{exp} but #{act} was thrown', {
         thisObject: fn,
         expected: expectedExceptionClass,
@@ -2925,33 +2971,28 @@ export class Assert extends Macroable implements AssertContract {
       })
     }
 
-    if (expectedErrorMessageRegex && expectedErrorMessageRegex.test(raisedException.message)) {
-      return this.evaluate(false, 'expected #{this} to throw error not matching #{exp}', {
-        thisObject: fn,
-        expected: expectedErrorMessageRegex,
-        actual: raisedException.message,
-        prefix: message,
-        operator: 'doesNotReject',
-      })
-    }
-
     /**
-     * Message doesn't match the expected message
+     * Message pattern checks (only if constructor matched or constructor was not specified)
      */
-    if (expectedErrorMessage && raisedException.message === expectedErrorMessage) {
-      return this.evaluate(
-        false,
-        hasMatchingErrorClass
-          ? 'expected #{this} to not throw #{exp} but #{act} was thrown'
-          : 'expected #{this} to throw error not including #{act}',
-        {
-          thisObject: fn,
-          expected: hasMatchingErrorClass ? expectedExceptionClass : expectedErrorMessage,
-          actual: hasMatchingErrorClass ? raisedException : raisedException.message,
-          prefix: message,
-          operator: 'doesNotReject',
-        }
-      )
+    if (pattern !== undefined && (expectedExceptionClass === null || hasMatchingErrorClass)) {
+      const matchResult = this.#matchExpectedMessage(raisedException.message, pattern)
+      if (matchResult.hasBrowserValue !== false && matchResult.matches) {
+        return this.evaluate(
+          false,
+          hasMatchingErrorClass
+            ? 'expected #{this} to not throw #{exp} but #{act} was thrown'
+            : matchResult.isRegex
+              ? 'expected #{this} to throw error not matching #{exp}'
+              : 'expected #{this} to throw error not including #{exp}',
+          {
+            thisObject: fn,
+            expected: hasMatchingErrorClass ? expectedExceptionClass : matchResult.expectedDescription,
+            actual: hasMatchingErrorClass ? raisedException : raisedException.message,
+            prefix: message,
+            operator: 'doesNotReject',
+          }
+        )
+      }
     }
   }
 
@@ -2964,5 +3005,57 @@ export class Assert extends Macroable implements AssertContract {
    */
   async isAccessible(element: Element | NodeList | string, options?: axe.RunOptions): Promise<void> {
     return assertIsAccessible(this, element, options)
+  }
+
+  /**
+   * Helper to recursively match the actual error message against expected error patterns.
+   */
+  #matchExpectedMessage(
+    actual: string,
+    expected: unknown
+  ): { matches: boolean; expectedDescription: unknown; isRegex: boolean; hasBrowserValue?: boolean } {
+    if (expected === undefined || expected === null) {
+      return { matches: true, expectedDescription: '', isRegex: false }
+    }
+
+    if (typeof expected === 'object' && !(expected instanceof RegExp) && !Array.isArray(expected)) {
+      const browser = this.getBrowserName()
+      const hasKey = Object.prototype.hasOwnProperty.call(expected, browser)
+      if (!hasKey) {
+        return { matches: false, expectedDescription: '', isRegex: false, hasBrowserValue: false }
+      }
+      const browserValue = (expected as Record<string, unknown>)[browser]
+      const res = this.#matchExpectedMessage(actual, browserValue)
+      return { ...res, hasBrowserValue: true }
+    }
+
+    if (Array.isArray(expected)) {
+      const results = expected.map((item) => this.#matchExpectedMessage(actual, item))
+      const matched = results.some((r) => r.matches)
+      const descriptions = expected.map((item) => (item instanceof RegExp ? item.toString() : `'${item}'`))
+      const desc = `one of [${descriptions.join(', ')}]`
+      if (matched) {
+        return { matches: true, expectedDescription: desc, isRegex: true }
+      }
+      return {
+        matches: false,
+        expectedDescription: desc,
+        isRegex: true,
+      }
+    }
+
+    if (expected instanceof RegExp) {
+      return {
+        matches: expected.test(actual),
+        expectedDescription: expected,
+        isRegex: true,
+      }
+    }
+
+    return {
+      matches: actual === String(expected),
+      expectedDescription: expected,
+      isRegex: false,
+    }
   }
 }
