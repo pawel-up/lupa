@@ -63,7 +63,7 @@ This document describes the exact flow of a test run in Lupa — from the CLI in
 │                                                       └──────────────────────┘ │
 │                                                                                │
 │  ┌──────────────────────────────────────────────────────────────────────────┐  │
-│  │  BrowserManager.boot(testPoolManager, onRunnerEnd)                       │  │
+│  │  BrowserManager.boot(poolManager, onRunnerEnd)                       │  │
 │  │                                                                          │  │
 │  │  For each browserName (chromium / firefox / webkit):                     │  │
 │  │    Launch playwright browser                                             │  │
@@ -255,7 +255,7 @@ The central lifecycle manager. Owns the three long-lived sub-systems and coordin
 | Property | Type | Role |
 | --- | --- | --- |
 | `exceptionsManager` | `ExceptionsManager` | Captures unhandled Node.js errors |
-| `testPoolManager` | `TestPoolManager` | Knows how files are chunked |
+| `poolManager` | `TestPoolManager` | Knows how files are chunked |
 | `serverManager` | `ServerManager` | Owns the Vite dev server |
 | `browserManager` | `BrowserManager` | Owns Playwright browser instances |
 | `cli` | `Cli` | Watch-mode interactive interface |

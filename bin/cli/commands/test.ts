@@ -48,7 +48,11 @@ export const testCommand = new Command('test')
   .option('--reporters <names...>', 'Activate one or more test reporters')
   .option('--bail-layer <layer>', 'Specify at which layer to enable the bail mode')
   .addOption(
-    new Option('--browser <browser>', 'Specify the browser to run tests in').choices(['chromium', 'firefox', 'webkit'])
+    new Option('--browser <browser...>', 'Specify the browser to run tests in').choices([
+      'chromium',
+      'firefox',
+      'webkit',
+    ])
     // .default('chromium')
   )
   .option('--vite-config <path>', 'Path to a custom Vite configuration file')
@@ -92,7 +96,6 @@ export const testCommand = new Command('test')
           'E_MISSING_CONFIG',
           `Could not load configuration file at ${configPath}.\nRun 'npx lupa init' to scaffold a new project.`
         )
-        process.exit(1)
       }
 
       config.configPath = configPath
@@ -105,6 +108,5 @@ export const testCommand = new Command('test')
       await run()
     } catch (err) {
       renderCriticalError('E_TEST_RUN_FAILED', 'Failed to execute test run.', err)
-      process.exit(1)
     }
   })

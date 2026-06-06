@@ -10,7 +10,7 @@ import type { TestPoolManager } from '../test_pool_manager.js'
  * Exported for testing purposes.
  */
 export default function harnessPlugin(
-  testPoolManager: TestPoolManager,
+  poolManager: TestPoolManager,
   resolvedPlugins: (JsonSerializable | undefined)[][],
   runnerConfig: NormalizedConfig,
   harnessPath: string
@@ -23,7 +23,7 @@ export default function harnessPlugin(
         const url = new URL(req.url || '/', `http://${host}`)
         const chunkId = url.searchParams.get('chunkId')
 
-        const chunk = chunkId ? testPoolManager.getChunk(chunkId) : undefined
+        const chunk = chunkId ? poolManager.getChunk(chunkId) : undefined
         const suitesToRun = chunk ? chunk.suites : []
 
         const configPayload = JSON.stringify({

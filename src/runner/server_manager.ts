@@ -17,7 +17,7 @@ const harnessPath = existsSync(harnessTs) ? harnessTs : resolve(__dirname, '../t
 export interface ServerManagerOptions {
   cwd: string
   config: NormalizedConfig
-  testPoolManager: TestPoolManager
+  poolManager: TestPoolManager
 }
 
 /**
@@ -59,7 +59,7 @@ export class ServerManager {
    * Boots the Vite server and returns the local server URL.
    */
   async boot(): Promise<string> {
-    const { cwd, config, testPoolManager } = this.#options
+    const { cwd, config, poolManager } = this.#options
 
     const logger = createLogger('silent')
     const _error = logger.error
@@ -116,7 +116,7 @@ export class ServerManager {
         include: ['axe-core', 'lit-html', 'lit', 'chai', 'assertion-error', '@poppinss/macroable', '@jarrodek/debug'],
         exclude: ['@pawel-up/lupa'],
       },
-      plugins: [lupaHarnessPlugin(testPoolManager, resolvedPlugins, config, harnessPath)],
+      plugins: [lupaHarnessPlugin(poolManager, resolvedPlugins, config, harnessPath)],
     }
 
     const finalViteConfig = config.vite ? mergeConfig(baseViteConfig, config.vite) : baseViteConfig

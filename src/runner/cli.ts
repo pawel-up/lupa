@@ -265,7 +265,7 @@ export class Cli {
     // we need to find the chunk that corresponds to the focused file to pass it to the debug page,
     // so it can load the correct test files and config
     const chunkId = focusedPath
-      ? (this.#orchestrator.testPoolManager?.getChunkIdForFile(browserName, focusedPath) ?? `${browserName}-0`)
+      ? (this.#orchestrator.poolManager?.getChunkIdForFile(browserName, focusedPath) ?? `${browserName}-0`)
       : `${browserName}-0`
     url.searchParams.append('chunkId', chunkId)
     url.searchParams.append('debug', '1')
@@ -408,7 +408,11 @@ export class Cli {
     console.clear()
 
     const replayEmitter = new Emitter<RunnerEvents>()
-    const replayRunner = new Runner(replayEmitter, this.#orchestrator.config)
+    const poolManager = this.#orchestrator.poolManager
+    if (!poolManager) {
+      throw new Error('Cannot replay events: Orchestrator is not booted.')
+    }
+    const replayRunner = new Runner(replayEmitter, this.#orchestrator.config, poolManager)
 
     // Wire reporters directly
     for (const reporter of this.#orchestrator.reporters || []) {

@@ -36,7 +36,7 @@ export class BrowserManager {
     this.#configPath = configPath
   }
 
-  async boot(testPoolManager: TestPoolManager, coverageManager?: CoverageManager): Promise<void> {
+  async boot(poolManager: TestPoolManager, coverageManager?: CoverageManager): Promise<void> {
     for (const name of this.#browserNames) {
       if (name !== 'chromium' && coverageManager?.isEnabled) {
         console.warn(
@@ -52,7 +52,7 @@ export class BrowserManager {
 
       this.#browsers.set(name, browser)
 
-      const chunkIds = testPoolManager.getChunkIdsForBrowser(name)
+      const chunkIds = poolManager.getChunkIdsForBrowser(name)
 
       for (const chunkId of chunkIds) {
         const page = await browser.newPage()

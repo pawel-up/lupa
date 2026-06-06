@@ -41,7 +41,7 @@ export class Orchestrator implements ServerTelemetryContract {
   public exceptionsManager: ExceptionsManager
 
   /** Manager responsible for splitting test files into executable chunks. */
-  public testPoolManager?: TestPoolManager
+  public poolManager?: TestPoolManager
 
   /** Manager for the Vite server and RPC endpoints. */
   public serverManager?: ServerManager
@@ -157,13 +157,13 @@ export class Orchestrator implements ServerTelemetryContract {
       }
     }
 
-    this.testPoolManager = new TestPoolManager(this.config, this.browserNames, this.suites)
-    this.cli.setExcludedFilePaths(this.testPoolManager.getExcludedFilePaths())
+    this.poolManager = new TestPoolManager(this.config, this.browserNames, this.suites)
+    this.cli.setExcludedFilePaths(this.poolManager.getExcludedFilePaths())
 
     this.serverManager = new ServerManager(this, {
       cwd: this.config.cwd || process.cwd(),
       config: this.config,
-      testPoolManager: this.testPoolManager,
+      poolManager: this.poolManager,
     })
 
     this.serverUrl = await this.serverManager.boot()
@@ -183,7 +183,7 @@ export class Orchestrator implements ServerTelemetryContract {
       this.config.configPath
     )
 
-    await this.browserManager.boot(this.testPoolManager, this.serverManager?.coverageManager)
+    await this.browserManager.boot(this.poolManager, this.serverManager?.coverageManager)
   }
 
   /**
@@ -300,7 +300,10 @@ export class Orchestrator implements ServerTelemetryContract {
 
     this.#runnerEnded = false
     this.activeNodeEmitter = new Emitter<RunnerEvents>()
-    this.activeNodeRunner = new Runner(this.activeNodeEmitter, this.config)
+    if (!this.poolManager) {
+      throw new Error('Cannot execute tests: Orchestrator is not booted.')
+    }
+    this.activeNodeRunner = new Runner(this.activeNodeEmitter, this.config, this.poolManager)
 
     const executeTeardowns: (() => void | Promise<void>)[] = []
 
@@ -347,7 +350,7 @@ export class Orchestrator implements ServerTelemetryContract {
 
     this.config.refiner.matchAllTags(this.cliArgs.matchAll ?? false)
 
-    const estimatedTotalFiles = this.testPoolManager?.getFilesCount() || 0
+    const estimatedTotalFiles = this.poolManager?.getFilesCount() || 0
 
     await this.activeNodeRunner.start({ estimatedTotalFiles })
 
@@ -371,11 +374,11 @@ export class Orchestrator implements ServerTelemetryContract {
   }
 
   async #runWaves(): Promise<void> {
-    if (!this.testPoolManager || !this.browserManager || !this.activeNodeRunner) {
+    if (!this.poolManager || !this.browserManager || !this.activeNodeRunner) {
       return
     }
-    const { testPoolManager, browserManager } = this
-    const tiers = testPoolManager.getChunkIdsByTier(this.browserNames[0])
+    const { poolManager, browserManager } = this
+    const tiers = poolManager.getChunkIdsByTier(this.browserNames[0])
 
     if (tiers.size === 0) {
       // No files to run — the test harness will signal runner end via the browser.
@@ -383,15 +386,13 @@ export class Orchestrator implements ServerTelemetryContract {
       return
     }
 
-    const excludedOnlyPriorities = testPoolManager.getExcludedOnlyPriorities()
+    const excludedOnlyPriorities = poolManager.getExcludedOnlyPriorities()
 
     for (const [priority] of tiers) {
       if (this.isShuttingDown) {
         break
       }
-      const allBrowserChunkIds = this.browserNames.flatMap(
-        (b) => testPoolManager.getChunkIdsByTier(b).get(priority) ?? []
-      )
+      const allBrowserChunkIds = this.browserNames.flatMap((b) => poolManager.getChunkIdsByTier(b).get(priority) ?? [])
       await browserManager.navigateAndWait(`${this.serverUrl}__lupa__/runner.html`, allBrowserChunkIds)
 
       if (this.isShuttingDown) {

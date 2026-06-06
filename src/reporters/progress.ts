@@ -14,7 +14,7 @@ import { colors, icons } from '../runner/helpers.js'
 const PROGRESS_BLOCKS = [' ', '▏', '▎', '▍', '▌', '▋', '▊', '▉', '█']
 const PROGRESS_WIDTH = 30
 
-function createProgressBlocks(value: number, total: number) {
+function createProgressBlocks(value: number, total: number): string {
   if (value >= total) {
     return PROGRESS_BLOCKS[8].repeat(PROGRESS_WIDTH)
   }
@@ -25,28 +25,60 @@ function createProgressBlocks(value: number, total: number) {
   return `${PROGRESS_BLOCKS[8].repeat(floored)}${partialBlock}${' '.repeat(Math.max(0, PROGRESS_WIDTH - floored - 1))}`
 }
 
+interface BrowserProgressState {
+  passedTests: number
+  failedTests: number
+  skippedTests: number
+  executedFiles: Set<string>
+  startedFiles: Set<string>
+}
+
 export class ProgressReporter extends BaseReporter {
   #totalFiles = 0
-  #passedTests = 0
-  #failedTests = 0
-  #skippedTests = 0
-  /**
-   * A Set of all files that either were already executed or had an import error.
-   * We use this to calculate progress, and also to know which files had logs/errors for grouping them in the output.
-   */
-  #executedFiles = new Set<string>()
-  #startedFiles = new Set<string>()
   #lastRenderTime = 0
-
+  #browserStates = new Map<string, BrowserProgressState>()
   #logs: { file: string; type: string; messages: any[] }[] = []
 
+  #getBrowserName(browserId?: string): string {
+    if (!browserId) return 'chromium'
+    const runner = this.getRunnerOrThrow()
+    const chunk = runner.poolManager.getChunk(browserId)
+    if (chunk) {
+      return chunk.browserName
+    }
+    for (const name of ['chromium', 'firefox', 'webkit']) {
+      if (browserId.startsWith(name)) {
+        return name
+      }
+    }
+    return browserId
+  }
+
+  #getOrCreateBrowserState(browserName: string): BrowserProgressState {
+    let state = this.#browserStates.get(browserName)
+    if (!state) {
+      state = {
+        passedTests: 0,
+        failedTests: 0,
+        skippedTests: 0,
+        executedFiles: new Set<string>(),
+        startedFiles: new Set<string>(),
+      }
+      this.#browserStates.set(browserName, state)
+    }
+    return state
+  }
+
   protected override onTestEnd(payload: WithCorrelation<TestEndNode>): void {
+    const browserName = this.#getBrowserName(payload.browserId)
+    const state = this.#getOrCreateBrowserState(browserName)
+
     if (payload.isSkipped || payload.isTodo) {
-      this.#skippedTests++
+      state.skippedTests++
     } else if (payload.hasError) {
-      this.#failedTests++
+      state.failedTests++
     } else {
-      this.#passedTests++
+      state.passedTests++
     }
 
     this.render()
@@ -54,32 +86,44 @@ export class ProgressReporter extends BaseReporter {
 
   protected override start(node: RunnerStartNode): void {
     this.#totalFiles = node.estimatedTotalFiles
-
-    this.#passedTests = 0
-    this.#failedTests = 0
-    this.#skippedTests = 0
+    this.#browserStates.clear()
     this.#logs = []
-    this.#executedFiles.clear()
-    this.#startedFiles.clear()
     this.#lastRenderTime = Date.now()
+
+    const browserNames = this.getRunnerOrThrow().poolManager.browserNames
+    for (const browserName of browserNames) {
+      this.#browserStates.set(browserName, {
+        passedTests: 0,
+        failedTests: 0,
+        skippedTests: 0,
+        executedFiles: new Set<string>(),
+        startedFiles: new Set<string>(),
+      })
+    }
 
     this.render()
   }
 
   protected override onFileStart(node: WithCorrelation<FileStartNode>): void {
-    this.#startedFiles.add(node.file)
+    const browserName = this.#getBrowserName(node.browserId)
+    const state = this.#getOrCreateBrowserState(browserName)
+    state.startedFiles.add(node.file)
     this.render()
   }
 
   protected override onFileEnd(node: WithCorrelation<FileEndNode>): void {
-    this.#executedFiles.add(node.file)
-    this.#startedFiles.add(node.file)
+    const browserName = this.#getBrowserName(node.browserId)
+    const state = this.#getOrCreateBrowserState(browserName)
+    state.executedFiles.add(node.file)
+    state.startedFiles.add(node.file)
     this.render()
   }
 
   protected override onImportError(payload: RunnerEvents['runner:import_error']): void {
-    this.#executedFiles.add(payload.file)
-    this.#startedFiles.add(payload.file)
+    const browserName = this.#getBrowserName(payload.browserId)
+    const state = this.#getOrCreateBrowserState(browserName)
+    state.executedFiles.add(payload.file)
+    state.startedFiles.add(payload.file)
     this.#logs.push({
       file: payload.file,
       type: 'error',
@@ -88,12 +132,12 @@ export class ProgressReporter extends BaseReporter {
     this.render()
   }
 
-  protected override onBrowserLog(payload: RunnerEvents['browser:log']) {
+  protected override onBrowserLog(payload: RunnerEvents['browser:log']): void {
     this.#logs.push(payload)
     this.render()
   }
 
-  protected override async end() {
+  protected override async end(): Promise<void> {
     logUpdate.clear()
 
     // We flush all buffered logs just in case some came very late
@@ -128,7 +172,7 @@ export class ProgressReporter extends BaseReporter {
     }
   }
 
-  #printLogs() {
+  #printLogs(): void {
     if (this.#logs.length === 0) return
 
     const groupedByFile = new Map<string, RunnerEvents['browser:log'][]>()
@@ -145,7 +189,6 @@ export class ProgressReporter extends BaseReporter {
     for (const [file, fileLogs] of groupedByFile.entries()) {
       console.log('')
       console.log(`${colors.cyan(file)}:`)
-      // console.log('')
 
       for (const log of fileLogs) {
         const isError = log.type === 'error'
@@ -165,9 +208,9 @@ export class ProgressReporter extends BaseReporter {
     this.#logs = []
   }
 
-  #getProgressBar(): string {
-    const completedFiles = this.#executedFiles.size
-    const startedFiles = Math.max(completedFiles, this.#startedFiles.size)
+  #getSingleBrowserProgressBar(browserName: string, state: BrowserProgressState, maxBrowserNameLength: number): string {
+    const completedFiles = state.executedFiles.size
+    const startedFiles = Math.max(completedFiles, state.startedFiles.size)
     const totalExpected = Math.max(startedFiles, this.#totalFiles)
 
     const completedBlocks = createProgressBlocks(completedFiles, totalExpected)
@@ -188,30 +231,45 @@ export class ProgressReporter extends BaseReporter {
     }
     const bar = `|${barChars.join('')}|`
 
-    const message: string[] = [bar, `${completedFiles}/${totalExpected}`, 'test files |']
+    const prefix = `${browserName}:`.padEnd(maxBrowserNameLength + 2)
+    const message: string[] = [prefix + bar, `${completedFiles}/${totalExpected}`, 'test files |']
 
-    if (this.#passedTests > 0) {
-      message.push(colors.green(`${this.#passedTests} passed,`))
+    if (state.passedTests > 0) {
+      message.push(colors.green(`${state.passedTests} passed,`))
     } else {
-      message.push(`${this.#passedTests} passed,`)
+      message.push(`${state.passedTests} passed,`)
     }
 
-    if (this.#failedTests > 0) {
-      message.push(colors.red(`${this.#failedTests} failed,`))
+    if (state.failedTests > 0) {
+      message.push(colors.red(`${state.failedTests} failed,`))
     } else {
-      message.push(`${this.#failedTests} failed,`)
+      message.push(`${state.failedTests} failed,`)
     }
 
-    if (this.#skippedTests > 0) {
-      message.push(colors.yellow(`${this.#skippedTests} skipped`))
+    if (state.skippedTests > 0) {
+      message.push(colors.yellow(`${state.skippedTests} skipped`))
     } else {
-      message.push(`${this.#skippedTests} skipped`)
+      message.push(`${state.skippedTests} skipped`)
     }
 
     return message.join(' ')
   }
 
-  protected render() {
+  #getProgressBar(): string {
+    const browserNames = Array.from(this.#browserStates.keys())
+    const maxBrowserNameLength = Math.max(...browserNames.map((name) => name.length), 0)
+
+    return browserNames
+      .map((name) => {
+        const state = this.#browserStates.get(name)
+        if (!state) return ''
+        return this.#getSingleBrowserProgressBar(name, state, maxBrowserNameLength)
+      })
+      .filter(Boolean)
+      .join('\n')
+  }
+
+  protected render(): void {
     if (this.#logs.length > 0) {
       logUpdate.clear()
     }

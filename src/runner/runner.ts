@@ -16,6 +16,7 @@ import { Tracker } from './tracker.js'
 import type { ReporterContract, RunnerSummary } from '../types.js'
 import type { NormalizedConfig } from './types.js'
 import { SummaryBuilder } from './summary_builder.js'
+import type { TestPoolManager } from './test_pool_manager.js'
 
 /**
  * The Runner class exposes the API to manage the node process telemetry
@@ -25,6 +26,7 @@ export class Runner extends Macroable {
   #emitter: Emitter<RunnerEvents>
   #config: NormalizedConfig
   #failed = false
+  poolManager: TestPoolManager
 
   /**
    * Reference to tests tracker
@@ -42,10 +44,14 @@ export class Runner extends Macroable {
    */
   reporters = new Set<ReporterContract>()
 
-  constructor(emitter: Emitter<RunnerEvents>, config: NormalizedConfig) {
+  constructor(emitter: Emitter<RunnerEvents>, config: NormalizedConfig, poolManager: TestPoolManager) {
     super()
+    if (!poolManager) {
+      throw new Error('TestPoolManager is required to initialize the Runner')
+    }
     this.#emitter = emitter
     this.#config = config
+    this.poolManager = poolManager
   }
 
   #getTrackerOrThrow() {

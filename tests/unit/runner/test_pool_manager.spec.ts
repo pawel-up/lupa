@@ -62,10 +62,10 @@ test('TestPoolManager', async (t) => {
     assert.equal(chunk1.suites[1].name, 'e2e')
   })
 
-  await t.test('getFilesCount returns total files across all chunks', () => {
+  await t.test('getFilesCount returns total files for a single browser', () => {
     const manager = new TestPoolManager(mockConfig, browsers, suites)
-    // 4 files per browser, 2 browsers = 8 files total
-    assert.equal(manager.getFilesCount(), 8)
+    // 4 files per browser
+    assert.equal(manager.getFilesCount(), 4)
   })
 
   await t.test('getFilesCount respects config.filters.files with exact match or endsWith', () => {
@@ -78,10 +78,10 @@ test('TestPoolManager', async (t) => {
 
     const manager = new TestPoolManager(configWithFilter, browsers, suites)
 
-    // test1 matches in chromium and firefox (1x2 = 2)
-    // test4 matches in chromium and firefox (1x2 = 2)
-    // Total should be 4
-    assert.equal(manager.getFilesCount(), 4)
+    // test1 matches (1)
+    // test4 matches (1)
+    // Total should be 2
+    assert.equal(manager.getFilesCount(), 2)
   })
 
   await t.test('getFilesCount returns 0 when no files match', () => {

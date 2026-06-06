@@ -58,7 +58,7 @@ export class TestPoolManager {
    */
   constructor(
     private config: NormalizedConfig,
-    private browserNames: string[],
+    public browserNames: string[],
     private suites: PlannedTestSuite[]
   ) {
     this.#computeChunks()
@@ -210,23 +210,26 @@ export class TestPoolManager {
    */
   getFilesCount(): number {
     const fileFilters = this.config.filters?.files
+    const firstBrowser = this.browserNames[0] || 'chromium'
 
-    return Array.from(this.#chunks.values()).reduce((acc, chunk) => {
-      return (
-        acc +
-        chunk.suites.reduce((sum, s) => {
-          if (s.excludeFromReporting) return sum
-          if (fileFilters && fileFilters.length > 0) {
-            const count = s.filesURLs.filter((u) => {
-              const path = fileURLToPath(u)
-              return fileFilters.some((allowed) => path.endsWith(allowed))
-            }).length
-            return sum + count
-          }
-          return sum + s.filesURLs.length
-        }, 0)
-      )
-    }, 0)
+    return Array.from(this.#chunks.values())
+      .filter((c) => c.browserName === firstBrowser)
+      .reduce((acc, chunk) => {
+        return (
+          acc +
+          chunk.suites.reduce((sum, s) => {
+            if (s.excludeFromReporting) return sum
+            if (fileFilters && fileFilters.length > 0) {
+              const count = s.filesURLs.filter((u) => {
+                const path = fileURLToPath(u)
+                return fileFilters.some((allowed) => path.endsWith(allowed))
+              }).length
+              return sum + count
+            }
+            return sum + s.filesURLs.length
+          }, 0)
+        )
+      }, 0)
   }
 
   /**

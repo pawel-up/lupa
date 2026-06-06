@@ -5,9 +5,11 @@ import { Emitter } from '../../../src/testing/emitter.js'
 import type { RunnerEvents } from '../../../src/types.js'
 
 test('Runner', async (t) => {
+  const dummyPool = {} as any
+
   await t.test('boot initializes tracker and listens to events', async () => {
     const emitter = new Emitter<RunnerEvents>()
-    const runner = new Runner(emitter, {} as any)
+    const runner = new Runner(emitter, {} as any, dummyPool)
 
     let reporterCalled = false
     runner.registerReporter(async () => {
@@ -46,7 +48,7 @@ test('Runner', async (t) => {
 
   await t.test('suite:end also flags runner as failed', async () => {
     const emitter = new Emitter<RunnerEvents>()
-    const runner = new Runner(emitter, {} as any)
+    const runner = new Runner(emitter, {} as any, dummyPool)
     await runner.start()
 
     await emitter.emit('suite:start', { name: 'S1', browserId: 'chromium', file: 'test.ts', meta: {} } as any)
@@ -63,7 +65,7 @@ test('Runner', async (t) => {
 
   await t.test('group:end also flags runner as failed', async () => {
     const emitter = new Emitter<RunnerEvents>()
-    const runner = new Runner(emitter, {} as any)
+    const runner = new Runner(emitter, {} as any, dummyPool)
     await runner.start()
 
     await emitter.emit('suite:start', { name: 'S1', browserId: 'chromium', file: 'test.ts', meta: {} } as any)
@@ -86,7 +88,7 @@ test('Runner', async (t) => {
 
   await t.test('calls object-based reporters handler', async () => {
     const emitter = new Emitter<RunnerEvents>()
-    const runner = new Runner(emitter, {} as any)
+    const runner = new Runner(emitter, {} as any, dummyPool)
 
     let reporterCalled = false
     const reporter = {
@@ -104,7 +106,7 @@ test('Runner', async (t) => {
 
   await t.test('getSummary throws if not booted', () => {
     const emitter = new Emitter<RunnerEvents>()
-    const runner = new Runner(emitter, {} as any)
+    const runner = new Runner(emitter, {} as any, dummyPool)
 
     assert.throws(() => {
       runner.getSummary()
@@ -113,7 +115,7 @@ test('Runner', async (t) => {
 
   await t.test('end method works without throwing', async () => {
     const emitter = new Emitter<RunnerEvents>()
-    const runner = new Runner(emitter, {} as any)
+    const runner = new Runner(emitter, {} as any, dummyPool)
     await runner.end()
     assert.ok(true)
   })
