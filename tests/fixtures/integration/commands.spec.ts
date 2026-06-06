@@ -11,6 +11,7 @@ import {
   query,
   screenshot,
   emulation,
+  cookies,
 } from '../../../src/commands/index.js'
 
 test.group('Browser Commands', (group) => {
@@ -205,5 +206,38 @@ test.group('Browser Commands', (group) => {
     assert.isFalse(navigator.onLine)
     await emulation.setOffline(false)
     assert.isTrue(navigator.onLine)
+  })
+
+  test('cookies class adds, gets, and clears cookies', async ({ assert }) => {
+    // 1. Clear any existing cookies
+    await cookies.clear()
+    const initial = await cookies.getAll()
+    assert.isArray(initial)
+
+    // 2. Add some cookies
+    await cookies.add([
+      { name: 'test_cookie1', value: 'val1', domain: 'localhost', path: '/' },
+      { name: 'test_cookie2', value: 'val2', domain: 'localhost', path: '/' },
+    ])
+
+    // 3. Get all cookies and assert their values
+    const list = await cookies.getAll()
+    const c1 = list.find((c) => c.name === 'test_cookie1')
+    const c2 = list.find((c) => c.name === 'test_cookie2')
+    assert.isDefined(c1)
+    assert.isDefined(c2)
+    assert.equal(c1!.value, 'val1')
+    assert.equal(c2!.value, 'val2')
+
+    // 4. Clear a specific cookie by name
+    await cookies.clear({ name: 'test_cookie1' })
+    const listAfterOneClear = await cookies.getAll()
+    assert.isUndefined(listAfterOneClear.find((c) => c.name === 'test_cookie1'))
+    assert.isDefined(listAfterOneClear.find((c) => c.name === 'test_cookie2'))
+
+    // 5. Clear all remaining cookies
+    await cookies.clear()
+    const listAfterAllClear = await cookies.getAll()
+    assert.isUndefined(listAfterAllClear.find((c) => c.name === 'test_cookie2'))
   })
 })

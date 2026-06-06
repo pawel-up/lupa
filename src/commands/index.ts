@@ -119,6 +119,8 @@ export { keyboard, Keyboard, type KeyboardPressOptions, type KeyboardTypeOptions
 
 export { screenshot, Screenshot, type PageScreenshotOptions } from './screenshot.js'
 export { emulation, Emulation, type Geolocation, type GrantPermissionsOptions } from './emulation.js'
+export { cookies, Cookies } from './cookies.js'
+export { type Cookie, type ClearCookiesOptions } from './types.js'
 
 export {
   mouse,

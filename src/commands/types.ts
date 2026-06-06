@@ -124,6 +124,88 @@ export interface SelectOptionPayload {
 }
 
 /**
+ * Shape of a cookie matching Playwright's format.
+ *
+ * @use-when
+ * Use when adding cookies via `cookies.add` or retrieving them via `cookies.getAll`.
+ *
+ * @dont-use-when
+ * Do not use for other storage mechanisms such as LocalStorage or SessionStorage.
+ */
+export interface Cookie {
+  /**
+   * The name of the cookie.
+   */
+  name: string
+
+  /**
+   * The value of the cookie.
+   */
+  value: string
+
+  /**
+   * The URL associated with the cookie. Either url or both domain and path must be specified.
+   */
+  url?: string
+
+  /**
+   * The domain of the cookie. Either url or both domain and path must be specified.
+   */
+  domain?: string
+
+  /**
+   * The path of the cookie. Either url or both domain and path must be specified.
+   */
+  path?: string
+
+  /**
+   * Unix time in seconds representing the cookie's expiration.
+   */
+  expires?: number
+
+  /**
+   * Whether the cookie is HTTP-only.
+   */
+  httpOnly?: boolean
+
+  /**
+   * Whether the cookie is secure (HTTPS-only).
+   */
+  secure?: boolean
+
+  /**
+   * SameSite attribute value.
+   */
+  sameSite?: 'Lax' | 'Strict' | 'None'
+}
+
+/**
+ * Options for clearing cookies. Filter which cookies should be deleted from the browser context.
+ *
+ * @use-when
+ * Use when calling `cookies.clear()` with filters to remove specific cookies.
+ *
+ * @dont-use-when
+ * Do not use if you want to clear all cookies (call `cookies.clear()` with no arguments instead).
+ */
+export interface ClearCookiesOptions {
+  /**
+   * Filter to clear cookies with this specific name.
+   */
+  name?: string
+
+  /**
+   * Filter to clear cookies belonging to this specific domain.
+   */
+  domain?: string
+
+  /**
+   * Filter to clear cookies matching this specific path.
+   */
+  path?: string
+}
+
+/**
  * Type representing all available commands.
  */
 export type CommandNames =
@@ -146,3 +228,6 @@ export type CommandNames =
   | 'screenshot'
   | 'emulate'
   | 'network:setOffline'
+  | 'cookies:add'
+  | 'cookies:getAll'
+  | 'cookies:clear'

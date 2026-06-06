@@ -575,3 +575,76 @@ describe('CommandsHandler - page screenshot', () => {
     assert.deepStrictEqual(screenshotCalls[0], { path: 'page.png', fullPage: true })
   })
 })
+
+describe('CommandsHandler - cookies', () => {
+  let mockPage: any
+  let exposedFn: (...args: any[]) => any
+  let contextCalls: { method: string; args: any[] }[] = []
+  const dummyCookies = [{ name: 'foo', value: 'bar' }]
+
+  beforeEach(() => {
+    contextCalls = []
+    mockPage = {
+      exposeFunction: async (name: string, fn: (...args: any[]) => any) => {
+        if (name === '__lupa_command__') {
+          exposedFn = fn
+        }
+        return { dispose: async () => {} }
+      },
+      context: () => ({
+        addCookies: async (...args: any[]) => {
+          contextCalls.push({ method: 'addCookies', args })
+        },
+        cookies: async (...args: any[]) => {
+          contextCalls.push({ method: 'cookies', args })
+          return dummyCookies
+        },
+        clearCookies: async (...args: any[]) => {
+          contextCalls.push({ method: 'clearCookies', args })
+        },
+      }),
+    }
+  })
+
+  test('calls context.addCookies', async () => {
+    const handler = new CommandsHandler(mockPage as Page)
+    await handler.boot()
+
+    const cookiesList = [{ name: 'auth', value: 'secret' }]
+    await exposedFn('cookies:add', { cookies: cookiesList })
+
+    assert.strictEqual(contextCalls.length, 1)
+    assert.deepStrictEqual(contextCalls[0], {
+      method: 'addCookies',
+      args: [cookiesList],
+    })
+  })
+
+  test('calls context.cookies', async () => {
+    const handler = new CommandsHandler(mockPage as Page)
+    await handler.boot()
+
+    const result = await exposedFn('cookies:getAll', { urls: ['https://example.com'] })
+
+    assert.strictEqual(contextCalls.length, 1)
+    assert.deepStrictEqual(contextCalls[0], {
+      method: 'cookies',
+      args: [['https://example.com']],
+    })
+    assert.deepStrictEqual(result, dummyCookies)
+  })
+
+  test('calls context.clearCookies', async () => {
+    const handler = new CommandsHandler(mockPage as Page)
+    await handler.boot()
+
+    const clearOptions = { name: 'auth' }
+    await exposedFn('cookies:clear', { options: clearOptions })
+
+    assert.strictEqual(contextCalls.length, 1)
+    assert.deepStrictEqual(contextCalls[0], {
+      method: 'clearCookies',
+      args: [clearOptions],
+    })
+  })
+})

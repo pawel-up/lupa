@@ -156,6 +156,14 @@ export class CommandsHandler {
           case 'network:setOffline':
             await this.page.context().setOffline(payload)
             break
+          case 'cookies:add':
+            await this.page.context().addCookies(payload.cookies)
+            break
+          case 'cookies:getAll':
+            return await this.page.context().cookies(payload.urls)
+          case 'cookies:clear':
+            await this.page.context().clearCookies(payload.options)
+            break
           case 'module:mock:register':
             registry.register(payload.testId, payload.path)
             break

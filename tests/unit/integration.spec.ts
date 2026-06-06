@@ -4,8 +4,8 @@ import { fork } from 'node:child_process'
 import path from 'node:path'
 import { unlink } from 'node:fs/promises'
 
-const BROWSER_TESTS_COUNT = 92
-const BROWSER_PASSED_TESTS_COUNT = 91
+const BROWSER_TESTS_COUNT = 93
+const BROWSER_PASSED_TESTS_COUNT = 92
 const BROWSER_SKIPPED_TESTS_COUNT = 1
 
 function forkSanitized(modulePath: string, args: string[], options: any = {}) {
@@ -120,7 +120,7 @@ test('Integration: Lupa Framework End-to-End', async (t) => {
     const output = stdout + '\n' + stderr
 
     assert.strictEqual(exitCode, 0, `Expected runner to exit with code 0. Output:\n${output}`)
-    assert.ok(output.includes('Total tests: 76'), `Expected list output to show 76 tests. Actual output: ${output}`)
+    assert.ok(output.includes('Total tests: 77'), `Expected list output to show 77 tests. Actual output: ${output}`)
     assert.ok(output.includes('Suite'), 'Expected list output to contain a table with Suite column.')
   })
 
