@@ -216,4 +216,11 @@ test.group('Network Interception', () => {
     })
     assert.include(calledTwiceError.message, 'Custom calledTwice message')
   }).timeout(5000)
+
+  test('simulates offline behavior using network.setOffline', async ({ network, assert }) => {
+    await network.setOffline(true)
+    await assert.rejectsNetworkError(async () => {
+      await fetch('/api/user')
+    })
+  })
 })

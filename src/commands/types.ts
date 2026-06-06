@@ -144,3 +144,5 @@ export type CommandNames =
   | 'mouse'
   | 'keyboard'
   | 'screenshot'
+  | 'emulate'
+  | 'network:setOffline'

@@ -10,6 +10,7 @@ import {
   keyboard,
   query,
   screenshot,
+  emulation,
 } from '../../../src/commands/index.js'
 
 test.group('Browser Commands', (group) => {
@@ -169,5 +170,40 @@ test.group('Browser Commands', (group) => {
   test('locator.screenshot takes element screenshot without throwing', async () => {
     const loc = query({ css: '#test-container' })
     await loc.screenshot({ path: 'locator-screenshot.png' })
+  })
+
+  test('emulation.setViewport changes the window dimensions', async ({ assert }) => {
+    await emulation.setViewport({ width: 800, height: 600 })
+    assert.equal(window.innerWidth, 800)
+    assert.equal(window.innerHeight, 600)
+  })
+
+  test('emulation.emulateMedia changes the media features', async ({ assert }) => {
+    await emulation.emulateMedia({ colorScheme: 'dark' })
+    assert.isTrue(window.matchMedia('(prefers-color-scheme: dark)').matches)
+
+    await emulation.emulateMedia({ colorScheme: 'light' })
+    assert.isTrue(window.matchMedia('(prefers-color-scheme: light)').matches)
+  })
+
+  test('emulation geolocation and permission helper functions work', async ({ assert }) => {
+    await emulation.grantPermissions(['geolocation'])
+    await emulation.setGeolocation({ latitude: 52.52, longitude: 13.405 })
+
+    const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject)
+    })
+    assert.equal(pos.coords.latitude, 52.52)
+    assert.equal(pos.coords.longitude, 13.405)
+
+    await emulation.clearPermissions()
+    await emulation.setGeolocation()
+  })
+
+  test('emulation.setOffline toggles browser offline state', async ({ assert }) => {
+    await emulation.setOffline(true)
+    assert.isFalse(navigator.onLine)
+    await emulation.setOffline(false)
+    assert.isTrue(navigator.onLine)
   })
 })

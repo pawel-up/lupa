@@ -40,9 +40,20 @@ import type {
   ElementScreenshotOptions,
 } from './locator.js'
 import type { PageScreenshotOptions } from './screenshot.js'
+import type { Geolocation, GrantPermissionsOptions } from './emulation.js'
 import debuglog from '../runner/debug.js'
 import { NetworkCommand } from '../network/network_command.js'
 import { registry } from '../module-mock/registry.js'
+
+export interface EmulatePayload {
+  action: 'setViewport' | 'emulateMedia' | 'setGeolocation' | 'grantPermissions' | 'clearPermissions' | 'setOffline'
+  viewport?: Viewport
+  media?: Media
+  geolocation?: Geolocation
+  permissions?: string[]
+  permissionOptions?: GrantPermissionsOptions
+  offline?: boolean
+}
 
 function isTypePayload(payload: SendKeysPayload): payload is TypePayload {
   return 'type' in payload
@@ -118,6 +129,9 @@ export class CommandsHandler {
           case 'screenshot':
             await this.handleScreenshot(payload)
             break
+          case 'emulate':
+            await this.handleEmulate(payload as EmulatePayload)
+            break
 
           case 'selectOption':
             await this.handleSelectOption(payload)
@@ -138,6 +152,9 @@ export class CommandsHandler {
             break
           case 'network:mock:ignoreCors':
             this.network.setIgnoreCors(payload)
+            break
+          case 'network:setOffline':
+            await this.page.context().setOffline(payload)
             break
           case 'module:mock:register':
             registry.register(payload.testId, payload.path)
@@ -187,6 +204,46 @@ export class CommandsHandler {
    */
   protected async handleEmulateMedia(payload: Media) {
     await this.page.emulateMedia(payload)
+  }
+
+  /**
+   * Handle emulate command.
+   */
+  protected async handleEmulate(payload: EmulatePayload) {
+    switch (payload.action) {
+      case 'setViewport':
+        if (payload.viewport) {
+          await this.page.setViewportSize(payload.viewport)
+        }
+        break
+      case 'emulateMedia':
+        if (payload.media) {
+          await this.page.emulateMedia(payload.media)
+        }
+        break
+      case 'setGeolocation':
+        if (payload.geolocation) {
+          await this.page.context().setGeolocation(payload.geolocation)
+        } else {
+          await this.page.context().setGeolocation(null)
+        }
+        break
+      case 'grantPermissions':
+        if (payload.permissions) {
+          await this.page.context().grantPermissions(payload.permissions, payload.permissionOptions)
+        }
+        break
+      case 'clearPermissions':
+        await this.page.context().clearPermissions()
+        break
+      case 'setOffline':
+        if (payload.offline !== undefined) {
+          await this.page.context().setOffline(payload.offline)
+        }
+        break
+      default:
+        throw new Error(`Unknown emulation action: ${(payload as any).action}`)
+    }
   }
 
   /**

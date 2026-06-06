@@ -150,6 +150,33 @@ export class Network {
   }
 
   /**
+   * Toggles the offline state of the browser context.
+   *
+   * > [!IMPORTANT]
+   * > **Automatic Cleanup**: Unlike `emulation.setOffline(...)`, this method is scoped to the current test.
+   * > The network offline state will automatically revert back to online mode at the end of the test.
+   *
+   * @example
+   * ```ts
+   * test('simulates offline behavior', async ({ network }) => {
+   *   await network.setOffline(true)
+   *   // verify application handles network failure...
+   * })
+   * ```
+   *
+   * @param offline Whether to set the network offline.
+   */
+  async setOffline(offline: boolean): Promise<void> {
+    await window.__lupa_command__?.('network:setOffline', offline)
+
+    if (this.context && this.context.test) {
+      this.context.cleanup(async () => {
+        await window.__lupa_command__?.('network:setOffline', false)
+      })
+    }
+  }
+
+  /**
    * Registers a new network mock to intercept requests matching the provided criteria.
    * Intercepted requests can be bypassed, stubbed with static payloads, or handled by dynamic closures.
    *

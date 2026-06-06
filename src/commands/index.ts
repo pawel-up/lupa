@@ -38,6 +38,7 @@ export {
  *
  * @param viewport - The viewport size.
  * @returns A promise that resolves when the viewport size is set.
+ * @deprecated Use the `emulation` instance instead (e.g., `await emulation.setViewport(...)`).
  */
 export function setViewport(viewport: Viewport): Promise<void> {
   return executeCommand('setViewport', viewport)
@@ -73,6 +74,7 @@ export function setViewport(viewport: Viewport): Promise<void> {
  *
  * @param media - The media features to emulate.
  * @returns A promise that resolves when the media features are emulated.
+ * @deprecated Use the `emulation` instance instead (e.g., `await emulation.emulateMedia(...)`).
  */
 export function emulateMedia(media: Media): Promise<void> {
   return executeCommand('emulateMedia', media)
@@ -116,6 +118,7 @@ export function sendKeys(payload: SendKeysPayload): Promise<void> {
 export { keyboard, Keyboard, type KeyboardPressOptions, type KeyboardTypeOptions } from './keyboard.js'
 
 export { screenshot, Screenshot, type PageScreenshotOptions } from './screenshot.js'
+export { emulation, Emulation, type Geolocation, type GrantPermissionsOptions } from './emulation.js'
 
 export {
   mouse,
