@@ -32,7 +32,6 @@ export const listCommand = new Command('list')
   .option('--search-files <queries...>', 'Search for test files with text search queries')
   .option('--search-tests <queries...>', 'Search for test titles with text search queries')
   .addOption(new Option('--format <format>', 'Output format for the list').choices(['table', 'json']).default('table'))
-  .allowUnknownOption()
   .action(
     async (
       suites: string[],

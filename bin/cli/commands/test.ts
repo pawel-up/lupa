@@ -69,7 +69,6 @@ export const testCommand = new Command('test')
   .option('--coverage', 'Enable code coverage reporting')
   .option('--coverage-reporters <reporters...>', 'Specify coverage reporters (e.g. text, html, lcov)')
   .option('--coverage-dir <dir>', 'Specify the directory to write coverage reports to')
-  .allowUnknownOption()
   .addHelpText('after', examples)
   .addHelpText('after', notes)
   .action(async (suites, options, command) => {
