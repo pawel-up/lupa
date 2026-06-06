@@ -135,21 +135,77 @@ export abstract class BaseReporter {
   }
 
   /**
+   * Check if running with multiple browsers
+   */
+  protected isMultipleBrowsers(): boolean {
+    return (this.runner?.poolManager?.browserNames.length ?? 0) > 1
+  }
+
+  /**
+   * Get formatted browser name from browser ID
+   */
+  protected getBrowserName(browserId?: string): string | undefined {
+    if (!browserId) {
+      return undefined
+    }
+
+    let rawBrowserName: string | undefined = undefined
+    const poolManager = this.runner?.poolManager
+    if (poolManager) {
+      const chunk = poolManager.getChunk(browserId)
+      if (chunk) {
+        rawBrowserName = chunk.browserName
+      }
+    }
+
+    if (!rawBrowserName) {
+      for (const name of ['chromium', 'firefox', 'webkit']) {
+        if (browserId.startsWith(name)) {
+          rawBrowserName = name
+          break
+        }
+      }
+    }
+
+    if (!rawBrowserName) {
+      rawBrowserName = browserId
+    }
+
+    if (rawBrowserName === 'chromium') {
+      return 'Chromium'
+    }
+    if (rawBrowserName === 'firefox') {
+      return 'Firefox'
+    }
+    if (rawBrowserName === 'webkit') {
+      return 'WebKit'
+    }
+    return rawBrowserName.charAt(0).toUpperCase() + rawBrowserName.slice(1)
+  }
+
+  /**
    * Aggregates errors tree to a flat array
    */
   protected aggregateErrors(summary: RunnerSummary) {
     const errorsList: { phase: string; title: string; error: Error }[] = []
+    const isMultiBrowser = this.isMultipleBrowsers()
 
     summary.failureTree.forEach((suite) => {
-      suite.errors.forEach((error) => errorsList.push({ title: suite.name, ...error }))
+      const suiteBrowser = isMultiBrowser ? this.getBrowserName(suite.browserId) : undefined
+      const suiteSuffix = suiteBrowser ? `: Failed on ${suiteBrowser}` : ''
+
+      suite.errors.forEach((error) => errorsList.push({ title: `${suite.name}${suiteSuffix}`, ...error }))
 
       suite.children.forEach((testOrGroup) => {
         /**
          * Suite child is a test
          */
         if (testOrGroup.type === 'test') {
+          const testBrowser = isMultiBrowser ? this.getBrowserName(testOrGroup.browserId) : undefined
+          const testSuffix = testBrowser ? `: Failed on ${testBrowser}` : ''
+
           testOrGroup.errors.forEach((error) => {
-            errorsList.push({ title: `${suite.name} / ${testOrGroup.title}`, ...error })
+            errorsList.push({ title: `${suite.name} / ${testOrGroup.title}${testSuffix}`, ...error })
           })
           return
         }
@@ -157,12 +213,18 @@ export abstract class BaseReporter {
         /**
          * Suite child is a group
          */
+        const groupBrowser = isMultiBrowser ? this.getBrowserName(testOrGroup.browserId) : undefined
+        const groupSuffix = groupBrowser ? `: Failed on ${groupBrowser}` : ''
+
         testOrGroup.errors.forEach((error) => {
-          errorsList.push({ title: testOrGroup.name, ...error })
+          errorsList.push({ title: `${testOrGroup.name}${groupSuffix}`, ...error })
         })
         testOrGroup.children.forEach((test) => {
+          const testBrowser = isMultiBrowser ? this.getBrowserName(test.browserId) : undefined
+          const testSuffix = testBrowser ? `: Failed on ${testBrowser}` : ''
+
           test.errors.forEach((error) => {
-            errorsList.push({ title: `${testOrGroup.name} / ${test.title}`, ...error })
+            errorsList.push({ title: `${testOrGroup.name} / ${test.title}${testSuffix}`, ...error })
           })
         })
       })
@@ -198,13 +260,19 @@ export abstract class BaseReporter {
       framesMaxLimit: this.options.framesMaxLimit,
     })
 
+    const isMultiBrowser = this.isMultipleBrowsers()
+
     errorPrinter.printSectionHeader('TEST FILE IMPORT ERRORS')
     await errorPrinter.printErrors(
-      summary.importErrors.map((ie) => ({
-        title: `Cannot load test file: ${ie.file}`,
-        phase: 'import',
-        error: ie.error,
-      }))
+      summary.importErrors.map((ie) => {
+        const browser = isMultiBrowser ? this.getBrowserName(ie.browserId) : undefined
+        const suffix = browser ? `: Failed on ${browser}` : ''
+        return {
+          title: `Cannot load test file: ${ie.file}${suffix}`,
+          phase: 'import',
+          error: ie.error,
+        }
+      })
     )
   }
 

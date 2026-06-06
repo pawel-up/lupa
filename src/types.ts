@@ -532,6 +532,10 @@ export interface RunnerImportErrorNode {
    * The error that occurred
    */
   error: TestError
+  /**
+   * Browser ID where the error occurred
+   */
+  browserId?: string
 }
 
 /**
@@ -846,6 +850,10 @@ export interface FailureTreeTestNode {
    * Test errors
    */
   errors: TestEndNode['errors']
+  /**
+   * Browser ID where the error occurred
+   */
+  browserId?: string
 }
 
 /**
@@ -868,6 +876,10 @@ export interface FailureTreeGroupNode {
    * Group children
    */
   children: FailureTreeTestNode[]
+  /**
+   * Browser ID where the error occurred
+   */
+  browserId?: string
 }
 
 /**
@@ -890,6 +902,10 @@ export interface FailureTreeSuiteNode {
    * Suite children
    */
   children: (FailureTreeTestNode | FailureTreeGroupNode)[]
+  /**
+   * Browser ID where the error occurred
+   */
+  browserId?: string
 }
 
 /**

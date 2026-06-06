@@ -48,7 +48,7 @@ export class Tracker {
    */
   #failureTree: FailureTreeSuiteNode[] = []
   #failedTestsTitles: string[] = []
-  #importErrors: { file: string; error: Error }[] = []
+  #importErrors: RunnerEvents['runner:import_error'][] = []
 
   #getSuiteKey(payload: { browserId: string; name: string }) {
     return `${payload.browserId}:${payload.name}`
@@ -67,6 +67,7 @@ export class Tracker {
       type: 'suite',
       errors: [],
       children: [],
+      browserId: payload.browserId,
     })
   }
 
@@ -99,6 +100,7 @@ export class Tracker {
       type: 'group',
       errors: [],
       children: [],
+      browserId: payload.browserId,
     })
   }
 
@@ -185,6 +187,7 @@ export class Tracker {
       type: 'test' as const,
       title: payload.title.expanded,
       errors: payload.errors,
+      browserId: payload.browserId,
     }
 
     /**
