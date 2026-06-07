@@ -46,9 +46,21 @@ export default defineConfig({
           { text: 'Test Suites', link: '/guide/test-suites' },
           { text: 'Grouping Tests', link: '/guide/grouping-tests' },
           { text: 'Assertions', link: '/guide/assertions' },
-          { text: 'Commands & Locator', link: '/guide/commands' },
           { text: 'Network Mocking', link: '/guide/network-mocking' },
           { text: 'Exceptions', link: '/guide/exceptions' },
+        ],
+      },
+      {
+        text: 'Browser Commands',
+        items: [
+          { text: 'Overview', link: '/guide/commands' },
+          { text: 'Locator API', link: '/guide/locator' },
+          { text: 'Keyboard API', link: '/guide/keyboard' },
+          { text: 'Mouse API', link: '/guide/mouse' },
+          { text: 'Cookies API', link: '/guide/cookies' },
+          { text: 'FileChooser Interception', link: '/guide/file-chooser' },
+          { text: 'Emulation API', link: '/guide/emulation' },
+          { text: 'Screenshot API', link: '/guide/screenshot' },
         ],
       },
       {

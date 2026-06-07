@@ -87,7 +87,7 @@ If you need deeper context on specific Lupa features, read the relevant guide in
 
 - **Core Concepts:** [`introduction.md`](./references/guide/introduction.md), [`installation.md`](./references/guide/installation.md), [`cli.md`](./references/guide/cli.md)
 - **Writing Tests:** [`test-suites.md`](./references/guide/test-suites.md), [`grouping-tests.md`](./references/guide/grouping-tests.md), [`lifecycle-hooks.md`](./references/guide/lifecycle-hooks.md)
-- **Assertions & DOM:** [`assertions.md`](./references/guide/assertions.md), [`commands.md`](./references/guide/commands.md)
+- **Assertions & Browser Commands:** [`assertions.md`](./references/guide/assertions.md), [`commands.md`](./references/guide/commands.md) (Overview), [`locator.md`](./references/guide/locator.md), [`keyboard.md`](./references/guide/keyboard.md), [`mouse.md`](./references/guide/mouse.md), [`cookies.md`](./references/guide/cookies.md), [`file-chooser.md`](./references/guide/file-chooser.md), [`emulation.md`](./references/guide/emulation.md), [`screenshot.md`](./references/guide/screenshot.md)
 - **Network Interception:** [`network-mocking.md`](./references/guide/network-mocking.md)
 - **ESM Mocking:** [`module-mocking.md`](./references/guide/module-mocking.md)
 - **Advanced Flow Control:** [`filtering-tests.md`](./references/guide/filtering-tests.md), [`skipping-tests.md`](./references/guide/skipping-tests.md), [`exceptions.md`](./references/guide/exceptions.md)

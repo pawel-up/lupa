@@ -1,128 +1,57 @@
-# Browser Commands
+# Browser Commands Overview
 
-Lupa provides a powerful set of commands to interact with the browser and DOM elements natively during your tests. These commands are available via the `@pawel-up/lupa/commands` module.
+Lupa provides a powerful set of APIs to interact with the browser and DOM elements natively during your tests. These APIs are exported from the `@pawel-up/lupa/commands` module.
 
-The commands are fully typed and use RPC to communicate directly with the underlying browser (Playwright) runner.
-
-## Locator API
-
-The `query()` function allows you to select elements on the page using a variety of semantic locators and CSS/XPath selectors. It returns a `Locator` object that you can use to interact with the element. Also note that the Locator api is heavily inspired by Playwright's Locator api,
-but it is not the same. Only methods relevant to testing (in our opinion) are exposed.
-
-```ts
-import { query } from '@pawel-up/lupa/commands'
-
-// Semantic locators
-await query({ role: 'button' }).click()
-await query({ label: 'Username' }).fill('admin')
-await query({ placeholder: 'Search...' }).fill('lupa')
-await query({ text: 'Submit' }).click()
-await query({ altText: 'Profile Picture' }).click()
-await query({ title: 'Close' }).click()
-await query({ testId: 'submit-button' }).click()
-
-// Standard locators
-await query({ css: '.my-class' }).hover()
-await query({ xpath: '//div/p' }).click()
-```
-
-### Locator Actions
-
-Once you've selected an element with `query()`, you can execute the following actions on it:
-
-* **`click(options?)`**: Clicks the element.
-* **`dblclick(options?)`**: Double-clicks the element.
-* **`fill(text, options?)`**: Fills an `<input>`, `<textarea>`, or `[contenteditable]` element.
-* **`check(options?)`**: Checks a checkbox or radio button.
-* **`uncheck(options?)`**: Unchecks a checkbox or radio button.
-* **`clear(options?)`**: Clears the input field.
-* **`hover(options?)`**: Hovers the mouse over the element.
-* **`press(key, options?)`**: Focuses the element and presses a specific key (e.g., `'Enter'`).
-* **`tap(options?)`**: Taps the element (useful for mobile emulation).
-* **`blur(options?)`**: Removes focus from the element.
-
-*Note: All actions are asynchronous and should be `await`ed.*
+All browser commands are fully typed and use a secure cross-process RPC bridge to communicate between your test context (running inside the Vite development server) and the underlying Playwright runner.
 
 ---
 
-## Global Browser Commands
+## How It Works
 
-In addition to interacting with specific elements, you can also manipulate the global state of the browser, such as the viewport size, mouse, keyboard, and emulated media.
+When you invoke a Lupa command in your test code, Lupa serializes the call and sends it via WebSocket to the Node.js runner. The runner executes the action natively using the Playwright API and returns the response:
 
-### `setViewport`
-
-Sets the viewport size of the browser.
-
-```ts
-import { setViewport } from '@pawel-up/lupa/commands'
-
-await setViewport({
-  width: 1024,
-  height: 768,
-})
+```
++-----------------------------------+          WebSocket          +-----------------------------------+
+|            Vite Browser           |  ========================>  |          Node.js Runner           |
+| (Your Test & Lupa Client Command) |  <========================  | (Playwright Browser / RPC Server) |
++-----------------------------------+            RPC              +-----------------------------------+
 ```
 
-### `emulateMedia`
+Because of this RPC bridge:
+- **All commands are asynchronous** and return promises that must be `await`ed.
+- DOM elements can be manipulated safely without having to deal with cross-origin or security constraints.
+- Native keyboard, mouse, cookie, screenshot, and file uploads are simulated perfectly.
 
-Emulates browser media features, such as screen/print or color schemes, which is useful for testing CSS media queries like dark mode.
+---
 
-```ts
-import { emulateMedia } from '@pawel-up/lupa/commands'
+## Command APIs
 
-// Test dark mode
-await emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' })
+Lupa provides the following specialized APIs to manage your browser testing environment:
 
-// Test print styles
-await emulateMedia({ media: 'print' })
-```
+### [Locator API](./locator.md)
+Allows you to select DOM elements using semantic or standard queries and interact with them. It automatically waits for elements to be visible, enabled, and interactive.
+* *Actions*: `click()`, `fill()`, `check()`, `uncheck()`, `selectOption()`, `setInputFiles()`, `screenshot()`.
 
-### `sendKeys`
+### [Keyboard API](./keyboard.md)
+Simulates low-level physical keystrokes, shortcuts, and text typing page-wide.
+* *Actions*: `keyboard.press()`, `keyboard.type()`, `keyboard.down()`, `keyboard.up()`, `keyboard.insertText()`.
 
-Sends a string of keys for the browser to press natively (all at once like a shortcut, or typed in sequence).
+### [Mouse API](./mouse.md)
+Enables raw pointer inputs, coordinates-based dragging/clicking, and custom cursor paths.
+* *Actions*: `mouse.move()`, `mouse.click()`, `mouse.down()`, `mouse.up()`, `mouse.reset()`.
 
-```ts
-import { sendKeys } from '@pawel-up/lupa/commands'
+### [Cookies API](./cookies.md)
+Allows reading, writing, and clearing cookies in the active browser context. Ideal for authentication seed tests.
+* *Actions*: `cookies.add()`, `cookies.getAll()`, `cookies.clear()`.
 
-// Press a shortcut
-await sendKeys({ press: 'Shift+a' })
-await sendKeys({ press: 'Tab' })
+### [FileChooser Interception](./file-chooser.md)
+Intercepts native browser file upload dialogs to assign files programmatically during tests.
+* *Actions*: `fileChooser.waitForEvent()`, `fileChooser.setFiles()`.
 
-// Type a sequence of characters
-await sendKeys({ type: 'Hello World' })
-```
+### [Emulation API](./emulation.md)
+Customizes browser environment features, including viewport sizing, media color schemes (dark mode/print), geo-locations, API permissions, and offline mode.
+* *Actions*: `emulation.setViewport()`, `emulation.emulateMedia()`, `emulation.setGeolocation()`, `emulation.grantPermissions()`, `emulation.setOffline()`.
 
-### `sendMouse`
-
-Sends raw mouse events (move, click, down, up) to specific coordinates.
-
-*WARNING*: When holding down a mouse button, the mouse stays in that state until explicitly released. Use `resetMouse()` to clean up state between tests.
-
-```ts
-import { sendMouse } from '@pawel-up/lupa/commands'
-
-await sendMouse({ type: 'move', position: [100, 100] })
-await sendMouse({ type: 'down', button: 'middle' })
-```
-
-### `resetMouse`
-
-Resets the mouse position to `(0, 0)` and releases any held mouse buttons. Highly recommended in an `afterEach` hook if you are using `sendMouse`.
-
-```ts
-import { resetMouse } from '@pawel-up/lupa/commands'
-
-await resetMouse()
-```
-
-### `selectOption`
-
-Selects an option within a `<select>` element by its value.
-
-```ts
-import { selectOption } from '@pawel-up/lupa/commands'
-
-await selectOption({ 
-  selector: '#my-dropdown', 
-  value: 'first-option' 
-})
-```
+### [Screenshot API](./screenshot.md)
+Captures page-wide or element-specific screenshots and writes them directly to your workspace filesystem.
+* *Actions*: `screenshot.take()`, `screenshot.takeOf()`.
