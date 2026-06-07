@@ -1,3 +1,25 @@
+## [0.4.7](https://github.com/pawel-up/lupa/compare/v0.4.6...v0.4.7) (2026-06-07)
+
+
+### Bug Fixes
+
+* add dragTo locator action and createFileDragEvent testing helper ([36aa589](https://github.com/pawel-up/lupa/commit/36aa589759c9ae210ff136b94bc1563894e6ec46))
+* add emulation command suite for viewport, media, geolocation, permissions, and offline state ([1b7aaed](https://github.com/pawel-up/lupa/commit/1b7aaeda1069c5128aa5e667233da6f1727a9bfa))
+* add screenshot command for full-page and element-specific captures ([af6bf0b](https://github.com/pawel-up/lupa/commit/af6bf0ba4fd1a181b845d66cdacd68139bbfd89d))
+* add selectOption support to Locator and deprecate the global command function ([0dcb2d3](https://github.com/pawel-up/lupa/commit/0dcb2d3e482565d507b9f7ebc05baa95cd1a384f))
+* adding --pined to the list command filters ([6a25592](https://github.com/pawel-up/lupa/commit/6a25592af91a3f5a3e51cff2a4fc305ad82c8598))
+* adding docs and skills ([2f6af8a](https://github.com/pawel-up/lupa/commit/2f6af8a4266ea458ad844025352bbd610cad7002))
+* adding file discovery progress ([50cbce5](https://github.com/pawel-up/lupa/commit/50cbce5e5a87ce4910d7a140fade6313f0c49709))
+* expand assertion rejects/doesNotReject with browser-specific maps and pattern arrays ([86c2dad](https://github.com/pawel-up/lupa/commit/86c2dada2b1bf1a5b4f5efb536488fdc85f2d4ce))
+* implement cookies command API for adding, retrieving, and clearing browser cookies ([f3da839](https://github.com/pawel-up/lupa/commit/f3da839b3956700a282fd95d95764c43d5967ffa))
+* implement file upload support with new FileChooser service and locator.setInputFiles method ([60cda8d](https://github.com/pawel-up/lupa/commit/60cda8db72dca7655db5df01ffa4af2e390c7d39))
+* implement keyboard commands and locator.pressSequentially action ([21cc315](https://github.com/pawel-up/lupa/commit/21cc3154bedb187bf8aae05043eb43f9385263a3))
+* include browser name in error reports when running tests across multiple browsers ([9216f6c](https://github.com/pawel-up/lupa/commit/9216f6c35d809a05a82167fcaf6889f5e72f1c09))
+* introduce Mouse command class for enhanced coordinate-based interaction ([e0f1191](https://github.com/pawel-up/lupa/commit/e0f1191eed591dec0539242dc9faccef0867afd7))
+* progress rendered per browser ([794da61](https://github.com/pawel-up/lupa/commit/794da613ba194fc07e9d1ed74639f67b297b4596))
+* remove allowUnknownOption from test and list CLI commands ([f1105d8](https://github.com/pawel-up/lupa/commit/f1105d84583b608c7cb6758ad334c9cdc2afaca6))
+* update bail CLI options with layer validation and enable parallel execution configuration ([b775db2](https://github.com/pawel-up/lupa/commit/b775db2d6f3785766a4ec65acc56d95cfd4164c4))
+
 ## [0.4.6](https://github.com/pawel-up/lupa/compare/v0.4.5...v0.4.6) (2026-06-04)
 
 
