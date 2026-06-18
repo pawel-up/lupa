@@ -98,31 +98,39 @@ export abstract class BaseReporter {
    */
   protected printAggregates(summary: RunnerSummary) {
     const tests: string[] = []
+    const browserCount = this.runner?.poolManager?.browserNames.length || 1
+
+    const passed = Math.round(summary.aggregates.passed / browserCount)
+    const failed = Math.round(summary.aggregates.failed / browserCount)
+    const todo = Math.round(summary.aggregates.todo / browserCount)
+    const skipped = Math.round(summary.aggregates.skipped / browserCount)
+    const regression = Math.round(summary.aggregates.regression / browserCount)
+    const total = Math.round(summary.aggregates.total / browserCount)
 
     /**
      * Set value for tests row
      */
-    if (summary.aggregates.passed) {
-      tests.push(colors.green(`${summary.aggregates.passed} passed`))
+    if (passed) {
+      tests.push(colors.green(`${passed} passed`))
     }
-    if (summary.aggregates.failed) {
-      tests.push(colors.red(`${summary.aggregates.failed} failed`))
+    if (failed) {
+      tests.push(colors.red(`${failed} failed`))
     }
-    if (summary.aggregates.todo) {
-      tests.push(colors.cyan(`${summary.aggregates.todo} todo`))
+    if (todo) {
+      tests.push(colors.cyan(`${todo} todo`))
     }
-    if (summary.aggregates.skipped) {
-      tests.push(colors.yellow(`${summary.aggregates.skipped} skipped`))
+    if (skipped) {
+      tests.push(colors.yellow(`${skipped} skipped`))
     }
-    if (summary.aggregates.regression) {
-      tests.push(colors.magenta(`${summary.aggregates.regression} regression`))
+    if (regression) {
+      tests.push(colors.magenta(`${regression} regression`))
     }
 
     this.getRunnerOrThrow().summaryBuilder.use(() => {
       return [
         {
           key: colors.dim('Tests'),
-          value: `${tests.join(', ')} ${colors.dim(`(${summary.aggregates.total})`)}`,
+          value: `${tests.join(', ')} ${colors.dim(`(${total})`)}`,
         },
         {
           key: colors.dim('Time'),
