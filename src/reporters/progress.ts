@@ -216,20 +216,22 @@ export class ProgressReporter extends BaseReporter {
     const completedBlocks = createProgressBlocks(completedFiles, totalExpected)
     const startedBlocks = createProgressBlocks(startedFiles, totalExpected)
 
-    const barChars: string[] = []
-    for (let i = 0; i < PROGRESS_WIDTH; i++) {
-      const completedChar = completedBlocks[i]
-      const startedChar = startedBlocks[i]
-
-      if (completedChar !== ' ') {
-        barChars.push(colors.white(completedChar))
-      } else if (startedChar !== ' ') {
-        barChars.push(colors.gray(startedChar))
-      } else {
-        barChars.push(' ')
-      }
+    let completedWidth = 0
+    while (completedWidth < PROGRESS_WIDTH && completedBlocks[completedWidth] !== ' ') {
+      completedWidth++
     }
-    const bar = `|${barChars.join('')}|`
+
+    let startedWidth = 0
+    while (startedWidth < PROGRESS_WIDTH && startedBlocks[startedWidth] !== ' ') {
+      startedWidth++
+    }
+
+    const completedPart = completedWidth > 0 ? colors.white(completedBlocks.slice(0, completedWidth)) : ''
+    const startedPart =
+      startedWidth > completedWidth ? colors.gray(startedBlocks.slice(completedWidth, startedWidth)) : ''
+    const emptyPart = ' '.repeat(PROGRESS_WIDTH - startedWidth)
+
+    const bar = `|${completedPart}${startedPart}${emptyPart}|`
 
     const prefix = `${browserName}:`.padEnd(maxBrowserNameLength + 2)
     const message: string[] = [prefix + bar, `${completedFiles}/${totalExpected}`, 'test files |']

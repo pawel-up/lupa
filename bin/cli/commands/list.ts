@@ -101,11 +101,10 @@ export const listCommand = new Command('list')
 
           if (options.format === 'json') {
             console.log(JSON.stringify(relativePaths, null, 2))
-            return
+          } else {
+            printFilesTable(relativePaths)
           }
-
-          printFilesTable(relativePaths)
-          return
+          process.exit(0)
         }
 
         configure(config, cliArgs)
@@ -129,16 +128,17 @@ export const listCommand = new Command('list')
         if (options.pinned || (options.searchTests && options.searchTests.length > 0)) {
           if (options.format === 'json') {
             console.log(JSON.stringify({ success: true, list }, null, 2))
-            return
+          } else {
+            printTable(list)
           }
-          printTable(list)
         } else {
           if (options.format === 'json') {
             console.log(JSON.stringify(result, null, 2))
-            return
+          } else {
+            printTable(list)
           }
-          printTable(list)
         }
+        process.exit(0)
       } catch (err) {
         renderCriticalError('E_TEST_LIST_FAILED', 'Failed to list tests.', err)
       }
