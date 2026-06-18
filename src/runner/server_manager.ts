@@ -101,6 +101,24 @@ export class ServerManager {
         fs: {
           allow: [process.cwd(), join(__dirname, '../')],
         },
+        watch: {
+          ignored: [
+            ...(config.exclude || []),
+            '**/node_modules/**',
+            '**/.git/**',
+            '**/dist/**',
+            '**/coverage/**',
+            '**/docs/**',
+            '**/.agents/**',
+            '**/.github/**',
+            '**/.husky/**',
+            '**/skills/**',
+            '**/architecture/**',
+            '**/bin/**',
+            '**/scratch-test/**',
+            '**/scripts/**',
+          ],
+        },
       },
       resolve: {
         dedupe: ['lit-html', 'lit'],
@@ -126,6 +144,11 @@ export class ServerManager {
 
     if (finalViteConfig.server?.middlewareMode) {
       throw new Error('Lupa cannot run with server.middlewareMode enabled in your Vite configuration.')
+    }
+
+    if (!config.watch) {
+      finalViteConfig.server = finalViteConfig.server || {}
+      finalViteConfig.server.watch = null
     }
 
     try {
