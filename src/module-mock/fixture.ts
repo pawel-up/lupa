@@ -82,7 +82,7 @@ export class ModuleMock {
    * @example
    * await module.import('../src/ui-dashboard.js', import.meta.url)
    */
-  async import<T = Record<string, unknown>>(path: string, importMetaUrl: string): Promise<T> {
+  async ['import']<T = Record<string, unknown>>(path: string, importMetaUrl: string): Promise<T> {
     const url = new URL(path, importMetaUrl)
     url.searchParams.set('lupa-mock-id', this.#mockId)
     return import(/* @vite-ignore */ url.href)

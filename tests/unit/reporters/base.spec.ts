@@ -81,6 +81,47 @@ test('BaseReporter', async (t) => {
     assert.match(output, /\(10\)/) // total
   })
 
+  await t.test('prints aggregates with import errors', () => {
+    const reporter = new DummyReporter()
+    const summaryBuilder = new SummaryBuilder()
+    const runner = { summaryBuilder } as unknown as Runner
+    const emitter = new Emitter<RunnerEvents>()
+    reporter.boot(runner, emitter, {} as any)
+
+    const summary: RunnerSummary = {
+      aggregates: {
+        total: 10,
+        passed: 5,
+        failed: 0,
+        todo: 1,
+        skipped: 1,
+        regression: 0,
+      },
+      duration: 120,
+      hasError: true,
+      failureTree: [],
+      failedTestsTitles: [],
+      importErrors: [
+        {
+          file: 'a.spec.ts',
+          error: new Error('Cannot import'),
+          browserId: 'chromium-0',
+        },
+      ],
+    }
+
+    reporter.testPrintAggregates(summary)
+
+    // We expect SummaryBuilder to have output something
+    assert.ok(logs.length > 0)
+    const output = logs.join('\n')
+    assert.match(output, /5 passed/)
+    assert.match(output, /1 failed/)
+    assert.match(output, /1 todo/)
+    assert.match(output, /1 skipped/)
+    assert.match(output, /\(11\)/) // total (10 + 1 import error)
+  })
+
   await t.test('aggregates errors from failure tree', () => {
     const reporter = new DummyReporter()
 

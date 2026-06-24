@@ -134,7 +134,35 @@ export class ServerManager {
         include: ['axe-core', 'lit-html', 'lit', 'chai', 'assertion-error', '@poppinss/macroable', '@jarrodek/debug'],
         exclude: ['@pawel-up/lupa'],
       },
-      plugins: [lupaHarnessPlugin(poolManager, resolvedPlugins, config, harnessPath)],
+      plugins: [
+        {
+          name: 'lupa:vite-8-import-regression-fix',
+          enforce: 'pre',
+          transform(code: string, id: string) {
+            if (
+              id.includes('node_modules') ||
+              id.endsWith('.ts') ||
+              id.endsWith('.js') ||
+              id.endsWith('.tsx') ||
+              id.endsWith('.jsx')
+            ) {
+              if (code.includes('import')) {
+                const updated = code.replace(
+                  /\b(async|public|private|protected|override|static)\s+import\s*(?=[(<])/g,
+                  "$1 ['import']"
+                )
+                if (updated !== code) {
+                  return {
+                    code: updated,
+                    map: null,
+                  }
+                }
+              }
+            }
+          },
+        },
+        lupaHarnessPlugin(poolManager, resolvedPlugins, config, harnessPath),
+      ],
     }
 
     const finalViteConfig = config.vite ? mergeConfig(baseViteConfig, config.vite) : baseViteConfig

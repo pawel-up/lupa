@@ -101,11 +101,12 @@ export abstract class BaseReporter {
     const browserCount = this.runner?.poolManager?.browserNames.length || 1
 
     const passed = Math.round(summary.aggregates.passed / browserCount)
-    const failed = Math.round(summary.aggregates.failed / browserCount)
+    const importErrors = Math.round((summary.importErrors?.length ?? 0) / browserCount)
+    const failed = Math.round(summary.aggregates.failed / browserCount) + importErrors
     const todo = Math.round(summary.aggregates.todo / browserCount)
     const skipped = Math.round(summary.aggregates.skipped / browserCount)
     const regression = Math.round(summary.aggregates.regression / browserCount)
-    const total = Math.round(summary.aggregates.total / browserCount)
+    const total = Math.round(summary.aggregates.total / browserCount) + importErrors
 
     /**
      * Set value for tests row

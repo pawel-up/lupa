@@ -124,6 +124,7 @@ export class ProgressReporter extends BaseReporter {
     const state = this.#getOrCreateBrowserState(browserName)
     state.executedFiles.add(payload.file)
     state.startedFiles.add(payload.file)
+    state.failedTests++
     this.#logs.push({
       file: payload.file,
       type: 'error',
