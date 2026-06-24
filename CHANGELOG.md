@@ -1,3 +1,17 @@
+# [0.5.0](https://github.com/pawel-up/lupa/compare/v0.4.8...v0.5.0) (2026-06-24)
+
+
+### Bug Fixes
+
+* enforce process exit in list command and optimize progress bar string construction ([0d35190](https://github.com/pawel-up/lupa/commit/0d351904ed25f1f9a6432d7f8615b13549d9033c))
+* normalize test aggregate counts by browser count in reporter summary ([dbb18b6](https://github.com/pawel-up/lupa/commit/dbb18b63bb342ba751ef5d424f44ad075f9b7339))
+* resolve Vite 8 import keyword regression and include import errors in test aggregates ([a515d40](https://github.com/pawel-up/lupa/commit/a515d40e45fe43e7ca37082f490a55c65ac454af))
+
+
+### Features
+
+* configure watch ignore patterns and explicitly disable watching ([d099481](https://github.com/pawel-up/lupa/commit/d099481f543b00f766577cb5f72b2c41eaa8dc17))
+
 ## [0.4.7](https://github.com/pawel-up/lupa/compare/v0.4.6...v0.4.7) (2026-06-07)
 
 
