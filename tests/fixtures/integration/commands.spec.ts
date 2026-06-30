@@ -1,19 +1,5 @@
 import { test } from '../../../src/testing/api.js'
-import {
-  setViewport,
-  emulateMedia,
-  sendKeys,
-  sendMouse,
-  resetMouse,
-  selectOption,
-  mouse,
-  keyboard,
-  query,
-  screenshot,
-  emulation,
-  cookies,
-  fileChooser,
-} from '../../../src/commands/index.js'
+import { mouse, keyboard, query, screenshot, emulation, cookies, fileChooser } from '../../../src/commands/index.js'
 
 test.group('Browser Commands', (group) => {
   group.setup(() => {
@@ -35,21 +21,21 @@ test.group('Browser Commands', (group) => {
   })
 
   test('setViewport changes the window dimensions', async ({ assert }) => {
-    await setViewport({ width: 800, height: 600 })
+    await emulation.setViewport({ width: 800, height: 600 })
     assert.equal(window.innerWidth, 800)
     assert.equal(window.innerHeight, 600)
 
     // Reset viewport
-    await setViewport({ width: 1024, height: 768 })
+    await emulation.setViewport({ width: 1024, height: 768 })
     assert.equal(window.innerWidth, 1024)
     assert.equal(window.innerHeight, 768)
   })
 
   test('emulateMedia changes the media features', async ({ assert }) => {
-    await emulateMedia({ colorScheme: 'dark' })
+    await emulation.emulateMedia({ colorScheme: 'dark' })
     assert.isTrue(window.matchMedia('(prefers-color-scheme: dark)').matches)
 
-    await emulateMedia({ colorScheme: 'light' })
+    await emulation.emulateMedia({ colorScheme: 'light' })
     assert.isTrue(window.matchMedia('(prefers-color-scheme: light)').matches)
   })
 
@@ -57,11 +43,11 @@ test.group('Browser Commands', (group) => {
     const input = document.getElementById('test-input') as HTMLInputElement
     input.focus()
 
-    await sendKeys({ type: 'Hello' })
+    await keyboard.type('Hello')
     assert.equal(input.value, 'Hello')
 
     // Test backspace using press
-    await sendKeys({ press: 'Backspace' })
+    await keyboard.press('Backspace')
     assert.equal(input.value, 'Hell')
   })
 
@@ -98,13 +84,13 @@ test.group('Browser Commands', (group) => {
     const y = rect.top + rect.height / 2
 
     // Move to button and click
-    await sendMouse({ type: 'move', position: [x, y] })
-    await sendMouse({ type: 'click', position: [x, y], button: 'left' })
+    await mouse.move({ x, y })
+    await mouse.click({ x, y }, { button: 'left' })
 
     assert.equal(clickCount, 1)
 
     // Clean up
-    await resetMouse()
+    await mouse.reset()
   })
 
   test('mouse class triggers events on target', async ({ assert }) => {
@@ -136,16 +122,6 @@ test.group('Browser Commands', (group) => {
 
     // Reset mouse
     await mouse.reset()
-  })
-
-  test('selectOption selects an option in a select element', async ({ assert }) => {
-    const select = document.getElementById('test-select') as HTMLSelectElement
-
-    await selectOption({ selector: '#test-select', value: '2' })
-    assert.equal(select.value, '2')
-
-    await selectOption({ selector: '#test-select', value: '3' })
-    assert.equal(select.value, '3')
   })
 
   test('locator selectOption selects an option and returns selected values', async ({ assert }) => {

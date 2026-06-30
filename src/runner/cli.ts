@@ -98,7 +98,7 @@ export class Cli {
 
       // Filter if a focused file is active
       if (this.#focusedFile) {
-        if (['suite:start', 'group:start', 'test:start', 'test:end', 'group:end', 'suite:end'].includes(eventName)) {
+        if (['group:start', 'test:start', 'test:end', 'group:end'].includes(eventName)) {
           const fileName = data?.file || data?.meta?.fileName || ''
           // If the event doesn't belong to the focused file, suppress it
           if (fileName && !fileName.includes(this.#focusedFile)) {
