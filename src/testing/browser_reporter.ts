@@ -187,11 +187,11 @@ export class BrowserReporter {
     const template = html`
       <div
         id="lupa-browser-overlay"
-        style="position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: system-ui, -apple-system, sans-serif; color: ${payload.hasError
-          ? '#fff'
-          : '#1f2937'}; background-color: ${payload.hasError
-          ? '#ef4444'
-          : '#f3f4f6'}; transition: opacity 0.5s ease-in-out; opacity: 0;"
+        style="position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: system-ui, -apple-system, sans-serif; color: ${
+          payload.hasError ? '#fff' : '#1f2937'
+        }; background-color: ${
+          payload.hasError ? '#ef4444' : '#f3f4f6'
+        }; transition: opacity 0.5s ease-in-out; opacity: 0;"
       >
         <div
           style="margin-bottom: 2rem; animation: ${payload.hasError ? 'none' : 'lupa-bounce 2s infinite ease-in-out'};"
@@ -202,9 +202,11 @@ export class BrowserReporter {
           ${payload.hasError ? 'Tests Failed' : 'All Tests Passed!'}
         </h1>
         <div>${this.#renderTable()}</div>
-        ${payload.hasError
-          ? html`<p style="margin-top: 2rem; opacity: 0.8;">Check the DevTools console for error details.</p>`
-          : ''}
+        ${
+          payload.hasError
+            ? html`<p style="margin-top: 2rem; opacity: 0.8;">Check the DevTools console for error details.</p>`
+            : ''
+        }
       </div>
     `
 

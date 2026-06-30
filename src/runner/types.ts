@@ -124,12 +124,7 @@ export type Filters = FilteringOptions & {
  * Functions, symbols, undefined, and class instances are rejected.
  */
 export type JsonSerializable =
-  | string
-  | number
-  | boolean
-  | null
-  | JsonSerializable[]
-  | { [key: string]: JsonSerializable }
+  string | number | boolean | null | JsonSerializable[] | { [key: string]: JsonSerializable }
 
 /**
  * A test plugin entry for browser-side plugins. Can be:
