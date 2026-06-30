@@ -279,7 +279,10 @@ export class Cli {
     this.#originalFilesFilter = this.#orchestrator.config.filters.files
 
     this.#orchestrator.vite?.watcher.on('change', async (file) => {
-      // ... existing watcher logic ...
+      if (this.#orchestrator.isRunning) {
+        return
+      }
+
       if (this.#focusedFile) {
         this.#orchestrator.executeTests()
         return
@@ -289,16 +292,21 @@ export class Cli {
         console.log(`\n[Watch Mode] File changed. Found ${affected.length} affected test file(s). Re-running...`)
         this.#orchestrator.config.filters.files = affected
         await this.#orchestrator.executeTests()
+        this.#orchestrator.activeNodeEmitter?.once('runner:end').then(() => {
+          this.#orchestrator.config.filters.files = this.#originalFilesFilter
+        })
       } else {
         if (file.includes('.spec.') || file.includes('.test.')) {
           console.log(`\n[Watch Mode] Test file changed: ${file.split('/').pop()}. Re-running...`)
           this.#orchestrator.config.filters.files = [file]
           await this.#orchestrator.executeTests()
+          this.#orchestrator.activeNodeEmitter?.once('runner:end').then(() => {
+            this.#orchestrator.config.filters.files = this.#originalFilesFilter
+          })
         } else {
           debug('Ignoring change in %s as no test files depend on it', file)
         }
       }
-      this.#orchestrator.config.filters.files = this.#originalFilesFilter
     })
 
     if (!process.stdout.isTTY) return

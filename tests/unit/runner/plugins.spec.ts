@@ -4,6 +4,14 @@ import { Orchestrator } from '../../../src/runner/orchestrator.js'
 import type { NormalizedConfig, LupaPlugin } from '../../../src/runner/types.js'
 import type { NamedReporterContract } from '../../../src/types.js'
 
+const dummySuite = {
+  name: 'dummy',
+  files: ['dummy.spec.ts'],
+  timeout: 2000,
+  retries: 0,
+  filesURLs: [new URL('file:///dummy.spec.ts')],
+}
+
 test('Runner Plugins Lifecycle', async (t) => {
   await t.test('executes plugins in the correct order with teardowns', async () => {
     const executedHooks: string[] = []
@@ -43,7 +51,7 @@ test('Runner Plugins Lifecycle', async (t) => {
       } as any,
     } as NormalizedConfig
 
-    const orchestrator = new Orchestrator(config, {}, [] as NamedReporterContract[], [], [])
+    const orchestrator = new Orchestrator(config, {}, [] as NamedReporterContract[], [dummySuite], [])
 
     // Simulate Plan hook execution since it's done before Orchestrator
     const planTeardown = dummyPlugin.plan!({ config, cliArgs: {} })
@@ -130,7 +138,7 @@ test('Runner Plugins Lifecycle', async (t) => {
       } as any,
     } as NormalizedConfig
 
-    const orchestrator = new Orchestrator(config, {}, [] as NamedReporterContract[], [], [])
+    const orchestrator = new Orchestrator(config, {}, [] as NamedReporterContract[], [dummySuite], [])
 
     // Simulate Plan hook execution
     const badPlanTeardown = badPlugin.plan!({ config, cliArgs: {} })
@@ -203,7 +211,7 @@ test('Runner Plugins Lifecycle', async (t) => {
       refiner: { add: () => {}, matchAllTags: () => {} } as any,
     } as NormalizedConfig
 
-    const orchestrator = new Orchestrator(config, {}, [] as NamedReporterContract[], [], [])
+    const orchestrator = new Orchestrator(config, {}, [] as NamedReporterContract[], [dummySuite], [])
     const planTeardown = await asyncPlugin.plan!({ config, cliArgs: {} })
     orchestrator.registerTeardowns([planTeardown as any])
 
@@ -261,7 +269,7 @@ test('Runner Plugins Lifecycle', async (t) => {
       refiner: { add: () => {}, matchAllTags: () => {} } as any,
     } as NormalizedConfig
 
-    const orchestrator = new Orchestrator(config, {}, [] as NamedReporterContract[], [], [])
+    const orchestrator = new Orchestrator(config, {}, [] as NamedReporterContract[], [dummySuite], [])
     orchestrator.serverManager = { boot: async () => 'http://localhost' } as any
     orchestrator.browserManager = {
       boot: async () => {},
@@ -293,7 +301,7 @@ test.describe('Ignoring lifecycle methods on plugins', () => {
       refiner: { add: () => {}, matchAllTags: () => {} } as any,
     } as NormalizedConfig
 
-    const orchestrator = new Orchestrator(config, {}, [], [], [])
+    const orchestrator = new Orchestrator(config, {}, [], [dummySuite], [])
     orchestrator.serverManager = { boot: async () => 'http://localhost' } as any
     orchestrator.browserManager = {
       boot: async () => {},
@@ -322,7 +330,7 @@ test.describe('Ignoring lifecycle methods on plugins', () => {
       refiner: { add: () => {}, matchAllTags: () => {} } as any,
     } as NormalizedConfig
 
-    const orchestrator = new Orchestrator(config, {}, [], [], [])
+    const orchestrator = new Orchestrator(config, {}, [], [dummySuite], [])
     orchestrator.serverManager = { boot: async () => 'http://localhost' } as any
     orchestrator.browserManager = {
       boot: async () => {},
@@ -351,7 +359,7 @@ test.describe('Ignoring lifecycle methods on plugins', () => {
       refiner: { add: () => {}, matchAllTags: () => {} } as any,
     } as NormalizedConfig
 
-    const orchestrator = new Orchestrator(config, {}, [], [], [])
+    const orchestrator = new Orchestrator(config, {}, [], [dummySuite], [])
     orchestrator.serverManager = { boot: async () => 'http://localhost' } as any
     orchestrator.browserManager = {
       boot: async () => {},
@@ -380,7 +388,7 @@ test.describe('Ignoring lifecycle methods on plugins', () => {
       refiner: { add: () => {}, matchAllTags: () => {} } as any,
     } as NormalizedConfig
 
-    const orchestrator = new Orchestrator(config, {}, [], [], [])
+    const orchestrator = new Orchestrator(config, {}, [], [dummySuite], [])
     orchestrator.serverManager = { boot: async () => 'http://localhost' } as any
     orchestrator.browserManager = {
       boot: async () => {},

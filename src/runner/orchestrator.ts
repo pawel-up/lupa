@@ -70,6 +70,10 @@ export class Orchestrator implements ServerTelemetryContract {
   /** Teardowns collected from plan and boot plugin phases */
   #pluginTeardowns: (() => void | Promise<void>)[] = []
 
+  #shutdownPromise: Promise<void> | null = null
+
+  #preventExit = false
+
   /** Telemetry captures WSS events from the harness and processes them */
   public telemetry: Telemetry
 
@@ -160,13 +164,17 @@ export class Orchestrator implements ServerTelemetryContract {
     this.poolManager = new TestPoolManager(this.config, this.browserNames, this.suites)
     this.cli.setExcludedFilePaths(this.poolManager.getExcludedFilePaths())
 
-    this.serverManager = new ServerManager(this, {
-      cwd: this.config.cwd || process.cwd(),
-      config: this.config,
-      poolManager: this.poolManager,
-    })
+    if (!this.serverManager) {
+      this.serverManager = new ServerManager(this, {
+        cwd: this.config.cwd || process.cwd(),
+        config: this.config,
+        poolManager: this.poolManager,
+      })
+    }
 
-    this.serverUrl = await this.serverManager.boot()
+    if (!this.serverUrl) {
+      this.serverUrl = await this.serverManager.boot()
+    }
     this.vite = this.serverManager.vite
 
     this.browserEmitter = new Emitter<RunnerEvents>()
@@ -176,12 +184,14 @@ export class Orchestrator implements ServerTelemetryContract {
       }
     })
 
-    this.browserManager = new BrowserManager(
-      this.browserNames,
-      !!this.cliArgs.verbose,
-      this.browserEmitter,
-      this.config.configPath
-    )
+    if (!this.browserManager) {
+      this.browserManager = new BrowserManager(
+        this.browserNames,
+        !!this.cliArgs.verbose,
+        this.browserEmitter,
+        this.config.configPath
+      )
+    }
 
     await this.browserManager.boot(this.poolManager, this.serverManager?.coverageManager)
   }
@@ -194,94 +204,105 @@ export class Orchestrator implements ServerTelemetryContract {
    * @param exitCode - The process exit code to terminate with (0 for success, 1 for failure).
    * @param options - Additional options, e.g., to prevent terminating the Node process.
    */
-  async shutdown(exitCode: number, options: { preventExit?: boolean } = {}) {
-    if (this.isShuttingDown) return
-    this.isShuttingDown = true
-    debug('shutting down (exit code: %d)', exitCode)
+  async shutdown(exitCode: number, options: { preventExit?: boolean } = {}): Promise<void> {
+    if (options.preventExit) {
+      this.#preventExit = true
+    }
 
-    if (this.config.runnerPlugins) {
-      for (const plugin of this.config.runnerPlugins) {
-        if (plugin.shutdown) {
-          try {
-            await plugin.shutdown({ config: this.config, cliArgs: this.cliArgs, exitCode })
-          } catch (error) {
-            debug('error executing plugin shutdown hook: %O', error)
+    if (this.#shutdownPromise) {
+      return this.#shutdownPromise
+    }
+
+    this.#shutdownPromise = (async () => {
+      this.isShuttingDown = true
+      debug('shutting down (exit code: %d)', exitCode)
+
+      if (this.config.runnerPlugins) {
+        for (const plugin of this.config.runnerPlugins) {
+          if (plugin.shutdown) {
+            try {
+              await plugin.shutdown({ config: this.config, cliArgs: this.cliArgs, exitCode })
+            } catch (error) {
+              debug('error executing plugin shutdown hook: %O', error)
+            }
           }
         }
       }
-    }
 
-    for (const teardown of this.#pluginTeardowns) {
+      for (const teardown of this.#pluginTeardowns) {
+        try {
+          await teardown()
+        } catch (error) {
+          debug('error executing plugin teardown hook: %O', error)
+        }
+      }
+
+      if (this.globalTimeout) {
+        clearTimeout(this.globalTimeout)
+        this.globalTimeout = undefined
+      }
+
+      if (this.activeNodeRunner && this.isRunning) {
+        try {
+          await this.activeNodeRunner.end()
+        } catch (error) {
+          debug('error ending runner: %O', error)
+        } finally {
+          this.isRunning = false
+        }
+      }
+
+      await this.exceptionsManager.report()
+
       try {
-        await teardown()
+        if (this.cli?.debugBrowser) {
+          debug('closing debug browser')
+          await Promise.race([this.cli.debugBrowser.close(), new Promise((r) => setTimeout(r, 1000))])
+          this.cli.debugBrowser = undefined
+        }
       } catch (error) {
-        debug('error executing plugin teardown hook: %O', error)
+        debug('error closing debug browser: %O', error)
       }
-    }
 
-    if (this.globalTimeout) {
-      clearTimeout(this.globalTimeout)
-      this.globalTimeout = undefined
-    }
-
-    if (this.activeNodeRunner && this.isRunning) {
       try {
-        await this.activeNodeRunner.end()
+        if (this.browserManager && this.serverManager?.coverageManager) {
+          await this.browserManager.extractCoverage(this.serverManager.coverageManager)
+          await this.serverManager.coverageManager.generateReport(this.exceptionsManager)
+        }
+      } catch (err) {
+        console.error('Failed to extract coverage:', err)
+      }
+
+      try {
+        if (this.browserManager) {
+          debug('closing browser manager')
+          await this.browserManager.close()
+          this.browserManager = undefined
+        }
       } catch (error) {
-        debug('error ending runner: %O', error)
-      } finally {
-        this.isRunning = false
+        debug('error closing browser manager: %O', error)
       }
-    }
 
-    await this.exceptionsManager.report()
-
-    try {
-      if (this.cli?.debugBrowser) {
-        debug('closing debug browser')
-        await Promise.race([this.cli.debugBrowser.close(), new Promise((r) => setTimeout(r, 1000))])
-        this.cli.debugBrowser = undefined
+      try {
+        if (this.vite) {
+          debug('closing Vite server')
+          await this.vite.close()
+          this.vite = undefined
+        }
+      } catch (error) {
+        debug('error closing Vite: %O', error)
       }
-    } catch (error) {
-      debug('error closing debug browser: %O', error)
-    }
 
-    try {
-      if (this.browserManager && this.serverManager?.coverageManager) {
-        await this.browserManager.extractCoverage(this.serverManager.coverageManager)
-        await this.serverManager.coverageManager.generateReport(this.exceptionsManager)
+      if (this.exceptionsManager.hasErrors) {
+        exitCode = 1
       }
-    } catch (err) {
-      console.error('Failed to extract coverage:', err)
-    }
 
-    try {
-      if (this.browserManager) {
-        debug('closing browser manager')
-        await this.browserManager.close()
-        this.browserManager = undefined
+      if (!this.#preventExit) {
+        process.exit(exitCode)
       }
-    } catch (error) {
-      debug('error closing browser manager: %O', error)
-    }
+    })()
 
-    try {
-      if (this.vite) {
-        debug('closing Vite server')
-        await this.vite.close()
-        this.vite = undefined
-      }
-    } catch (error) {
-      debug('error closing Vite: %O', error)
-    }
-
-    if (this.exceptionsManager.hasErrors) {
-      exitCode = 1
-    }
-
-    if (!options.preventExit) {
-      process.exit(exitCode)
-    }
+    return this.#shutdownPromise
   }
 
   /**
@@ -324,7 +345,10 @@ export class Orchestrator implements ServerTelemetryContract {
     }
 
     if (executeTeardowns.length > 0) {
+      let ran = false
       this.activeNodeEmitter.on('runner:end', async () => {
+        if (ran) return
+        ran = true
         for (const teardown of executeTeardowns) {
           try {
             await teardown()
@@ -375,77 +399,92 @@ export class Orchestrator implements ServerTelemetryContract {
 
   async #runWaves(): Promise<void> {
     if (!this.poolManager || !this.browserManager || !this.activeNodeRunner) {
+      this.isRunning = false
       return
     }
     const { poolManager, browserManager } = this
     const tiers = poolManager.getChunkIdsByTier(this.browserNames[0])
 
     if (tiers.size === 0) {
-      // No files to run — the test harness will signal runner end via the browser.
-      // Nothing to do here; completion is driven by the existing runner:end event path.
+      // No files to run — end the runner directly on the Node side.
+      if (this.activeNodeRunner && !this.#runnerEnded) {
+        this.#runnerEnded = true
+        await this.activeNodeRunner.end()
+      }
+      this.isRunning = false
+      if (!this.isWatchMode) {
+        await this.shutdown(0)
+      } else {
+        this.cli.printWaitingMessage()
+      }
       return
     }
 
-    const excludedOnlyPriorities = poolManager.getExcludedOnlyPriorities()
+    try {
+      const excludedOnlyPriorities = poolManager.getExcludedOnlyPriorities()
 
-    for (const [priority] of tiers) {
-      if (this.isShuttingDown) {
-        break
-      }
-      const allBrowserChunkIds = this.browserNames.flatMap((b) => poolManager.getChunkIdsByTier(b).get(priority) ?? [])
-      await browserManager.navigateAndWait(`${this.serverUrl}__lupa__/runner.html`, allBrowserChunkIds)
+      for (const [priority] of tiers) {
+        if (this.isShuttingDown) {
+          break
+        }
+        const allBrowserChunkIds = this.browserNames.flatMap(
+          (b) => poolManager.getChunkIdsByTier(b).get(priority) ?? []
+        )
+        await browserManager.navigateAndWait(`${this.serverUrl}__lupa__/runner.html`, allBrowserChunkIds)
 
-      if (this.isShuttingDown) {
-        break
-      }
+        if (this.isShuttingDown) {
+          break
+        }
 
-      // After the last reporting wave completes, drain telemetry and end the runner
-      // so the reporter prints its summary before any excluded (e.g. benchmark) waves run.
-      if (!excludedOnlyPriorities.has(priority)) {
-        const remainingTiers = [...tiers.keys()].filter((p) => p < priority)
-        const hasMoreReportingTiers = remainingTiers.some((p) => !excludedOnlyPriorities.has(p))
-        if (!hasMoreReportingTiers && !this.#runnerEnded) {
-          await this.telemetry.drainTelemetry()
-          this.#runnerEnded = true
-          await this.activeNodeRunner.end()
+        // After the last reporting wave completes, drain telemetry and end the runner
+        // so the reporter prints its summary before any excluded (e.g. benchmark) waves run.
+        if (!excludedOnlyPriorities.has(priority)) {
+          const remainingTiers = [...tiers.keys()].filter((p) => p < priority)
+          const hasMoreReportingTiers = remainingTiers.some((p) => !excludedOnlyPriorities.has(p))
+          if (!hasMoreReportingTiers && !this.#runnerEnded) {
+            await this.telemetry.drainTelemetry()
+            this.#runnerEnded = true
+            await this.activeNodeRunner.end()
+          }
         }
       }
-    }
 
-    if (this.globalTimeout) {
-      clearTimeout(this.globalTimeout)
-      this.globalTimeout = undefined
-    }
-
-    // Final drain + end in case all tiers were excluded-only (no reporting waves).
-    await this.telemetry.drainTelemetry()
-
-    if (this.activeNodeRunner && !this.#runnerEnded) {
-      this.#runnerEnded = true
-      await this.activeNodeRunner.end()
-    }
-
-    try {
-      if (this.browserManager && this.serverManager?.coverageManager) {
-        await this.browserManager.extractCoverage(this.serverManager.coverageManager)
-        await this.serverManager.coverageManager.generateReport(this.exceptionsManager)
+      if (this.globalTimeout) {
+        clearTimeout(this.globalTimeout)
+        this.globalTimeout = undefined
       }
-    } catch (err) {
-      console.error('Failed to extract coverage:', err)
-    }
 
-    this.isRunning = false
+      // Final drain + end in case all tiers were excluded-only (no reporting waves).
+      await this.telemetry.drainTelemetry()
 
-    const exitCode = (this.activeNodeRunner && this.activeNodeRunner.failed) || this.exceptionsManager.hasErrors ? 1 : 0
+      if (this.activeNodeRunner && !this.#runnerEnded) {
+        this.#runnerEnded = true
+        await this.activeNodeRunner.end()
+      }
 
-    if (this.#resolveCompletion) {
-      this.#resolveCompletion(exitCode)
-    }
+      try {
+        if (this.browserManager && this.serverManager?.coverageManager) {
+          await this.browserManager.extractCoverage(this.serverManager.coverageManager)
+          await this.serverManager.coverageManager.generateReport(this.exceptionsManager)
+        }
+      } catch (err) {
+        console.error('Failed to extract coverage:', err)
+      }
 
-    if (!this.isWatchMode) {
-      await this.shutdown(exitCode)
-    } else {
-      this.cli.printWaitingMessage()
+      const exitCode =
+        (this.activeNodeRunner && this.activeNodeRunner.failed) || this.exceptionsManager.hasErrors ? 1 : 0
+
+      if (this.#resolveCompletion) {
+        this.#resolveCompletion(exitCode)
+      }
+
+      if (!this.isWatchMode) {
+        await this.shutdown(exitCode)
+      } else {
+        this.cli.printWaitingMessage()
+      }
+    } finally {
+      this.isRunning = false
     }
   }
 
