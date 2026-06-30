@@ -1,3 +1,11 @@
+## [0.5.1](https://github.com/pawel-up/lupa/compare/v0.5.0...v0.5.1) (2026-06-30)
+
+
+### Bug Fixes
+
+* runner shutdown reliability and prevent concurrent execution during file watcher changes ([a4d0bd7](https://github.com/pawel-up/lupa/commit/a4d0bd77a60ef38738c52986151fa91481d44d31))
+* update CLI test filtering ([0a256b3](https://github.com/pawel-up/lupa/commit/0a256b3fe1455a452956ae2846ee7e664129aa94))
+
 # [0.5.0](https://github.com/pawel-up/lupa/compare/v0.4.8...v0.5.0) (2026-06-24)
 
 
