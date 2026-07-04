@@ -1,3 +1,10 @@
+## [0.5.2](https://github.com/pawel-up/lupa/compare/v0.5.1...v0.5.2) (2026-07-04)
+
+
+### Bug Fixes
+
+* make runner end methods idempotent to prevent multiple runner:end events ([a95c5e4](https://github.com/pawel-up/lupa/commit/a95c5e40036833f44cd00382abe2bc61a9060860))
+
 ## [0.5.1](https://github.com/pawel-up/lupa/compare/v0.5.0...v0.5.1) (2026-06-30)
 
 
