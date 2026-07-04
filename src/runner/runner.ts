@@ -44,6 +44,8 @@ export class Runner extends Macroable {
    */
   reporters = new Set<ReporterContract>()
 
+  #ended = false
+
   constructor(emitter: Emitter<RunnerEvents>, config: NormalizedConfig, poolManager: TestPoolManager) {
     super()
     if (!poolManager) {
@@ -171,6 +173,10 @@ export class Runner extends Macroable {
    * @returns Promise that resolves when the runner finishes
    */
   async end(): Promise<void> {
+    if (this.#ended) {
+      return
+    }
+    this.#ended = true
     debug('node runner ended')
     await this.#emitter.emit('runner:end', {
       hasError: this.#failed,

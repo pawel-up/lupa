@@ -14,6 +14,7 @@ export class WebRunner extends Macroable {
   #emitter: Emitter
   #failed = false
   #bail = false
+  #ended = false
 
   /**
    * Callbacks to invoke on every suite
@@ -128,6 +129,10 @@ export class WebRunner extends Macroable {
    * End the runner process. Emits "runner:end" event
    */
   async end() {
+    if (this.#ended) {
+      return
+    }
+    this.#ended = true
     await this.#notifyEnd()
   }
 

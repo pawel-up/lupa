@@ -243,13 +243,15 @@ export class Orchestrator implements ServerTelemetryContract {
       }
 
       if (this.activeNodeRunner && this.isRunning) {
-        try {
-          await this.activeNodeRunner.end()
-        } catch (error) {
-          debug('error ending runner: %O', error)
-        } finally {
-          this.isRunning = false
+        if (!this.#runnerEnded) {
+          try {
+            this.#runnerEnded = true
+            await this.activeNodeRunner.end()
+          } catch (error) {
+            debug('error ending runner: %O', error)
+          }
         }
+        this.isRunning = false
       }
 
       await this.exceptionsManager.report()

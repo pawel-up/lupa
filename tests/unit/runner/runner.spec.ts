@@ -119,4 +119,16 @@ test('Runner', async (t) => {
     await runner.end()
     assert.ok(true)
   })
+
+  await t.test('end method is idempotent and only emits runner:end once', async () => {
+    const emitter = new Emitter<RunnerEvents>()
+    const runner = new Runner(emitter, {} as any, dummyPool)
+    let emitCount = 0
+    emitter.on('runner:end', () => {
+      emitCount++
+    })
+    await runner.end()
+    await runner.end()
+    assert.strictEqual(emitCount, 1)
+  })
 })

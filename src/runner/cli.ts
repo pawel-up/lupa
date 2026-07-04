@@ -436,7 +436,6 @@ export class Cli {
       }
     }
 
-    await replayEmitter.emit('runner:end', { hasError: replayRunner.failed })
     await replayRunner.end()
 
     this.#isReplaying = false
