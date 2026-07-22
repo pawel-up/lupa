@@ -436,7 +436,11 @@ export class TestRunner {
         this.#test.options.retryAttempt = attempt
         return this.#wrapTestInTimeout()
       },
-      { retries: this.#test.options.retries, factor: 1 }
+      {
+        retries: this.#test.options.retries,
+        factor: 1,
+        ...this.#test.options.retryOptions,
+      }
     )
   }
 

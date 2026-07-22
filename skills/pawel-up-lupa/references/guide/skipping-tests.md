@@ -55,3 +55,26 @@ test('allow email editing post signup')
 ```
 
 Todo tests appear natively in the reporter output, reminding you that there is still work to be completed without failing your test suite or CI pipelines.
+
+## Retrying Flaky Tests
+
+You can automatically retry flaky tests upon failure using the `.retry()` method.
+
+```ts
+import { test } from '@pawel-up/lupa/testing'
+
+// Basic retry (retries up to 3 times with default 1s delay)
+test('flaky network call', async () => {
+  // ...
+}).retry(3)
+
+// Exponential backoff strategy (doubles delay on each attempt)
+test('flaky external API', async () => {
+  // ...
+}).retry(3, { factor: 2, minTimeout: 500, maxTimeout: 5000 })
+
+// Custom delay callback (calculates delay in milliseconds per attempt)
+test('custom delay strategy', async () => {
+  // ...
+}).retry(3, (attempt) => attempt * 1000)
+```

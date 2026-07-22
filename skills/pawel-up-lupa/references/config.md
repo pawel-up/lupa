@@ -77,6 +77,24 @@ export interface BaseConfig {
   list?: boolean
 }
 
+export interface TestSuite {
+  name: string
+  files: string | string[] | (() => URL[] | Promise<URL[]>)
+  timeout?: number
+  retries?: number
+  priority?: number
+  disableInWatchMode?: boolean
+  excludeFromReporting?: boolean
+  concurrency?: number | 'auto' // Per-suite concurrency override
+}
+
+export interface RetryBackoffOptions {
+  factor?: number // Exponential growth multiplier (e.g. 2)
+  minTimeout?: number // Base delay in ms
+  maxTimeout?: number // Cap on maximum delay in ms
+  delay?: (attempt: number) => number // Custom delay calculation callback
+}
+
 export interface HarnessConfig {
   // Custom HTML template string or function returning HTML
   template?: string | ((context: { scripts: string; stylesheets: string }) => string)

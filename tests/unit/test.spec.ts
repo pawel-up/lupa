@@ -145,4 +145,52 @@ test('Test', async (t) => {
 
     assert.deepStrictEqual(calls, ['setup', 'run', 'cleanup', 'teardown'])
   })
+
+  await t.test('executes retries with custom delay callback', async () => {
+    let attempts = 0
+    const delays: number[] = []
+
+    const emitter = new Emitter()
+    const refiner = new Refiner()
+    const context = {} as TestContext
+
+    const t1 = new Test('retry with custom delay', context, emitter, refiner)
+    t1.retry(2, (attempt) => {
+      delays.push(attempt)
+      return 10
+    })
+
+    t1.run(async () => {
+      attempts++
+      if (attempts < 3) {
+        throw new Error('failed attempt')
+      }
+    })
+
+    await t1.exec()
+
+    assert.equal(attempts, 3)
+    assert.deepStrictEqual(delays, [1, 2])
+  })
+
+  await t.test('executes retries with factor backoff options', async () => {
+    let attempts = 0
+    const emitter = new Emitter()
+    const refiner = new Refiner()
+    const context = {} as TestContext
+
+    const t1 = new Test('retry with factor', context, emitter, refiner)
+    t1.retry(2, { factor: 2, minTimeout: 10 })
+
+    t1.run(async () => {
+      attempts++
+      if (attempts < 3) {
+        throw new Error('failed attempt')
+      }
+    })
+
+    await t1.exec()
+
+    assert.equal(attempts, 3)
+  })
 })

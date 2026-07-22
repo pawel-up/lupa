@@ -177,7 +177,7 @@ The following issues are prioritized by technical urgency based on their impact 
      { name: 'unit', concurrency: 8 } // Parallel execution for unit tests
      ```
 
-5. **No Configurable Retry Backoff Strategy**
+5. **No Configurable Retry Backoff Strategy** (Done)
 
    [runner.ts](file:///home/pawel/workspace/pawel-up/lupa/src/testing/test/runner.ts#L434-L440) passes a fixed `{ factor: 1 }` to `retry()`, causing a static 1-second delay between attempts without exponential backoff or custom delay options.
 

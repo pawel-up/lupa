@@ -135,6 +135,40 @@ export type TestExecutor<DataSet> = DataSet extends any[]
     : (context: TestContext, done: (error?: any) => void) => void | Promise<void>
 
 /**
+ * Backoff configuration options for retrying failing tests.
+ */
+export interface RetryBackoffOptions {
+  /**
+   * Exponential growth factor for delay calculation (e.g. `2` doubles the delay on each attempt).
+   * Defaults to `1` (linear delay).
+   */
+  factor?: number
+
+  /**
+   * Initial delay duration in milliseconds before executing the first retry attempt.
+   * Defaults to `1000` ms.
+   */
+  minTimeout?: number
+
+  /**
+   * Maximum delay duration in milliseconds between retry attempts.
+   * Caps exponential delay growth. Defaults to `30000` ms.
+   */
+  maxTimeout?: number
+
+  /**
+   * Custom delay callback function. Receives the 1-based attempt index (1, 2, ...)
+   * and returns the delay duration in milliseconds for that attempt.
+   *
+   * @example
+   * ```ts
+   * test('flaky test', () => {}).retry(3, (attempt) => attempt * 500)
+   * ```
+   */
+  delay?: (attempt: number) => number
+}
+
+/**
  * Test configuration options.
  */
 export interface TestOptions {
@@ -186,6 +220,10 @@ export interface TestOptions {
    * Retry attempt number
    */
   retryAttempt?: number
+  /**
+   * Additional retry backoff configuration options
+   */
+  retryOptions?: RetryBackoffOptions
   /**
    * Test metadata
    */
