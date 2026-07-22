@@ -127,7 +127,7 @@ The following issues are prioritized by technical urgency based on their impact 
 
 ### High Urgency (Correctness & Architectural Foundation)
 
-1. **Implicit Global State in Browser Test Execution**
+1. **Implicit Global State in Browser Test Execution** (Done)
 
    The browser-side test context relies on module-scoped global variables (`activeTest`, `activeGroup`, `activeSuite`, `activeFile` in [api.ts](file:///home/pawel/workspace/pawel-up/lupa/src/testing/api.ts#L48-L70)):
 
@@ -138,7 +138,7 @@ The following issues are prioritized by technical urgency based on their impact 
    This reliance on global state introduces risks of state bleeding and race conditions when async tasks interleave.
    * **Suggestion**: Thread test context explicitly or utilize `AsyncLocalStorage` for browser context isolation.
 
-2. **Orchestrator is a God Object**
+2. **Orchestrator is a God Object** (Done)
 
    [orchestrator.ts](file:///home/pawel/workspace/pawel-up/lupa/src/runner/orchestrator.ts#L27-L506) (507 lines) directly manages every framework lifecycle:
    - Browser and Vite server lifecycles
@@ -204,4 +204,3 @@ The following issues are prioritized by technical urgency based on their impact 
    [test_pool_manager.ts](file:///home/pawel/workspace/pawel-up/lupa/src/runner/test_pool_manager.ts#L49-L288) combines priority tier grouping, round-robin sharding, excluded file filtering, and path resolution in a single class.
 
    * **Suggestion**: Extract `ShardingStrategy` and `PriorityPlanner` to enable isolated unit testing of sharding algorithms.
-
