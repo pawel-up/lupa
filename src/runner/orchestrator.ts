@@ -224,6 +224,7 @@ export class Orchestrator implements ServerTelemetryContract {
               await plugin.shutdown({ config: this.config, cliArgs: this.cliArgs, exitCode })
             } catch (error) {
               debug('error executing plugin shutdown hook: %O', error)
+              this.exceptionsManager.notifyException(error as Error)
             }
           }
         }
@@ -234,6 +235,7 @@ export class Orchestrator implements ServerTelemetryContract {
           await teardown()
         } catch (error) {
           debug('error executing plugin teardown hook: %O', error)
+          this.exceptionsManager.notifyException(error as Error)
         }
       }
 
@@ -356,6 +358,7 @@ export class Orchestrator implements ServerTelemetryContract {
             await teardown()
           } catch (error) {
             debug('error executing plugin run teardown: %O', error)
+            this.exceptionsManager.notifyException(error as Error)
           }
         }
       })
