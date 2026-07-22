@@ -1,3 +1,18 @@
+# [0.6.0](https://github.com/pawel-up/lupa/compare/v0.5.2...v0.6.0) (2026-07-22)
+
+
+### Bug Fixes
+
+* report plugin lifecycle hook errors to exceptions manager ([f6b51f0](https://github.com/pawel-up/lupa/commit/f6b51f07120f267976f55c3f4767c8d2b702aa44))
+
+
+### Features
+
+* expose fixture method on TestContext for better lifecycle management ([68714b4](https://github.com/pawel-up/lupa/commit/68714b496c610ba9f4f9882a7828b3c1771374b4))
+* implement configurable retry backoff strategies and per-suite concurrency settings ([ae2b571](https://github.com/pawel-up/lupa/commit/ae2b571870f3dab472a0895021af60cfe47dd2a7))
+* implement test result caching to skip redundant executions in watch mode ([04b1c54](https://github.com/pawel-up/lupa/commit/04b1c54ab9e3340b89366d1ddaf60df59dfce324))
+* support per-suite concurrency overrides in TestPoolManager ([10f8fd9](https://github.com/pawel-up/lupa/commit/10f8fd91a2f9f75015b6ac4b46bde56d432b736f))
+
 ## [0.5.2](https://github.com/pawel-up/lupa/compare/v0.5.1...v0.5.2) (2026-07-04)
 
 
