@@ -1,9 +1,8 @@
-import os from 'node:os'
 import { fileURLToPath } from 'node:url'
 import type { NormalizedConfig } from './types.js'
 import { PlannedTestSuite } from '../types.js'
-
-const DEFAULT_PRIORITY = 100
+import { PriorityPlanner, DEFAULT_PRIORITY } from './priority_planner.js'
+import { ShardingStrategy } from './sharding_strategy.js'
 
 /**
  * Represents a discrete chunk of tests assigned to a specific browser page slot.
@@ -48,6 +47,8 @@ export interface TestChunk {
  */
 export class TestPoolManager {
   #chunks = new Map<string, TestChunk>()
+  #priorityPlanner = new PriorityPlanner()
+  #shardingStrategy = new ShardingStrategy()
 
   /**
    * Creates a new TestPoolManager and immediately computes the workload chunks.
@@ -64,79 +65,13 @@ export class TestPoolManager {
     this.#computeChunks()
   }
 
-  #resolveConcurrency(value: number | 'auto' | undefined): number {
-    if (value === 'auto') {
-      return Math.max(1, os.cpus().length - 1)
-    }
-    return Math.max(1, Number(value) || 1)
-  }
-
   #computeChunks() {
-    const globalConcurrency = this.#resolveConcurrency(this.config.concurrency)
+    const tierMap = this.#priorityPlanner.groupByPriority(this.suites)
 
-    // Group suites by priority tier.
-    const tierMap = new Map<number, PlannedTestSuite[]>()
-    for (const suite of this.suites) {
-      const priority = suite.priority ?? DEFAULT_PRIORITY
-      const bucket = tierMap.get(priority)
-      if (bucket) {
-        bucket.push(suite)
-      } else {
-        tierMap.set(priority, [suite])
-      }
-    }
-
-    // Process each tier independently with per-suite concurrency distribution.
     for (const [priority, tieredSuites] of tierMap) {
-      const maxTierConcurrency = Math.max(
-        ...tieredSuites.map((s) =>
-          s.concurrency !== undefined ? this.#resolveConcurrency(s.concurrency) : globalConcurrency
-        )
-      )
-
-      const totalFilesCount = tieredSuites.reduce((sum, s) => sum + s.filesURLs.length, 0)
-      const actualConcurrency = Math.max(1, Math.min(maxTierConcurrency, totalFilesCount || 1))
-
-      for (const browserName of this.browserNames) {
-        let tierFileIndex = 0
-        const browserChunks: TestChunk[] = Array.from({ length: actualConcurrency }).map((_, i) => ({
-          id: `${browserName}-t${priority}-${i}`,
-          browserName,
-          pageIndex: i,
-          priority,
-          suites: [],
-        }))
-
-        for (const suite of tieredSuites) {
-          const effectiveConcurrency =
-            suite.concurrency !== undefined ? this.#resolveConcurrency(suite.concurrency) : globalConcurrency
-
-          suite.filesURLs.forEach((fileURL) => {
-            const pageIndex = tierFileIndex++ % effectiveConcurrency
-            const chunk = browserChunks[pageIndex]
-            let suiteChunk = chunk.suites.find((s) => s.name === suite.name)
-            if (!suiteChunk) {
-              suiteChunk = {
-                name: suite.name,
-                timeout: suite.timeout,
-                retries: suite.retries,
-                priority: suite.priority,
-                disableInWatchMode: suite.disableInWatchMode,
-                excludeFromReporting: suite.excludeFromReporting,
-                concurrency: suite.concurrency,
-                filesURLs: [],
-              }
-              chunk.suites.push(suiteChunk)
-            }
-            suiteChunk.filesURLs.push(fileURL)
-          })
-        }
-
-        for (const chunk of browserChunks) {
-          if (chunk.suites.some((s) => s.filesURLs.length > 0)) {
-            this.#chunks.set(chunk.id, chunk)
-          }
-        }
+      const chunks = this.#shardingStrategy.shard(tieredSuites, priority, this.browserNames, this.config.concurrency)
+      for (const chunk of chunks) {
+        this.#chunks.set(chunk.id, chunk)
       }
     }
   }
