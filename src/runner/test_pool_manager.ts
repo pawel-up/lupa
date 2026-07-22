@@ -218,10 +218,11 @@ export class TestPoolManager {
    * Returns the total number of test files across all chunks and browsers,
    * excluding files that belong to suites marked with `excludeFromReporting`.
    *
+   * @param ignoreFileFilters - If true, returns total count ignoring active config.filters.files.
    * @returns Total number of reportable test files
    */
-  getFilesCount(): number {
-    const fileFilters = this.config.filters?.files
+  getFilesCount(ignoreFileFilters = false): number {
+    const fileFilters = ignoreFileFilters ? undefined : this.config.filters?.files
     const firstBrowser = this.browserNames[0] || 'chromium'
 
     return Array.from(this.#chunks.values())

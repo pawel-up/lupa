@@ -113,6 +113,15 @@ export class TestExecutor {
 
     this.activeNodeRunner.reporterEmitter = cli.createFilteredEmitter(this.activeNodeEmitter)
 
+    this.activeNodeEmitter.on('test:end', (payload: any) => {
+      const filePath = payload.file || payload.meta?.fileName
+      if (filePath) {
+        const hash = this.#orchestrator.testCache.computeFileHash(filePath, this.#orchestrator.vite)
+        const status = payload.hasError ? 'fail' : 'pass'
+        this.#orchestrator.testCache.recordResult(filePath, hash, status, [])
+      }
+    })
+
     reporters.forEach((reporter) => {
       debug('registering "%s" reporter', reporter.name)
       this.activeNodeRunner?.registerReporter(reporter)
@@ -125,7 +134,11 @@ export class TestExecutor {
 
     config.refiner.matchAllTags(cliArgs.matchAll ?? false)
 
-    const estimatedTotalFiles = poolManager.getFilesCount() || 0
+    const isFocusedMode = !!cli.focusedFile
+    const estimatedTotalFiles =
+      this.#orchestrator.isWatchMode && !isFocusedMode
+        ? poolManager.getFilesCount(true) || 0
+        : poolManager.getFilesCount() || 0
 
     await this.activeNodeRunner.start({ estimatedTotalFiles })
 

@@ -183,7 +183,7 @@ The following issues are prioritized by technical urgency based on their impact 
 
    * **Suggestion**: Add configurable backoff strategies (e.g. exponential backoff or custom delay callbacks) to `test.retry()`.
 
-6. **No Test Result Caching for Watch Mode**
+6. **No Test Result Caching for Watch Mode** (Done)
 
    When a file changes in watch mode, all dependent test files re-run via Vite module graph invalidation, but previous test outcomes are not cached.
 

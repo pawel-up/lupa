@@ -63,6 +63,26 @@ export class Cli {
   }
 
   /**
+   * Re-emits cached events for test files that were NOT executed in the current watch cycle
+   * so reporters render full suite progress and accurate totals.
+   */
+  async replayCachedEventsForUnchangedFiles(activeNodeEmitter: Emitter<RunnerEvents>, activeFilesFilter?: string[]) {
+    this.#isReplaying = true
+    try {
+      for (const [file, events] of this.#fileEvents.entries()) {
+        if (activeFilesFilter && activeFilesFilter.some((f) => file.includes(f) || f.includes(file))) {
+          continue
+        }
+        for (const event of events) {
+          await activeNodeEmitter.emit(event.eventName as any, event.data)
+        }
+      }
+    } finally {
+      this.#isReplaying = false
+    }
+  }
+
+  /**
    * Creates an interceptor emitter that buffers events and filters
    * them based on the current focused file before reaching reporters.
    */
@@ -75,7 +95,7 @@ export class Cli {
 
       // We don't buffer events if we are just replaying
       if (!this.#isReplaying) {
-        if (['suite:start', 'group:start', 'test:start', 'test:end', 'group:end', 'suite:end'].includes(eventName)) {
+        if (['file:start', 'file:end', 'group:start', 'test:start', 'test:end', 'group:end'].includes(eventName)) {
           const fileName = data?.file || data?.meta?.fileName || ''
           if (fileName) {
             let events = this.#fileEvents.get(fileName)
@@ -96,12 +116,15 @@ export class Cli {
         }
       }
 
-      // Filter if a focused file is active
-      if (this.#focusedFile) {
-        if (['group:start', 'test:start', 'test:end', 'group:end'].includes(eventName)) {
-          const fileName = data?.file || data?.meta?.fileName || ''
-          // If the event doesn't belong to the focused file, suppress it
-          if (fileName && !fileName.includes(this.#focusedFile)) {
+      const focused = this.#focusedFile
+      if (focused) {
+        const fileName = data?.file || data?.meta?.fileName || ''
+        if (fileName && !fileName.includes(focused)) {
+          return
+        }
+        if (eventName === 'runner:start') {
+          const currentFilters = this.#orchestrator.config.filters?.files || []
+          if (!currentFilters.some((f) => f.includes(focused))) {
             return
           }
         }
@@ -273,40 +296,17 @@ export class Cli {
     await debugPage.goto(url.toString())
   }
 
+  #pendingWatchFile: string | null = null
+  #isExecutingWatch = false
+
   async start() {
     // Keep a reference to the original configured files filters
     this.#orchestrator.config.filters = this.#orchestrator.config.filters || {}
     this.#originalFilesFilter = this.#orchestrator.config.filters.files
 
-    this.#orchestrator.vite?.watcher.on('change', async (file) => {
-      if (this.#orchestrator.isRunning) {
-        return
-      }
-
-      if (this.#focusedFile) {
-        this.#orchestrator.executeTests()
-        return
-      }
-      const affected = await this.#getAffectedTestFiles(file)
-      if (affected.length > 0) {
-        console.log(`\n[Watch Mode] File changed. Found ${affected.length} affected test file(s). Re-running...`)
-        this.#orchestrator.config.filters.files = affected
-        await this.#orchestrator.executeTests()
-        this.#orchestrator.activeNodeEmitter?.once('runner:end').then(() => {
-          this.#orchestrator.config.filters.files = this.#originalFilesFilter
-        })
-      } else {
-        if (file.includes('.spec.') || file.includes('.test.')) {
-          console.log(`\n[Watch Mode] Test file changed: ${file.split('/').pop()}. Re-running...`)
-          this.#orchestrator.config.filters.files = [file]
-          await this.#orchestrator.executeTests()
-          this.#orchestrator.activeNodeEmitter?.once('runner:end').then(() => {
-            this.#orchestrator.config.filters.files = this.#originalFilesFilter
-          })
-        } else {
-          debug('Ignoring change in %s as no test files depend on it', file)
-        }
-      }
+    this.#orchestrator.vite?.watcher.on('change', (file) => {
+      this.#pendingWatchFile = file
+      this.#triggerWatchRun()
     })
 
     if (!process.stdout.isTTY) return
@@ -318,6 +318,40 @@ export class Cli {
     }
 
     process.stdin.on('keypress', this.#onKeypress)
+  }
+
+  async #triggerWatchRun(): Promise<void> {
+    if (this.#orchestrator.isRunning || this.#isExecutingWatch) {
+      return
+    }
+    const file = this.#pendingWatchFile
+    if (!file) return
+    this.#pendingWatchFile = null
+    this.#isExecutingWatch = true
+
+    try {
+      const affected = await this.#getAffectedTestFiles(file)
+      const targetFiles =
+        affected.length > 0 ? affected : file.includes('.spec.') || file.includes('.test.') ? [file] : []
+
+      if (targetFiles.length > 0) {
+        if (!this.#focusedFile) {
+          console.log(`\n[Watch Mode] File changed. Found ${targetFiles.length} affected test file(s). Re-running...`)
+        } else {
+          debug('[Focus Mode] Unfocused file %s changed. Executing in background to update cache.', file)
+        }
+        this.#orchestrator.config.filters.files = targetFiles
+        await this.#orchestrator.executeTests()
+        this.#orchestrator.config.filters.files = this.#originalFilesFilter
+      } else {
+        debug('Ignoring change in %s as no test files depend on it', file)
+      }
+    } finally {
+      this.#isExecutingWatch = false
+      if (this.#pendingWatchFile) {
+        await this.#triggerWatchRun()
+      }
+    }
   }
 
   async #promptFocusFile(): Promise<void> {

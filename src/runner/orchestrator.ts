@@ -13,6 +13,8 @@ import { Telemetry } from './telemetry.js'
 import { LifecycleManager, type ShutdownOptions } from './lifecycle_manager.js'
 import { TestExecutor } from './test_executor.js'
 
+import { TestCache } from './test_cache.js'
+
 /**
  * The `Orchestrator` is the primary coordinator of the Lupa test framework.
  * Delegates environment startup and teardown to `LifecycleManager`, and
@@ -23,6 +25,7 @@ export class Orchestrator implements ServerTelemetryContract {
   public browserNames: BrowserName[]
   public cli: Cli
   public telemetry: Telemetry
+  public testCache: TestCache
   public lifecycle: LifecycleManager
   public executor: TestExecutor
 
@@ -42,6 +45,7 @@ export class Orchestrator implements ServerTelemetryContract {
     const rawBrowsers = cliArgs.browser || ['chromium']
     this.browserNames = (Array.isArray(rawBrowsers) ? rawBrowsers : [rawBrowsers]) as BrowserName[]
     this.exceptionsManager = new ExceptionsManager()
+    this.testCache = new TestCache()
 
     this.cli = new Cli(this)
     this.telemetry = new Telemetry(this)
