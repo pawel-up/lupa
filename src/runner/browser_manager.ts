@@ -109,14 +109,26 @@ export class BrowserManager {
     })
 
     await Promise.all(
-      targetIds.map((chunkId) => {
+      targetIds.map(async (chunkId) => {
         const page = this.#pages.get(chunkId)
         if (!page) {
           throw new Error(`Page for chunk ${chunkId} not found`)
         }
         const url = new URL(urlBase)
         url.searchParams.set('chunkId', chunkId)
-        return page.goto(url.href)
+        try {
+          await page.goto(url.href)
+        } catch (err: any) {
+          if (
+            err?.message?.includes('interrupted by another navigation') ||
+            err?.message?.includes('net::ERR_ABORTED') ||
+            err?.message?.includes('Target closed')
+          ) {
+            debug('Ignored expected page navigation interruption for chunk %s: %s', chunkId, err.message)
+          } else {
+            throw err
+          }
+        }
       })
     )
 

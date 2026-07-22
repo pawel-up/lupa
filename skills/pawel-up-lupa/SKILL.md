@@ -43,14 +43,14 @@ A lightning-fast, Vite-powered browser testing framework for Web Components with
 Here is a basic example of how to write a test suite using Lupa:
 
 ```typescript
-import { test, fixture, html } from '@pawel-up/lupa/testing'
+import { test, html } from '@pawel-up/lupa/testing'
 
 test.group('My Component', (group) => {
   group.setup(() => {
     // Setup logic that runs before the group
   })
 
-  test('renders correctly', async ({ assert }) => {
+  test('renders correctly', async ({ fixture, assert }) => {
     // Render the component into the test fixture
     const el = await fixture(html`<my-component></my-component>`)
     
@@ -72,7 +72,7 @@ Lupa provides a Model Context Protocol (MCP) server (`@pawel-up/lupa-mcp`) that 
 ## Quick Reference
 
 **Key imports:**
-- `import { test, fixture, html, waitUntil } from '@pawel-up/lupa/testing'` — The core testing primitives. Use `test` to define test blocks, `fixture` to mount elements to the DOM, and `waitUntil` to poll for a condition.
+- `import { test, fixture, html, waitUntil } from '@pawel-up/lupa/testing'` — The core testing primitives. Use `test` to define test blocks, `fixture` (available on `TestContext` as `({ fixture })` or as a standalone import) to mount elements to the DOM, and `waitUntil` to poll for a condition.
 - `import { assert } from '@pawel-up/lupa/assert'` — The standalone assertion library, though `assert` is also available on the test context.
 - `import { configure, run, loadLupaConfig } from '@pawel-up/lupa/runner'` — Configures and runs the Lupa test suite programmatically or loads config files.
 - `import { network } from '@pawel-up/lupa/network'` — API to mock and intercept HTTP requests made from the browser.

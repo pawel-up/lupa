@@ -7,12 +7,38 @@ export interface RetryOptions {
    * The exponential factor to use. Default is 2.
    */
   factor?: number
+  /**
+   * Initial delay in milliseconds between retries. Default is 1000.
+   */
+  minTimeout?: number
+  /**
+   * Maximum delay in milliseconds between retries. Default is 30000.
+   */
+  maxTimeout?: number
+  /**
+   * Custom delay callback returning delay in milliseconds for attempt N.
+   */
+  delay?: (attempt: number) => number
 }
 
-export function retry<T = void>(fn: (...args: any[]) => Promise<T>, options?: RetryOptions): Promise<T> {
+export function retry<T = void>(
+  fn: (retryCount: number, attempt: number) => Promise<T>,
+  options?: RetryOptions
+): Promise<T> {
   const retries = options?.retries ?? 10
-  const factor = options?.factor ?? 2
-  const wait = (retries: number) => Math.min(1000 * Math.pow(factor, retries), 30000)
+  const factor = options?.factor ?? 1
+  const minTimeout = options?.minTimeout ?? 1000
+  const maxTimeout = options?.maxTimeout ?? 30000
+
+  const getDelay = (attempt: number): number => {
+    if (options?.delay) {
+      return options.delay(attempt)
+    }
+    if (factor <= 1) {
+      return minTimeout
+    }
+    return Math.min(minTimeout * Math.pow(factor, Math.max(0, attempt - 1)), maxTimeout)
+  }
 
   let lastError: Error
 
@@ -20,7 +46,7 @@ export function retry<T = void>(fn: (...args: any[]) => Promise<T>, options?: Re
     let attempt = 0
     const next = async () => {
       try {
-        const result = await fn()
+        const result = await fn(retries, attempt)
         resolve(result)
       } catch (error) {
         lastError = error as Error
@@ -29,7 +55,7 @@ export function retry<T = void>(fn: (...args: any[]) => Promise<T>, options?: Re
           reject(lastError)
           return
         }
-        setTimeout(next, wait(attempt))
+        setTimeout(next, getDelay(attempt))
       }
     }
     next()

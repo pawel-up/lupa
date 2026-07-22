@@ -51,22 +51,22 @@ As per your configuration above, your tests should be placed in `tests/browser/`
 Let's create our first test:
 
 ```ts
-import { test, fixture, html } from '@pawel-up/lupa/testing'
+import { test, html } from '@pawel-up/lupa/testing'
 
-test('renders text correctly', async ({ assert }) => {
+test('renders text correctly', async ({ fixture, assert }) => {
   const el = await fixture(html`<div>Hello World</div>`)
   assert.equal(el.textContent, 'Hello World')
 })
 ```
 
-The test callback function receives a `TestContext`. We destructure `assert` from this context to run expectations against the DOM.
+The test callback function receives a `TestContext`. We destructure `fixture` and `assert` from this context to mount DOM fixtures and run expectations.
 
 ## Creating test groups
 
 You can logically group related tests together using the `test.group` method. Groups allow you to define lifecycle hooks that run before or after every test in the group.
 
 ```ts
-import { test, fixture, html } from '@pawel-up/lupa/testing'
+import { test, html } from '@pawel-up/lupa/testing'
 
 test.group('My Component', (group) => {
   
@@ -74,7 +74,7 @@ test.group('My Component', (group) => {
     // Runs once before all tests in this group
   })
 
-  test('button click works', async ({ assert }) => {
+  test('button click works', async ({ fixture, assert }) => {
     const btn = await fixture(html`<button>Click me</button>`)
     assert.equal(btn.textContent, 'Click me')
   })

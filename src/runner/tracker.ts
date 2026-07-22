@@ -54,15 +54,17 @@ export class Tracker {
     return `${payload.browserId}:${payload.name}`
   }
 
-  #getGroupKey(payload: { browserId: string; file: string; title: string }) {
-    return `${payload.browserId}:${payload.file}:${payload.title}`
+  #getGroupKey(payload: { browserId: string; file?: string; meta?: any; title: string }) {
+    const file = payload.file || payload.meta?.fileName || ''
+    return `${payload.browserId}:${file}:${payload.title}`
   }
 
   /**
    * Set reference for the current suite
    */
   #onSuiteStart(payload: RunnerEvents['suite:start']) {
-    this.#activeSuites.set(this.#getSuiteKey(payload), {
+    const key = this.#getSuiteKey(payload)
+    this.#activeSuites.set(key, {
       name: payload.name,
       type: 'suite',
       errors: [],
@@ -79,7 +81,7 @@ export class Tracker {
     const key = this.#getSuiteKey(payload)
     const suite = this.#activeSuites.get(key)
     if (!suite) {
-      throw new Error('Suite not found')
+      return
     }
     if (payload.hasError) {
       suite.errors = payload.errors
@@ -105,6 +107,30 @@ export class Tracker {
   }
 
   /**
+   * Get existing suite or create a new one
+   */
+  #getOrCreateSuite(browserId: string, name?: string): FailureTreeSuiteNode | undefined {
+    const suiteName = name || 'default'
+    const suiteKey = this.#getSuiteKey({ browserId, name: suiteName })
+    let suite = this.#activeSuites.get(suiteKey)
+    if (!suite) {
+      const endedSuite = this.#failureTree.find((s) => s.browserId === browserId && s.name === suiteName)
+      if (endedSuite) {
+        return undefined
+      }
+      suite = {
+        name: suiteName,
+        type: 'suite',
+        errors: [],
+        children: [],
+        browserId,
+      }
+      this.#activeSuites.set(suiteKey, suite)
+    }
+    return suite
+  }
+
+  /**
    * Move group to the suite children when the group
    * has errors or children
    */
@@ -112,17 +138,14 @@ export class Tracker {
     const key = this.#getGroupKey(payload)
     const group = this.#activeGroups.get(key)
     if (!group) {
-      throw new Error('Group not found')
+      return
     }
     if (payload.hasError) {
       group.errors = payload.errors
     }
 
     if (group.errors.length > 0 || group.children.length > 0) {
-      const suiteKey = payload.meta.suite
-        ? this.#getSuiteKey({ browserId: payload.browserId, name: payload.meta.suite })
-        : null
-      const suite = suiteKey ? this.#activeSuites.get(suiteKey) : null
+      const suite = this.#getOrCreateSuite(payload.browserId, payload.meta?.suite)
       if (suite) {
         suite.children.push(group)
       }
@@ -194,18 +217,19 @@ export class Tracker {
      * Track test inside the current group or suite
      */
     const groupKey = payload.meta.group
-      ? this.#getGroupKey({ browserId: payload.browserId, file: payload.file, title: payload.meta.group })
+      ? this.#getGroupKey({
+          browserId: payload.browserId,
+          file: payload.file,
+          meta: payload.meta,
+          title: payload.meta.group,
+        })
       : null
     const group = groupKey ? this.#activeGroups.get(groupKey) : null
 
     if (group) {
       group.children.push(testPayload)
     } else {
-      const suiteKey = payload.meta.suite
-        ? this.#getSuiteKey({ browserId: payload.browserId, name: payload.meta.suite })
-        : null
-      const suite = suiteKey ? this.#activeSuites.get(suiteKey) : null
-
+      const suite = this.#getOrCreateSuite(payload.browserId, payload.meta?.suite)
       if (suite) {
         suite.children.push(testPayload)
       }
@@ -253,11 +277,18 @@ export class Tracker {
    * Returns the tests runner summary
    */
   getSummary(): RunnerSummary {
+    const failureTree = [...this.#failureTree]
+    for (const suite of this.#activeSuites.values()) {
+      if ((suite.errors.length > 0 || suite.children.length > 0) && !failureTree.includes(suite)) {
+        failureTree.push(suite)
+      }
+    }
+
     return {
       aggregates: this.#aggregates,
-      hasError: this.#aggregates.failed > 0 || this.#failureTree.length > 0 || this.#importErrors.length > 0,
+      hasError: this.#aggregates.failed > 0 || failureTree.length > 0 || this.#importErrors.length > 0,
       duration: this.#duration,
-      failureTree: this.#failureTree,
+      failureTree,
       failedTestsTitles: this.#failedTestsTitles,
       importErrors: this.#importErrors,
     }

@@ -1,9 +1,8 @@
-import os from 'node:os'
 import { fileURLToPath } from 'node:url'
-import type { NormalizedConfig, TestSuite } from './types.js'
+import type { NormalizedConfig } from './types.js'
 import { PlannedTestSuite } from '../types.js'
-
-const DEFAULT_PRIORITY = 100
+import { PriorityPlanner, DEFAULT_PRIORITY } from './priority_planner.js'
+import { ShardingStrategy } from './sharding_strategy.js'
 
 /**
  * Represents a discrete chunk of tests assigned to a specific browser page slot.
@@ -48,6 +47,8 @@ export interface TestChunk {
  */
 export class TestPoolManager {
   #chunks = new Map<string, TestChunk>()
+  #priorityPlanner = new PriorityPlanner()
+  #shardingStrategy = new ShardingStrategy()
 
   /**
    * Creates a new TestPoolManager and immediately computes the workload chunks.
@@ -65,66 +66,12 @@ export class TestPoolManager {
   }
 
   #computeChunks() {
-    let concurrency = this.config.concurrency
-    if (concurrency === 'auto') {
-      concurrency = Math.max(1, os.cpus().length - 1)
-    } else {
-      concurrency = Number(concurrency) || 1
-    }
+    const tierMap = this.#priorityPlanner.groupByPriority(this.suites)
 
-    // Group suites by priority tier.
-    const tierMap = new Map<number, PlannedTestSuite[]>()
-    for (const suite of this.suites) {
-      const priority = suite.priority ?? DEFAULT_PRIORITY
-      const bucket = tierMap.get(priority)
-      if (bucket) {
-        bucket.push(suite)
-      } else {
-        tierMap.set(priority, [suite])
-      }
-    }
-
-    // Process each tier independently with the same round-robin distribution.
     for (const [priority, tieredSuites] of tierMap) {
-      const allFiles: { suite: TestSuite; fileURL: URL }[] = []
-      for (const suite of tieredSuites) {
-        for (const fileURL of suite.filesURLs) {
-          allFiles.push({ suite, fileURL })
-        }
-      }
-
-      const actualConcurrency = Math.max(1, Math.min(concurrency, allFiles.length || 1))
-
-      for (const browserName of this.browserNames) {
-        const browserChunks: TestChunk[] = Array.from({ length: actualConcurrency }).map((_, i) => ({
-          id: `${browserName}-t${priority}-${i}`,
-          browserName,
-          pageIndex: i,
-          priority,
-          suites: [],
-        }))
-
-        allFiles.forEach((fileObj, index) => {
-          const chunk = browserChunks[index % actualConcurrency]
-          let suiteChunk = chunk.suites.find((s) => s.name === fileObj.suite.name)
-          if (!suiteChunk) {
-            suiteChunk = {
-              name: fileObj.suite.name,
-              timeout: fileObj.suite.timeout,
-              retries: fileObj.suite.retries,
-              priority: fileObj.suite.priority,
-              disableInWatchMode: fileObj.suite.disableInWatchMode,
-              excludeFromReporting: fileObj.suite.excludeFromReporting,
-              filesURLs: [],
-            }
-            chunk.suites.push(suiteChunk)
-          }
-          suiteChunk.filesURLs.push(fileObj.fileURL)
-        })
-
-        for (const chunk of browserChunks) {
-          this.#chunks.set(chunk.id, chunk)
-        }
+      const chunks = this.#shardingStrategy.shard(tieredSuites, priority, this.browserNames, this.config.concurrency)
+      for (const chunk of chunks) {
+        this.#chunks.set(chunk.id, chunk)
       }
     }
   }
@@ -206,10 +153,11 @@ export class TestPoolManager {
    * Returns the total number of test files across all chunks and browsers,
    * excluding files that belong to suites marked with `excludeFromReporting`.
    *
+   * @param ignoreFileFilters - If true, returns total count ignoring active config.filters.files.
    * @returns Total number of reportable test files
    */
-  getFilesCount(): number {
-    const fileFilters = this.config.filters?.files
+  getFilesCount(ignoreFileFilters = false): number {
+    const fileFilters = ignoreFileFilters ? undefined : this.config.filters?.files
     const firstBrowser = this.browserNames[0] || 'chromium'
 
     return Array.from(this.#chunks.values())

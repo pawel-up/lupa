@@ -25,12 +25,19 @@ function createProgressBlocks(value: number, total: number): string {
   return `${PROGRESS_BLOCKS[8].repeat(floored)}${partialBlock}${' '.repeat(Math.max(0, PROGRESS_WIDTH - floored - 1))}`
 }
 
+interface FileTestStats {
+  passed: number
+  failed: number
+  skipped: number
+}
+
 interface BrowserProgressState {
   passedTests: number
   failedTests: number
   skippedTests: number
   executedFiles: Set<string>
   startedFiles: Set<string>
+  fileStats: Map<string, FileTestStats>
 }
 
 export class ProgressReporter extends BaseReporter {
@@ -63,6 +70,7 @@ export class ProgressReporter extends BaseReporter {
         skippedTests: 0,
         executedFiles: new Set<string>(),
         startedFiles: new Set<string>(),
+        fileStats: new Map<string, FileTestStats>(),
       }
       this.#browserStates.set(browserName, state)
     }
@@ -72,13 +80,26 @@ export class ProgressReporter extends BaseReporter {
   protected override onTestEnd(payload: WithCorrelation<TestEndNode>): void {
     const browserName = this.#getBrowserName(payload.browserId)
     const state = this.#getOrCreateBrowserState(browserName)
+    const file = payload.file || (payload.meta as any)?.fileName
+
+    let fStat: FileTestStats | undefined
+    if (file) {
+      fStat = state.fileStats.get(file)
+      if (!fStat) {
+        fStat = { passed: 0, failed: 0, skipped: 0 }
+        state.fileStats.set(file, fStat)
+      }
+    }
 
     if (payload.isSkipped || payload.isTodo) {
       state.skippedTests++
+      if (fStat) fStat.skipped++
     } else if (payload.hasError) {
       state.failedTests++
+      if (fStat) fStat.failed++
     } else {
       state.passedTests++
+      if (fStat) fStat.passed++
     }
 
     this.render()
@@ -86,19 +107,22 @@ export class ProgressReporter extends BaseReporter {
 
   protected override start(node: RunnerStartNode): void {
     this.#totalFiles = node.estimatedTotalFiles
-    this.#browserStates.clear()
     this.#logs = []
     this.#lastRenderTime = Date.now()
 
+    const isFocusedMode = !!this.config?.filters?.files?.length && this.config.filters.files.length === 1
+    const isWatchMode = !!this.config?.watch
+
+    // Reset browser states completely if not in watch mode or if switching focus mode
+    if (!isWatchMode || isFocusedMode) {
+      this.#browserStates.clear()
+    }
+
     const browserNames = this.getRunnerOrThrow().poolManager.browserNames
     for (const browserName of browserNames) {
-      this.#browserStates.set(browserName, {
-        passedTests: 0,
-        failedTests: 0,
-        skippedTests: 0,
-        executedFiles: new Set<string>(),
-        startedFiles: new Set<string>(),
-      })
+      if (!this.#browserStates.has(browserName)) {
+        this.#getOrCreateBrowserState(browserName)
+      }
     }
 
     this.render()
@@ -107,6 +131,18 @@ export class ProgressReporter extends BaseReporter {
   protected override onFileStart(node: WithCorrelation<FileStartNode>): void {
     const browserName = this.#getBrowserName(node.browserId)
     const state = this.#getOrCreateBrowserState(browserName)
+
+    if (node.file && state.fileStats.has(node.file)) {
+      const prev = state.fileStats.get(node.file)
+      if (prev) {
+        state.passedTests = Math.max(0, state.passedTests - prev.passed)
+        state.failedTests = Math.max(0, state.failedTests - prev.failed)
+        state.skippedTests = Math.max(0, state.skippedTests - prev.skipped)
+      }
+      state.executedFiles.delete(node.file)
+      state.fileStats.delete(node.file)
+    }
+
     state.startedFiles.add(node.file)
     this.render()
   }
@@ -155,6 +191,7 @@ export class ProgressReporter extends BaseReporter {
 
       if (summary.hasError) {
         console.log('')
+        await this.printImportErrors(summary)
         await this.printErrors(summary)
       }
     } else {

@@ -140,4 +140,49 @@ test('TestPoolManager', async (t) => {
     assert.ok(tiers.get(100)?.every((id) => id.includes('-t100-')))
     assert.ok(tiers.get(50)?.every((id) => id.includes('-t50-')))
   })
+
+  await t.test('respects per-suite concurrency override', () => {
+    const customSuites: PlannedTestSuite[] = [
+      {
+        name: 'serial-e2e',
+        files: [],
+        concurrency: 1, // Must be forced to 1 page slot
+        filesURLs: [
+          pathToFileURL('/absolute/path/to/e2e1.spec.ts'),
+          pathToFileURL('/absolute/path/to/e2e2.spec.ts'),
+          pathToFileURL('/absolute/path/to/e2e3.spec.ts'),
+        ],
+      },
+      {
+        name: 'parallel-unit',
+        files: [],
+        concurrency: 4, // Distributed across up to 4 page slots
+        filesURLs: [
+          pathToFileURL('/absolute/path/to/u1.spec.ts'),
+          pathToFileURL('/absolute/path/to/u2.spec.ts'),
+          pathToFileURL('/absolute/path/to/u3.spec.ts'),
+          pathToFileURL('/absolute/path/to/u4.spec.ts'),
+        ],
+      },
+    ]
+
+    const manager = new TestPoolManager(mockConfig, ['chromium'], customSuites)
+    const chromiumChunks = manager.getChunkIdsForBrowser('chromium')
+
+    // Concurrency max is 4 (from parallel-unit)
+    assert.equal(chromiumChunks.length, 4)
+
+    // serial-e2e has concurrency: 1, so all 3 files MUST be in chunk 0 (chromium-t100-0)
+    const chunk0 = manager.getChunk('chromium-t100-0')!
+    const serialSuiteInChunk0 = chunk0.suites.find((s) => s.name === 'serial-e2e')
+    assert.ok(serialSuiteInChunk0)
+    assert.equal(serialSuiteInChunk0.filesURLs.length, 3)
+
+    // Chunks 1, 2, 3 must NOT contain any files from serial-e2e
+    for (let i = 1; i < 4; i++) {
+      const chunk = manager.getChunk(`chromium-t100-${i}`)!
+      const serialSuite = chunk.suites.find((s) => s.name === 'serial-e2e')
+      assert.equal(serialSuite, undefined)
+    }
+  })
 })

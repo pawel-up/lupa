@@ -21,6 +21,7 @@ import type {
   DataSetNode,
   TestEndNode,
   TestOptions,
+  RetryBackoffOptions,
   TestExecutor,
   TestHooksHandler,
   TestHooksCleanupHandler,
@@ -323,13 +324,34 @@ export class Test<TestData extends DataSetNode = undefined> extends Macroable {
   }
 
   /**
-   * Configure the number of times this test should be retried
-   * when failing.
+   * Configure the number of times this test should be retried when failing,
+   * with optional exponential backoff or custom delay logic.
    *
-   * @param retries - The number of times to retry the test
+   * @param retries - The maximum number of times to retry the test callback upon failure.
+   * @param options - Backoff factor multiplier, custom delay callback `(attempt) => ms`,
+   *                  or a {@link RetryBackoffOptions} configuration object.
+   *
+   * @example
+   * **Exponential Backoff**
+   * ```ts
+   * test('flaky API', async () => { ... }).retry(3, { factor: 2, minTimeout: 500 })
+   * ```
+   *
+   * @example
+   * **Custom Delay Callback**
+   * ```ts
+   * test('flaky API', async () => { ... }).retry(3, (attempt) => attempt * 1000)
+   * ```
    */
-  retry(retries: number): this {
+  retry(retries: number, options?: number | ((attempt: number) => number) | RetryBackoffOptions): this {
     this.options.retries = retries
+    if (typeof options === 'number') {
+      this.options.retryOptions = { factor: options }
+    } else if (typeof options === 'function') {
+      this.options.retryOptions = { delay: options }
+    } else if (options) {
+      this.options.retryOptions = options
+    }
     return this
   }
 

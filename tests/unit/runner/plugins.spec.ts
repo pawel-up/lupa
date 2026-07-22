@@ -165,6 +165,9 @@ test('Runner Plugins Lifecycle', async (t) => {
     assert.ok(executedHooks.includes('good:shutdown'))
     assert.ok(executedHooks.includes('good:plan:teardown'))
     assert.ok(executedHooks.includes('good:boot:teardown'))
+
+    // Verify errors were surfaced to exceptionsManager
+    assert.strictEqual(orchestrator.exceptionsManager.hasErrors, true)
   })
 
   await t.test('handles asynchronous hooks and teardowns properly', async () => {

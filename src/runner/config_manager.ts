@@ -232,6 +232,7 @@ export class ConfigManager {
           priority: suite.priority ?? 100,
           disableInWatchMode: suite.disableInWatchMode ?? false,
           excludeFromReporting: suite.excludeFromReporting ?? false,
+          concurrency: suite.concurrency ?? baseConfig.concurrency,
         }
       }),
       ...baseConfig,

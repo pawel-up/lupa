@@ -1,6 +1,7 @@
 import Macroable from '@poppinss/macroable'
 import type { TestHooksCleanupHandler } from '../types.js'
 import type { Test } from './test/main.js'
+import { renderFixture, type TemplateTypes, type FixtureRenderOptions } from './fixture.js'
 
 /**
  * A fresh copy of test context is shared with all the tests.
@@ -9,10 +10,37 @@ import type { Test } from './test/main.js'
 export class TestContext extends Macroable {
   cleanup: (cleanupCallback: TestHooksCleanupHandler) => void
 
+  /**
+   * Renders a HTML string or a Lit template into a dedicated fixture container and mounts it to the DOM.
+   * Bound explicitly to this test context instance for auto-cleanup.
+   *
+   * @param template - A string of HTML or a `lit-html` template.
+   * @param options - Render options.
+   * @returns A promise resolving to the rendered DOM element.
+   *
+   * @category DOM
+   * @useWhen Rendering HTML templates or Custom Elements into the DOM in a test.
+   *
+   * @example
+   * ```ts
+   * test('renders lit template', async ({ fixture, assert }) => {
+   *   const el = await fixture<HTMLButtonElement>(html`<button>Click me</button>`)
+   *   assert.equal(el.textContent, 'Click me')
+   * })
+   * ```
+   */
+  fixture: <T extends Element = Element>(template: TemplateTypes, options?: FixtureRenderOptions) => Promise<T>
+
   constructor(public test: Test) {
     super()
     this.cleanup = (cleanupCallback: TestHooksCleanupHandler) => {
       test.cleanup(cleanupCallback)
+    }
+    this.fixture = <T extends Element = Element>(
+      template: TemplateTypes,
+      options?: FixtureRenderOptions
+    ): Promise<T> => {
+      return renderFixture<T>(template, options, this)
     }
   }
 

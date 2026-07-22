@@ -64,12 +64,24 @@ You can control parallel execution in your `lupa.config.ts`:
 import { defineConfig } from '@pawel-up/lupa/runner'
 
 export default defineConfig({
-  // Enable or disable parallel execution (default: true)
+  // Enable or disable parallel execution globally (default: true)
   parallel: true,
   
-  // Set the number of concurrent browser pages. 
-  // Can be 'auto' (based on CPU cores) or a specific number.
-  concurrency: 'auto'
+  // Set global concurrency. Can be 'auto' (based on CPU cores) or a specific number.
+  concurrency: 'auto',
+
+  suites: [
+    {
+      name: 'unit',
+      files: ['tests/unit/**/*.spec.ts'],
+      concurrency: 8, // Run unit tests with high parallelism
+    },
+    {
+      name: 'e2e',
+      files: ['tests/e2e/**/*.spec.ts'],
+      concurrency: 1, // Force serial execution for stateful E2E tests
+    },
+  ]
 })
 ```
 

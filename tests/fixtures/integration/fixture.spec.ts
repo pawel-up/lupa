@@ -81,3 +81,12 @@ test.group('Edge Cases', () => {
     assert.equal(queried[0], el)
   })
 })
+
+test.group('Explicit TestContext fixture property', () => {
+  test('can render fixture using explicit TestContext property', async ({ fixture: contextFixture, assert }) => {
+    const el = await contextFixture(html`<div id="explicit-context-fixture">Explicit Context Fixture</div>`)
+    assert.exists(el)
+    assert.equal(el.id, 'explicit-context-fixture')
+    assert.equal(document.getElementById('explicit-context-fixture'), el)
+  })
+})
