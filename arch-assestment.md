@@ -193,7 +193,7 @@ The following issues are prioritized by technical urgency based on their impact 
 
 ### Low Urgency (Code Cleanliness & Refactoring)
 
-7. **ServerManager Does Too Much**
+7. **ServerManager Does Too Much** (Done)
 
    [server_manager.ts](file:///home/pawel/workspace/pawel-up/lupa/src/runner/server_manager.ts#L39-L233) handles Vite server instantiation, plugin specifier URL resolution, coverage instrumentation, WSS telemetry attachment, and URL warmup requests.
 

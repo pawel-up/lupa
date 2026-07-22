@@ -12,9 +12,7 @@ import { ensureIsConfigured } from './validator.js'
 import { Planner } from './planner.js'
 import { Orchestrator } from './orchestrator.js'
 import type { ProgrammaticReporterContract } from '../types.js'
-export { SummaryBuilder } from './summary_builder.js'
 export { loadLupaConfig } from './config_loader.js'
-export { TestCache, type CachedTestFileResult } from './test_cache.js'
 export type { Config, NormalizedConfig, CLIArgs, JsonSerializable } from './types.js'
 
 /**

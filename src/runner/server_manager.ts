@@ -1,11 +1,13 @@
 import { resolve, dirname, join } from 'node:path'
 import { existsSync } from 'node:fs'
-import { fileURLToPath, pathToFileURL } from 'node:url'
+import { fileURLToPath } from 'node:url'
 import { createServer, createLogger, mergeConfig, type ViteDevServer, type InlineConfig } from 'vite'
 
-import type { NormalizedConfig, JsonSerializable } from './types.js'
+import type { NormalizedConfig } from './types.js'
 import type { TestPoolManager } from './test_pool_manager.js'
-import { CoverageManager } from './coverage_manager.js'
+import type { CoverageManager } from './coverage_manager.js'
+import { CoverageIntegrator } from './coverage_integrator.js'
+import { PluginResolver } from './plugin_resolver.js'
 import { colors } from './helpers.js'
 import lupaHarnessPlugin from './plugins/harness.js'
 import type { Orchestrator } from './orchestrator.js'
@@ -40,14 +42,15 @@ export class ServerManager {
   #orchestrator: Orchestrator
   #vite?: ViteDevServer
   #options: ServerManagerOptions
-  #coverageManager?: CoverageManager
+  #pluginResolver = new PluginResolver()
+  #coverageIntegrator = new CoverageIntegrator()
 
   get vite(): ViteDevServer | undefined {
     return this.#vite
   }
 
   get coverageManager(): CoverageManager | undefined {
-    return this.#coverageManager
+    return this.#coverageIntegrator.coverageManager
   }
 
   constructor(orchestrator: Orchestrator, options: ServerManagerOptions) {
@@ -73,23 +76,7 @@ export class ServerManager {
       this.#orchestrator.handleCompilationError(err, !config.watch)
     }
 
-    const resolvedPlugins: (JsonSerializable | undefined)[][] = await Promise.all(
-      (config.testPlugins || []).map(async (plugin) => {
-        const [specifier, options] = Array.isArray(plugin) ? plugin : [plugin, undefined]
-        let url = specifier as string
-        try {
-          const resolved = import.meta.resolve(url, pathToFileURL(cwd + '/').href)
-          if (resolved.startsWith('file://')) {
-            url = '/@fs' + fileURLToPath(resolved)
-          } else {
-            url = resolved
-          }
-        } catch {
-          // Leave as is, let the browser fail and report it
-        }
-        return [url, options]
-      })
-    )
+    const resolvedPlugins = await this.#pluginResolver.resolve(config.testPlugins, cwd)
 
     const baseViteConfig: InlineConfig = {
       root: cwd,
@@ -167,8 +154,7 @@ export class ServerManager {
 
     const finalViteConfig = config.vite ? mergeConfig(baseViteConfig, config.vite) : baseViteConfig
 
-    this.#coverageManager = new CoverageManager(config.coverage, config.exclude)
-    await this.#coverageManager.instrumentViteConfig(finalViteConfig)
+    await this.#coverageIntegrator.instrument(config, finalViteConfig)
 
     if (finalViteConfig.server?.middlewareMode) {
       throw new Error('Lupa cannot run with server.middlewareMode enabled in your Vite configuration.')
