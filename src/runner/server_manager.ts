@@ -188,8 +188,8 @@ export class ServerManager {
       await this.#vite.listen()
     } catch (err: any) {
       console.error(`\n${colors.red('[Vite Startup Error]')} ${err.message || err}`)
-      this.#orchestrator.handleCompilationError(err, true)
-      throw err
+      await this.#orchestrator.handleCompilationError(err, true)
+      return ''
     }
 
     interface ViteDevServerWithInternalOptimizer {

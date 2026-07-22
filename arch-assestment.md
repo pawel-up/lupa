@@ -150,7 +150,7 @@ The following issues are prioritized by technical urgency based on their impact 
 
    * **Suggestion**: Extract `LifecycleManager` (boot/shutdown coordination) and `TestExecutor` (wave execution) to make `Orchestrator` a thin coordinator.
 
-3. **Inconsistent Error Handling**
+3. **Inconsistent Error Handling** (Done)
 
    Error handling mixes raw `throw` statements, `process.exit()`, and `ExceptionsManager.notifyException()`:
 

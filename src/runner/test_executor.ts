@@ -77,14 +77,19 @@ export class TestExecutor {
     if (config.runnerPlugins) {
       for (const plugin of config.runnerPlugins) {
         if (plugin.execute) {
-          const teardown = await plugin.execute({
-            config,
-            cliArgs,
-            runner: this.activeNodeRunner,
-            emitter: this.activeNodeEmitter,
-          })
-          if (typeof teardown === 'function') {
-            executeTeardowns.push(teardown)
+          try {
+            const teardown = await plugin.execute({
+              config,
+              cliArgs,
+              runner: this.activeNodeRunner,
+              emitter: this.activeNodeEmitter,
+            })
+            if (typeof teardown === 'function') {
+              executeTeardowns.push(teardown)
+            }
+          } catch (error) {
+            debug('error executing plugin execute hook: %O', error)
+            exceptionsManager.notifyException(error as Error)
           }
         }
       }

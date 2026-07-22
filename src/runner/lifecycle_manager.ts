@@ -59,9 +59,14 @@ export class LifecycleManager {
     if (config.runnerPlugins) {
       for (const plugin of config.runnerPlugins) {
         if (plugin.boot) {
-          const teardown = await plugin.boot({ config, cliArgs })
-          if (typeof teardown === 'function') {
-            this.#pluginTeardowns.push(teardown)
+          try {
+            const teardown = await plugin.boot({ config, cliArgs })
+            if (typeof teardown === 'function') {
+              this.#pluginTeardowns.push(teardown)
+            }
+          } catch (error) {
+            debug('error executing plugin boot hook: %O', error)
+            exceptionsManager.notifyException(error as Error)
           }
         }
       }
