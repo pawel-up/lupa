@@ -167,7 +167,7 @@ The following issues are prioritized by technical urgency based on their impact 
 
 ### Medium Urgency (Feature Completeness & DX)
 
-4. **Limited Parallelism Control**
+4. **Limited Parallelism Control** (Done)
 
    Concurrency is strictly global (`concurrency: 4`). Individual suites cannot override execution parallelism:
 

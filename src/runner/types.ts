@@ -479,6 +479,12 @@ export interface TestSuite {
    * @default false
    */
   excludeFromReporting?: boolean
+
+  /**
+   * Custom concurrency level for this suite, overriding the global concurrency setting.
+   * Specify `1` for serial execution (e.g. stateful E2E tests) or a higher number/`'auto'`.
+   */
+  concurrency?: number | 'auto'
 }
 
 /**

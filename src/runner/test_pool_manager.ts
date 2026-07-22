@@ -1,6 +1,6 @@
 import os from 'node:os'
 import { fileURLToPath } from 'node:url'
-import type { NormalizedConfig, TestSuite } from './types.js'
+import type { NormalizedConfig } from './types.js'
 import { PlannedTestSuite } from '../types.js'
 
 const DEFAULT_PRIORITY = 100
@@ -64,13 +64,15 @@ export class TestPoolManager {
     this.#computeChunks()
   }
 
-  #computeChunks() {
-    let concurrency = this.config.concurrency
-    if (concurrency === 'auto') {
-      concurrency = Math.max(1, os.cpus().length - 1)
-    } else {
-      concurrency = Number(concurrency) || 1
+  #resolveConcurrency(value: number | 'auto' | undefined): number {
+    if (value === 'auto') {
+      return Math.max(1, os.cpus().length - 1)
     }
+    return Math.max(1, Number(value) || 1)
+  }
+
+  #computeChunks() {
+    const globalConcurrency = this.#resolveConcurrency(this.config.concurrency)
 
     // Group suites by priority tier.
     const tierMap = new Map<number, PlannedTestSuite[]>()
@@ -84,18 +86,19 @@ export class TestPoolManager {
       }
     }
 
-    // Process each tier independently with the same round-robin distribution.
+    // Process each tier independently with per-suite concurrency distribution.
     for (const [priority, tieredSuites] of tierMap) {
-      const allFiles: { suite: TestSuite; fileURL: URL }[] = []
-      for (const suite of tieredSuites) {
-        for (const fileURL of suite.filesURLs) {
-          allFiles.push({ suite, fileURL })
-        }
-      }
+      const maxTierConcurrency = Math.max(
+        ...tieredSuites.map((s) =>
+          s.concurrency !== undefined ? this.#resolveConcurrency(s.concurrency) : globalConcurrency
+        )
+      )
 
-      const actualConcurrency = Math.max(1, Math.min(concurrency, allFiles.length || 1))
+      const totalFilesCount = tieredSuites.reduce((sum, s) => sum + s.filesURLs.length, 0)
+      const actualConcurrency = Math.max(1, Math.min(maxTierConcurrency, totalFilesCount || 1))
 
       for (const browserName of this.browserNames) {
+        let tierFileIndex = 0
         const browserChunks: TestChunk[] = Array.from({ length: actualConcurrency }).map((_, i) => ({
           id: `${browserName}-t${priority}-${i}`,
           browserName,
@@ -104,26 +107,35 @@ export class TestPoolManager {
           suites: [],
         }))
 
-        allFiles.forEach((fileObj, index) => {
-          const chunk = browserChunks[index % actualConcurrency]
-          let suiteChunk = chunk.suites.find((s) => s.name === fileObj.suite.name)
-          if (!suiteChunk) {
-            suiteChunk = {
-              name: fileObj.suite.name,
-              timeout: fileObj.suite.timeout,
-              retries: fileObj.suite.retries,
-              priority: fileObj.suite.priority,
-              disableInWatchMode: fileObj.suite.disableInWatchMode,
-              excludeFromReporting: fileObj.suite.excludeFromReporting,
-              filesURLs: [],
+        for (const suite of tieredSuites) {
+          const effectiveConcurrency =
+            suite.concurrency !== undefined ? this.#resolveConcurrency(suite.concurrency) : globalConcurrency
+
+          suite.filesURLs.forEach((fileURL) => {
+            const pageIndex = tierFileIndex++ % effectiveConcurrency
+            const chunk = browserChunks[pageIndex]
+            let suiteChunk = chunk.suites.find((s) => s.name === suite.name)
+            if (!suiteChunk) {
+              suiteChunk = {
+                name: suite.name,
+                timeout: suite.timeout,
+                retries: suite.retries,
+                priority: suite.priority,
+                disableInWatchMode: suite.disableInWatchMode,
+                excludeFromReporting: suite.excludeFromReporting,
+                concurrency: suite.concurrency,
+                filesURLs: [],
+              }
+              chunk.suites.push(suiteChunk)
             }
-            chunk.suites.push(suiteChunk)
-          }
-          suiteChunk.filesURLs.push(fileObj.fileURL)
-        })
+            suiteChunk.filesURLs.push(fileURL)
+          })
+        }
 
         for (const chunk of browserChunks) {
-          this.#chunks.set(chunk.id, chunk)
+          if (chunk.suites.some((s) => s.filesURLs.length > 0)) {
+            this.#chunks.set(chunk.id, chunk)
+          }
         }
       }
     }
