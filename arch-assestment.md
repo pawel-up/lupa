@@ -123,411 +123,85 @@ Familiar to Node.js developers, minimal boilerplate.
 
 ## What Can Be Improved 🟡
 
-1. TestPoolManager is Too Complex
+The following issues are prioritized by technical urgency based on their impact on runner correctness, developer experience, and architectural maintainability. Invalid claims (such as alleged module mock memory leaks or incorrect telemetry queue code) have been removed.
 
-`test_pool_manager.ts` does too many jobs:
+### High Urgency (Correctness & Architectural Foundation)
 
-- Priority tier computation
-- Round-robin sharding
-- File path resolution
-- Excluded file tracking
-- Files count calculation
+1. **Implicit Global State in Browser Test Execution**
 
-Suggestion: Split into:
+   The browser-side test context relies on module-scoped global variables (`activeTest`, `activeGroup`, `activeSuite`, `activeFile` in [api.ts](file:///home/pawel/workspace/pawel-up/lupa/src/testing/api.ts#L48-L70)):
 
-- ShardingStrategy - Round-robin distribution logic
-- PriorityPlanner - Tier computation
-- TestPoolManager - Coordination only
+   ```ts
+   const activeTest = getActiveTest() // Implicit global lookup in fixture()
+   ```
 
-1. Orchestrator is a God Object (504 lines)
+   This reliance on global state introduces risks of state bleeding and race conditions when async tasks interleave.
+   * **Suggestion**: Thread test context explicitly or utilize `AsyncLocalStorage` for browser context isolation.
 
-`orchestrator.ts` manages:
+2. **Orchestrator is a God Object**
 
-- Browser lifecycle
-- Server lifecycle
-- Test execution
-- CLI interactions
-- Telemetry
-- Plugin hooks
-- Shutdown coordination
-- Error handling
+   [orchestrator.ts](file:///home/pawel/workspace/pawel-up/lupa/src/runner/orchestrator.ts#L27-L506) (507 lines) directly manages every framework lifecycle:
+   - Browser and Vite server lifecycles
+   - Wave-based test execution (`#runWaves`)
+   - CLI interaction & event buffering
+   - Telemetry processing
+   - Plugin hooks (`boot`, `execute`, `shutdown`)
+   - Process exit & shutdown routines
 
-Suggestion: Extract:
+   * **Suggestion**: Extract `LifecycleManager` (boot/shutdown coordination) and `TestExecutor` (wave execution) to make `Orchestrator` a thin coordinator.
 
-- LifecycleManager - Boot/shutdown coordination
-- TestExecutor - Wave execution logic (currently #runWaves)
-- Keep Orchestrator as a thin coordinator
+3. **Inconsistent Error Handling**
 
-1. Implicit Global State
+   Error handling mixes raw `throw` statements, `process.exit()`, and `ExceptionsManager.notifyException()`:
 
-The browser-side test context relies on globals:
+   ```ts
+   // Inconsistent pattern across runner and server manager:
+   throw new Error('...')                          // Thrown directly in some modules
+   this.exceptionsManager.notifyException(error)   // Buffered in other modules
+   ```
 
-```ts
-const activeTest = getActiveTest() // Implicit global state
-```
-
-This works but makes reasoning harder. Consider explicit context threading:
-
-```ts
-fixture(html`...`, { context: this }) // Explicit
-```
-
-1. ServerManager Does Too Much
-
-`server_manager.ts` handles:
-
-- Vite server creation
-- Coverage instrumentation
-- Plugin resolution
-- WebSocket setup
-- Warmup requests
-
-Suggestion: Extract PluginResolver and CoverageIntegrator as separate concerns.
-
-1. Error Handling is Inconsistent
-
-Some places throw, others use `ExceptionsManager.notifyException()`:
-
-```ts
-// Inconsistent:
-throw new Error('...')                          // Some places
-this.exceptionsManager.notifyException(error)   // Other places
-```
-
-Suggestion: Standardize - always use ExceptionsManager for runtime errors, throw only for programmer errors.
-
-1. No Retry Backoff Strategy
-
-Test retries are simple counters:
-
-```ts
-retry(retries: number)
-```
-
-Suggestion: Add exponential backoff or delay between retries for flaky network tests.
-
-1. Limited Parallelism Control
-
-Concurrency is global (concurrency: 4). Some suites might benefit from serial execution while others run parallel.
-
-Suggestion: Per-suite concurrency override:
-
-```ts
-{ name: 'e2e', concurrency: 1 }  // Serial
-{ name: 'unit', concurrency: 8 } // Parallel
-```
-
-1. Telemetry Queue Has No Backpressure
-
-Telemetry.handleLupaTelemetryEvent processes events immediately:
-
-```ts
-handleLupaTelemetryEvent = (data: any, client: any) => {
-  this.#queue.push({ data, client, time: Date.now() })
-}
-```
-
-If the browser emits events faster than Node.js can process them, the queue grows unbounded.
-
-Suggestion: Add a max queue size and drop/warn on overflow.
-
-1. No Test Result Caching for Watch Mode
-
-When a file changes, all dependent tests re-run. Could cache results of unchanged tests to speed up feedback.
-
-Suggestion: Store test result hashes and skip re-running tests whose dependencies haven't changed.
-
-1. Module Mock Leaks Between Tests
-
-The module-mock system requires manual cleanup. If a test throws before calling `restore()`, mocks persist.
-
-Suggestion: Auto-register mocks with test cleanup hooks (like fixtures do).
+   Direct `throw`s bypass the exception buffer and can lead to unhandled promise rejections or truncated error output before reporter summaries complete.
+   * **Suggestion**: Standardize runtime error reporting through `ExceptionsManager` and reserve `throw` exclusively for programmer contract violations.
 
 ---
 
-## What is Bad ❌
+### Medium Urgency (Feature Completeness & DX)
 
-1. Test Timeout Implementation is Fragile
+4. **Limited Parallelism Control**
 
-Timeouts are managed via setTimeout with manual cleanup:
+   Concurrency is strictly global (`concurrency: 4`). Individual suites cannot override execution parallelism:
 
-```ts
-this.#activeRunner.resetTimeout(duration)
-```
+   * **Suggestion**: Allow per-suite concurrency overrides in `TestSuite` definitions:
+     ```ts
+     { name: 'e2e', concurrency: 1 }  // Serial execution for stateful tests
+     { name: 'unit', concurrency: 8 } // Parallel execution for unit tests
+     ```
 
-The resetTimeout logic is scattered and error-prone. If an exception occurs mid-test, the timeout might not clear, causing false failures.
+5. **No Configurable Retry Backoff Strategy**
 
-**Problem**: Tests failing with "timeout" when they actually threw an exception first.
+   [runner.ts](file:///home/pawel/workspace/pawel-up/lupa/src/testing/test/runner.ts#L434-L440) passes a fixed `{ factor: 1 }` to `retry()`, causing a static 1-second delay between attempts without exponential backoff or custom delay options.
 
-**Fix**: Use AbortController for cancellation:
+   * **Suggestion**: Add configurable backoff strategies (e.g. exponential backoff or custom delay callbacks) to `test.retry()`.
 
-```ts
-const controller = new AbortController()
-setTimeout(() => controller.abort(), timeout)
-await testExecutor({ ...context, signal: controller.signal })
-```
+6. **No Test Result Caching for Watch Mode**
 
-1. Shutdown Race Conditions
+   When a file changes in watch mode, all dependent test files re-run via Vite module graph invalidation, but previous test outcomes are not cached.
 
-The shutdown sequence has multiple concurrent cleanups:
-
-```ts
-await Promise.all([
-  this.browserManager?.close(),
-  this.vite?.close(),
-  this.serverManager?.coverageManager?.generateReport()
-])
-```
-
-If coverageManager.generateReport() tries to extract coverage from an already-closed browser, it fails.
-
-**Problem**: Failed to extract coverage errors in CI.
-
-**Fix**: Sequential shutdown with explicit ordering:
-
-```ts
-// 1. Extract coverage first (browser still alive)
-await this.browserManager.extractCoverage(...)
-// 2. Close browser
-await this.browserManager.close()
-// 3. Generate report (no browser needed)
-await this.serverManager.coverageManager.generateReport()
-// 4. Close Vite
-await this.vite?.close()
-```
-
-1. `runner.end()` is Not Idempotent in All Cases
-
-Despite the #ended flag, there are race conditions:
-
-```ts
-if (this.#ended) return
-this.#ended = true
-await this.#emitter.emit('runner:end', { hasError: this.#failed })
-```
-
-If two promises call end() simultaneously, both pass the guard before setting the flag.
-
-**Fix**: Use a promise cache:
-
-```ts
-#endPromise?: Promise<void>
-
-async end() {
-  if (this.#endPromise) return this.#endPromise
-  this.#endPromise = this.#doEnd()
-  return this.#endPromise
-}
-```
-
-(Note: Recent commit a95c5e4 may have addressed this)
-
-1. ExceptionsManager Silently Swallows Errors
-
-`exceptionsManager.notifyException()` adds errors to a list but doesn't log them immediately:
-
-```ts
-notifyException(error: Error) {
-  this.#errors.push(error)
-}
-```
-
-**Problem**: Errors occur mid-test but aren't visible until report() is called at shutdown - debugging is painful.
-
-**Fix**: Log immediately + store:
-
-```ts
-notifyException(error: Error) {
-  console.error('[Lupa Internal Error]', error)
-  this.#errors.push(error)
-}
-```
-
-1. Browser Page Slots are Statically Allocated
-
-BrowserManager creates concurrency pages upfront:
-
-```ts
-for (let i = 0; i < concurrency; i++) {
-  pages.push(await context.newPage())
-}
-```
-
-**Problem**: If a test suite has only 2 files but concurrency: 8, 6 browser pages sit idle, wasting memory.
-
-**Fix**: Lazy page allocation - create pages as chunks arrive.
-
-1. No Circuit Breaker for Playwright Failures
-
-If Playwright fails to launch (e.g., Chrome not installed), the orchestrator retries indefinitely via the global timeout.
-
-**Fix**: Fail-fast on browser launch errors:
-
-```ts
-try {
-  await playwright.chromium.launch()
-} catch (err) {
-  throw new Error('Failed to launch browser. Is Playwright installed?')
-}
-```
-
-1. Coverage Threshold Failures are Silent
-
-The CoverageManager checks thresholds but doesn't surface failures clearly:
-
-```ts
-if (coverage < threshold) {
-  // What happens here?
-}
-```
-
-**Fix**: Mark tests as failed and print a summary:
-
-```sh
-❌ Coverage threshold not met:
-    Lines: 65% (expected 80%)
-    Branches: 55% (expected 70%)
-```
-
-1. Plugin Teardown Errors are Swallowed
-
-```ts
-for (const teardown of this.#pluginTeardowns) {
-  try {
-    await teardown()
-  } catch (error) {
-    debug('error executing plugin teardown hook: %O', error)
-    // Error swallowed - no propagation
-  }
-}
-```
-
-Problem: Plugin cleanup failures (e.g., test database not shutting down) are invisible to users.
-
-**Fix**: Collect errors and report them with the summary.
-
-1. No Retry Jitter
-
-Test retries happen immediately:
-
-```ts
-for (let attempt = 0; attempt <= retries; attempt++) {
-  await test.exec()
-}
-```
-
-**Problem**: Flaky network tests fail deterministically if the network issue persists for <1s.
-
-**Fix**: Add jitter:
-
-```ts
-await delay(Math.random() *1000* attempt)
-```
-
-1. Watch Mode File Filtering is Too Eager
-
-The server watch config excludes many directories:
-
-```ts
-ignored: [
-  '**/node_modules/**',
-  '**/dist/**',
-  '**/coverage/**',
-  // ...15+ entries
-]
-```
-
-**Problem**: If a user has a custom directory structure (e.g., packages/core), it might be incorrectly ignored.
-
-**Fix**: Make the ignore list configurable via lupa.config.ts.
-
----
-Architecture Diagram
-
-```plain
-┌─────────────────────────────────────────────────────────────┐
-│                        Orchestrator                         │
-│  (Central Coordinator - Boot, Execute, Shutdown)            │
-└─────┬───────────────┬──────────────┬─────────────┬──────────┘
-      │               │              │             │
-      ▼               ▼              ▼             ▼
-┌───────────┐  ┌─────────────┐ ┌──────────┐ ┌──────────────┐
-│ Browser   │  │   Server    │ │TestPool  │ │ Exceptions   │
-│ Manager   │  │  Manager    │ │ Manager  │ │  Manager     │
-│(Playwright│  │   (Vite)    │ │(Sharding)│ │(Error Track) │
-└─────┬─────┘  └──────┬──────┘ └────┬─────┘ └──────────────┘
-      │               │             │
-      │               │             │
-      ▼               ▼             ▼
-┌──────────────────────────────────────────┐
-│         Browser Context (Harness)        │
-│  ┌─────────┐  ┌────────┐  ┌──────────┐   │
-│  │WebRunner│→ │ Suite  │→ │  Group   │   │
-│  └─────────┘  └────┬───┘  └────┬─────┘   │
-│                    │            │        │
-│                    ▼            ▼        │
-│               ┌────────────────────┐     │
-│               │       Test         │     │
-│               │  (with Context)    │     │
-│               └─────────┬──────────┘     │
-│                         │                │
-│       ┌─────────────────┼─────────────┐  │
-│       ▼                 ▼             ▼  │
-│  ┌────────┐      ┌─────────┐   ┌───────┐ │
-│  │Fixture │      │ Assert  │   │Network│ │
-│  │(DOM)   │      │(Chai++) │   │ Mock  │ │
-│  └────────┘      └─────────┘   └───────┘ │
-└──────────────────────────────────────────┘
-          │
-          │ (WebSocket Telemetry)
-          ▼
-    ┌──────────┐
-    │ Reporter │
-    │(Progress)│
-    └──────────┘
-```
+   * **Suggestion**: Cache test result hashes to skip re-executing unchanged suites and provide instant feedback during watch runs.
 
 ---
 
-## Recommendations
+### Low Urgency (Code Cleanliness & Refactoring)
 
-### High Priority
+7. **ServerManager Does Too Much**
 
-1. Fix shutdown race condition (coverage extraction before browser close)
-2. Make runner.end() truly idempotent (promise caching pattern)
-3. Surface plugin teardown errors (don't swallow)
-4. Add circuit breaker for Playwright launch failures
-5. Log exceptions immediately in ExceptionsManager
+   [server_manager.ts](file:///home/pawel/workspace/pawel-up/lupa/src/runner/server_manager.ts#L39-L233) handles Vite server instantiation, plugin specifier URL resolution, coverage instrumentation, WSS telemetry attachment, and URL warmup requests.
 
-### Medium Priority
+   * **Suggestion**: Extract `PluginResolver` and `CoverageIntegrator` into separate helper classes to simplify Vite configuration assembly.
 
-1. Split Orchestrator (extract LifecycleManager, TestExecutor)
-2. Refactor TestPoolManager (separate sharding, planning, tracking)
-3. Add retry backoff/jitter for flaky tests
-4. Add telemetry backpressure (max queue size)
-5. Make watch ignore list configurable
+8. **TestPoolManager Monolithic Partitioning**
 
-### Nice to Have
+   [test_pool_manager.ts](file:///home/pawel/workspace/pawel-up/lupa/src/runner/test_pool_manager.ts#L49-L288) combines priority tier grouping, round-robin sharding, excluded file filtering, and path resolution in a single class.
 
-1. Lazy browser page allocation
-2. Per-suite concurrency control
-3. Test result caching for watch mode
-4. Explicit context threading (vs global state)
-5. Auto-cleanup for module mocks
+   * **Suggestion**: Extract `ShardingStrategy` and `PriorityPlanner` to enable isolated unit testing of sharding algorithms.
 
----
-
-## Verdict
-
-### Overall Architecture: 8/10
-
-Lupa is a well-architected framework with clear separations, excellent DX, and smart technical choices (Vite, Playwright, WebSocket telemetry, V8 coverage). The core abstractions (Orchestrator, TestPoolManager, WebRunner, NetworkInterceptor) are solid.
-
-The main issues are:
-
-- God objects (Orchestrator, ServerManager, TestPoolManager could be decomposed)
-- Shutdown sequencing (race conditions in cleanup)
-- Error visibility (swallowed exceptions, silent plugin failures)
-- Edge case brittleness (timeout handling, idempotency gaps)
-
-These are fixable without major refactoring. The foundation is strong - this is a framework with staying power. With the improvements above, it could rival @web/test-runner while offering superior DX.

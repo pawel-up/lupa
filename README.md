@@ -78,11 +78,11 @@ Write your tests using the beautiful, explicit Japa-style API alongside Lupa's b
 
 ```typescript
 // tests/button.spec.ts
-import { test, fixture, html } from '@pawel-up/lupa/testing'
+import { test, html } from '@pawel-up/lupa/testing'
 import '../src/components/my-button.js'
 
 test.group('My Button Component', () => {
-  test('renders text correctly', async ({ assert }) => {
+  test('renders text correctly', async ({ fixture, assert }) => {
     // Renders the element to the DOM and waits for the next animation frame
     const el = await fixture(html`<my-button>Click Me</my-button>`)
     
@@ -100,9 +100,9 @@ Lupa ships with powerful network interception, allowing you to seamlessly mock r
 
 ```typescript
 // tests/api.spec.ts
-import { test, fixture, html } from '@pawel-up/lupa/testing'
+import { test, html } from '@pawel-up/lupa/testing'
 
-test('mocks a network request', async ({ assert, network }) => {
+test('mocks a network request', async ({ fixture, assert, network }) => {
   // 1. Setup the mock
   const mock = await network.mock('https://api.example.com/data', {
     status: 200,

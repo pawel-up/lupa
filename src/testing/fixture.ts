@@ -56,15 +56,25 @@ export interface FixtureRenderOptions extends RenderOptions {
  * })
  * ```
  */
-export async function fixture<T extends Element = Element>(
+/**
+ * Renders a template into a dedicated container using an explicit TestContext.
+ *
+ * @param template - HTML string or Lit template.
+ * @param options - Render options.
+ * @param context - The active TestContext instance.
+ * @returns A promise resolving to the rendered element.
+ * @internal
+ */
+export async function renderFixture<T extends Element = Element>(
   template: TemplateTypes,
-  options?: FixtureRenderOptions
+  options?: FixtureRenderOptions,
+  context?: { cleanup: (fn: () => void) => void }
 ): Promise<T> {
-  const activeTest = getActiveTest()
-  const activeExecutingGroup = getActiveExecutingGroup()
+  const activeTest = context ? undefined : getActiveTest()
+  const activeExecutingGroup = context ? undefined : getActiveExecutingGroup()
 
-  const isInsideTest = !!activeTest
-  const isInsideGroup = !!activeExecutingGroup
+  const isInsideTest = !!context || !!activeTest
+  const isInsideGroup = !context && !!activeExecutingGroup
 
   if (!isInsideTest && !isInsideGroup) {
     throw new Error('Cannot render fixture outside of a test or group hook')
@@ -74,13 +84,15 @@ export async function fixture<T extends Element = Element>(
   container.className = 'lupa-fixture'
   document.body.appendChild(container)
 
-  if (isInsideTest) {
-    // Automatically clean up the fixture when the test finishes
+  if (context) {
+    context.cleanup(() => {
+      container.remove()
+    })
+  } else if (isInsideTest) {
     activeTest?.cleanup(() => {
       container.remove()
     })
   } else if (isInsideGroup) {
-    // Automatically clean up the fixture when the group finishes
     activeExecutingGroup?.teardown(() => {
       container.remove()
     })
@@ -98,4 +110,38 @@ export async function fixture<T extends Element = Element>(
   }
 
   return container.firstElementChild as T
+}
+
+/**
+ * Renders a HTML string or a Lit template into a dedicated fixture container and mounts it to the DOM.
+ *
+ * The fixture is automatically cleaned up and removed from the DOM
+ * when the current test or group finishes.
+ *
+ * @param template - A string of HTML or a `lit-html` template created using the `html` tag.
+ * @param options - Additional options to control rendering and waiting.
+ * @returns A promise that resolves to the rendered DOM Element.
+ *
+ * @category DOM
+ * @useWhen Rendering templates and Custom Elements into the DOM for interaction
+ * @avoidWhen Testing pure logic or functions that do not require a DOM
+ *
+ * @example
+ * ```ts
+ * test('renders lit template', async ({ assert }) => {
+ *   const el = await fixture<HTMLButtonElement>(html`<button>Click me</button>`)
+ *   assert.equal(el.textContent, 'Click me')
+ * })
+ *
+ * test('renders string template', async ({ assert }) => {
+ *   const el = await fixture<HTMLDivElement>('<div id="test"></div>')
+ *   assert.equal(el.id, 'test')
+ * })
+ * ```
+ */
+export async function fixture<T extends Element = Element>(
+  template: TemplateTypes,
+  options?: FixtureRenderOptions
+): Promise<T> {
+  return renderFixture<T>(template, options)
 }
