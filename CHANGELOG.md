@@ -1,3 +1,10 @@
+# [0.7.0](https://github.com/pawel-up/lupa/compare/v0.6.0...v0.7.0) (2026-07-26)
+
+
+### Features
+
+* add synchronous synthetic events API to commands for high-performance DOM interaction testing ([657c030](https://github.com/pawel-up/lupa/commit/657c030d3c5f1cb2428743ba2970e93c283e7221)), closes [hi#performance](https://github.com/hi/issues/performance)
+
 # [0.6.0](https://github.com/pawel-up/lupa/compare/v0.5.2...v0.6.0) (2026-07-22)
 
 
