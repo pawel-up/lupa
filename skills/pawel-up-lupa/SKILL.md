@@ -76,6 +76,7 @@ Lupa provides a Model Context Protocol (MCP) server (`@pawel-up/lupa-mcp`) that 
 - `import { assert } from '@pawel-up/lupa/assert'` — The standalone assertion library, though `assert` is also available on the test context.
 - `import { configure, run, loadLupaConfig } from '@pawel-up/lupa/runner'` — Configures and runs the Lupa test suite programmatically or loads config files.
 - `import { network } from '@pawel-up/lupa/network'` — API to mock and intercept HTTP requests made from the browser.
+- `import { events, KeyCode } from '@pawel-up/lupa/commands'` — Fast, synchronous DOM event dispatching API (`keyboard`, `mouse`, `input`, `clipboard`, `focus`). Bypasses Playwright IPC roundtrips for maximum test suite performance and to prevent IPC queue flooding.
 
 ## Configuration Reference
 
@@ -87,7 +88,7 @@ If you need deeper context on specific Lupa features, read the relevant guide in
 
 - **Core Concepts:** [`introduction.md`](./references/guide/introduction.md), [`installation.md`](./references/guide/installation.md), [`cli.md`](./references/guide/cli.md)
 - **Writing Tests:** [`test-suites.md`](./references/guide/test-suites.md), [`grouping-tests.md`](./references/guide/grouping-tests.md), [`lifecycle-hooks.md`](./references/guide/lifecycle-hooks.md)
-- **Assertions & Browser Commands:** [`assertions.md`](./references/guide/assertions.md), [`commands.md`](./references/guide/commands.md) (Overview), [`locator.md`](./references/guide/locator.md), [`keyboard.md`](./references/guide/keyboard.md), [`mouse.md`](./references/guide/mouse.md), [`cookies.md`](./references/guide/cookies.md), [`file-chooser.md`](./references/guide/file-chooser.md), [`emulation.md`](./references/guide/emulation.md), [`screenshot.md`](./references/guide/screenshot.md)
+- **Assertions & Browser Commands:** [`assertions.md`](./references/guide/assertions.md), [`events.md`](./references/guide/events.md) (Synthetic Events), [`commands.md`](./references/guide/commands.md) (Overview), [`locator.md`](./references/guide/locator.md), [`keyboard.md`](./references/guide/keyboard.md), [`mouse.md`](./references/guide/mouse.md), [`cookies.md`](./references/guide/cookies.md), [`file-chooser.md`](./references/guide/file-chooser.md), [`emulation.md`](./references/guide/emulation.md), [`screenshot.md`](./references/guide/screenshot.md)
 - **Network Interception:** [`network-mocking.md`](./references/guide/network-mocking.md)
 - **ESM Mocking:** [`module-mocking.md`](./references/guide/module-mocking.md)
 - **Advanced Flow Control:** [`filtering-tests.md`](./references/guide/filtering-tests.md), [`skipping-tests.md`](./references/guide/skipping-tests.md), [`exceptions.md`](./references/guide/exceptions.md)

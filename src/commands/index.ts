@@ -117,6 +117,7 @@ export function sendKeys(payload: SendKeysPayload): Promise<void> {
 }
 
 export { keyboard, Keyboard, type KeyboardPressOptions, type KeyboardTypeOptions } from './keyboard.js'
+export { events, KeyCode, Events } from './events.js'
 
 export { screenshot, Screenshot, type PageScreenshotOptions } from './screenshot.js'
 export { emulation, Emulation, type Geolocation, type GrantPermissionsOptions } from './emulation.js'

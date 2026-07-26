@@ -121,7 +121,30 @@ test('mocks a network request', async ({ fixture, assert, network }) => {
 })
 ```
 
-### 4. Running the Tests
+### 4. Fast Synthetic Events
+
+For maximum component test execution speed without Playwright IPC roundtrips, Lupa provides a synchronous synthetic events dispatcher (`keyboard`, `mouse`, `input`, `clipboard`, `focus`):
+
+```typescript
+// tests/form.spec.ts
+import { test, html } from '@pawel-up/lupa/testing'
+import { events } from '@pawel-up/lupa/commands'
+
+test('interacts via synthetic events', async ({ fixture, assert }) => {
+  const form = await fixture(html`<form>
+    <input id="email" type="email" />
+    <button type="submit">Submit</button>
+  </form>`)
+
+  // 1. Synchronously fill input (sets .value and emits input & change events)
+  events(form.querySelector('#email')!).input.fill('user@example.com')
+
+  // 2. Synchronously click button (dispatches mousedown -> mouseup -> click)
+  events(form.querySelector('button')!).mouse.click()
+})
+```
+
+### 5. Running the Tests
 
 Execute your test script using a transpiler like `tsx`. You can run all test suites, or run specific suites by passing positional arguments or the `--suites` option:
 
@@ -137,7 +160,7 @@ For the ultimate developer experience, run it in **Watch Mode**:
 npx lupa test --watch
 ```
 
-### 5. Code Coverage
+### 6. Code Coverage
 
 Lupa has native code coverage collection built directly on Playwright's Chromium V8 coverage engine and programmatic `c8` reports. This avoids slow build-time Istanbul instrumentation.
 
@@ -211,7 +234,7 @@ Lupa supports all standard Istanbul/c8 reporters:
 > [!NOTE]
 > **Browser Support:** Native V8 JavaScript coverage collection is only supported on Chromium-based browsers. If you execute tests on Firefox or WebKit, Lupa will print a warning that coverage collection is skipped for those browsers and proceed with the test execution.
 
-### 6. Discovering Tests
+### 7. Discovering Tests
 
 You can list all available test suites and tests without executing them. You can filter the listing to specific suites using positional arguments or the `--suites` option:
 

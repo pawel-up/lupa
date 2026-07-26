@@ -54,6 +54,7 @@ export default defineConfig({
         text: 'Browser Commands',
         items: [
           { text: 'Overview', link: '/guide/commands' },
+          { text: 'Synthetic Events', link: '/guide/events' },
           { text: 'Locator API', link: '/guide/locator' },
           { text: 'Keyboard API', link: '/guide/keyboard' },
           { text: 'Mouse API', link: '/guide/mouse' },

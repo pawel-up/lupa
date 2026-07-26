@@ -28,6 +28,10 @@ Because of this RPC bridge:
 
 Lupa provides the following specialized APIs to manage your browser testing environment:
 
+### [Synthetic Events API (`events`)](./events.md)
+Provides fast, synchronous DOM event dispatching directly on target elements (`keyboard`, `mouse`, `input`, `clipboard`, `focus`), bypassing Playwright IPC roundtrips for maximum test suite execution speed.
+* *Actions*: `events(target).keyboard`, `events(target).mouse`, `events(target).input.fill()`, `events(target).clipboard.paste()`, `events(target).focus.in()`.
+
 ### [Locator API](./locator.md)
 Allows you to select DOM elements using semantic or standard queries and interact with them. It automatically waits for elements to be visible, enabled, and interactive.
 * *Actions*: `click()`, `fill()`, `check()`, `uncheck()`, `selectOption()`, `setInputFiles()`, `screenshot()`.
