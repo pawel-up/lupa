@@ -1,3 +1,15 @@
+# [0.8.0](https://github.com/pawel-up/lupa/compare/v0.7.0...v0.8.0) (2026-10-06)
+
+
+### Bug Fixes
+
+* update package-lock.json dependencies ([5f92833](https://github.com/pawel-up/lupa/commit/5f928339cb3a148832888673a5ad501abd99c74c))
+
+
+### Features
+
+* add query parameter and search matching support to network route definitions ([528bd01](https://github.com/pawel-up/lupa/commit/528bd01d156b4b66a94cdc58ed55cc4b0678b726))
+
 # [0.7.0](https://github.com/pawel-up/lupa/compare/v0.6.0...v0.7.0) (2026-07-26)
 
 
