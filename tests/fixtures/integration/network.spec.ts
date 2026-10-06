@@ -223,4 +223,104 @@ test.group('Network Interception', () => {
       await fetch('/api/user')
     })
   })
+
+  test('matches relative URI with query string without URLPattern construction errors', async ({ network, assert }) => {
+    const historyMock = await network.mock('/api/history?*', {
+      status: 200,
+      body: JSON.stringify({ items: [1, 2, 3] }),
+      headers: { 'Content-Type': 'application/json' },
+    })
+
+    const resWithQuery = await fetch('/api/history?limit=10')
+    const jsonWithQuery = await resWithQuery.json()
+    assert.equal(resWithQuery.status, 200)
+    assert.deepEqual(jsonWithQuery, { items: [1, 2, 3] })
+
+    const resWithoutQuery = await fetch('/api/history')
+    const jsonWithoutQuery = await resWithoutQuery.json()
+    assert.equal(resWithoutQuery.status, 200)
+    assert.deepEqual(jsonWithoutQuery, { items: [1, 2, 3] })
+
+    await historyMock.assert.calledTwice()
+  })
+
+  test('matches relative URI with specific query parameter and bypasses non-matching', async ({ network, assert }) => {
+    const fallbackMock = await network.mock('/api/users?*', {
+      status: 404,
+      body: 'Not Found',
+    })
+    const activeMock = await network.mock('/api/users?status=active', {
+      status: 200,
+      body: JSON.stringify({ active: true }),
+      headers: { 'Content-Type': 'application/json' },
+    })
+
+    const activeRes = await fetch('/api/users?status=active')
+    assert.equal(activeRes.status, 200)
+    assert.deepEqual(await activeRes.json(), { active: true })
+
+    const inactiveRes = await fetch('/api/users?status=inactive')
+    assert.equal(inactiveRes.status, 404)
+
+    await activeMock.assert.calledOnce()
+    await fallbackMock.assert.calledOnce()
+  })
+
+  test('matches plain relative URI with and without query parameters by default', async ({ network, assert }) => {
+    const mock = await network.mock('/api/data', {
+      status: 200,
+      body: 'matched',
+    })
+
+    const res1 = await fetch('/api/data')
+    assert.equal(await res1.text(), 'matched')
+
+    const res2 = await fetch('/api/data?foo=bar')
+    assert.equal(await res2.text(), 'matched')
+
+    await mock.assert.calledTwice()
+  })
+
+  test('supports declarative search wildcard match', async ({ network, assert }) => {
+    const mock = await network.mock(
+      { uri: '/api/declarative-search', search: '*' },
+      {
+        status: 200,
+        body: 'wildcard match',
+      }
+    )
+
+    const res1 = await fetch('/api/declarative-search')
+    assert.equal(await res1.text(), 'wildcard match')
+
+    const res2 = await fetch('/api/declarative-search?page=2&sort=desc')
+    assert.equal(await res2.text(), 'wildcard match')
+
+    await mock.assert.calledTwice()
+  })
+
+  test('supports declarative query parameter matching', async ({ network, assert }) => {
+    const fallbackMock = await network.mock('/api/declarative-query?*', {
+      status: 403,
+      body: 'Forbidden',
+    })
+    const adminMock = await network.mock(
+      { uri: '/api/declarative-query', query: { role: 'admin' } },
+      {
+        status: 200,
+        body: JSON.stringify({ access: 'granted' }),
+        headers: { 'Content-Type': 'application/json' },
+      }
+    )
+
+    const adminRes = await fetch('/api/declarative-query?role=admin&session=123')
+    assert.equal(adminRes.status, 200)
+    assert.deepEqual(await adminRes.json(), { access: 'granted' })
+
+    const userRes = await fetch('/api/declarative-query?role=user')
+    assert.equal(userRes.status, 403)
+
+    await adminMock.assert.calledOnce()
+    await fallbackMock.assert.calledOnce()
+  })
 })

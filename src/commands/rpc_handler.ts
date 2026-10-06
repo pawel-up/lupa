@@ -156,6 +156,11 @@ export class CommandsHandler {
           case 'network:mock:ignoreCors':
             this.network.setIgnoreCors(payload)
             break
+          case 'network:mock:getUnmatched':
+            return this.network.getUnmatchedRequests()
+          case 'network:mock:clearUnmatched':
+            this.network.clearUnmatchedRequests()
+            break
           case 'network:setOffline':
             await this.page.context().setOffline(payload)
             break
@@ -196,16 +201,25 @@ export class CommandsHandler {
   }
 
   /**
+   * Returns the underlying NetworkCommand instance.
+   */
+  getNetwork(): NetworkCommand {
+    return this.network
+  }
+
+  /**
    * Handle network:mock:enable command
    */
-  protected async handleNetworkEnable() {
+  protected async handleNetworkEnable(): Promise<void> {
+    this.network.setMockingEnabled(true)
     await this.page.route('**/*', this.network.onRoute)
   }
 
   /**
    * Handle network:mock:disable command
    */
-  protected async handleNetworkDisable() {
+  protected async handleNetworkDisable(): Promise<void> {
+    this.network.setMockingEnabled(false)
     await this.page.unroute('**/*', this.network.onRoute)
   }
 

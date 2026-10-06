@@ -6,15 +6,26 @@ import type {
   NetworkEvaluateResult,
   NetworkRegisterPayload,
   NetworkUnregisterPayload,
+  UnmatchedRequest,
 } from './types.js'
 import debuglog from '../runner/debug.js'
 
+interface RouteFulfillOptions {
+  status: number
+  headers: Record<string, string>
+  body?: string | Buffer
+}
+
 /**
- * Handles network mock commands.
+ * Handles network mock commands in the Node Playwright process.
+ * Manages active route interception, CORS options, and unmatched request observability.
  */
 export class NetworkCommand {
   private routeStore = new RouteStore()
   private ignoreCors = false
+  private isNetworkMockingEnabled = false
+  private unmatchedRequests: UnmatchedRequest[] = []
+  private readonly maxUnmatchedRequests = 20
 
   /**
    * @param page Playwright page to register on
@@ -24,9 +35,40 @@ export class NetworkCommand {
   }
 
   /**
+   * Whether network mocking is currently active or enabled.
+   */
+  public get isMockingEnabled(): boolean {
+    return this.isNetworkMockingEnabled || this.routeStore.hasRoutes()
+  }
+
+  /**
+   * Sets whether network mocking is enabled.
+   *
+   * @param enabled Boolean indicating active mocking status.
+   */
+  public setMockingEnabled(enabled: boolean): void {
+    this.isNetworkMockingEnabled = enabled
+  }
+
+  /**
+   * Returns a copy of recent unmatched intercepted requests for diagnostics.
+   */
+  public getUnmatchedRequests(): readonly UnmatchedRequest[] {
+    return this.unmatchedRequests
+  }
+
+  /**
+   * Clears the in-memory ring buffer of unmatched requests for the active test.
+   */
+  public clearUnmatchedRequests(): void {
+    this.unmatchedRequests = []
+  }
+
+  /**
    * Handle network:mock:register command
    */
   public async register(payload: NetworkRegisterPayload): Promise<void> {
+    this.isNetworkMockingEnabled = true
     const routeDef = RouteMatcher.createRouteDefinition(payload.id, payload.matcher, { lifetime: payload.times })
     this.routeStore.add(routeDef)
   }
@@ -36,6 +78,9 @@ export class NetworkCommand {
    */
   public async unregister(payload: NetworkUnregisterPayload): Promise<void> {
     this.routeStore.removeById(payload.id)
+    if (!this.routeStore.hasRoutes()) {
+      this.isNetworkMockingEnabled = false
+    }
   }
 
   /**
@@ -46,11 +91,23 @@ export class NetworkCommand {
   }
 
   /**
-   * Reset the network command.
+   * Reset the network command state.
    */
-  public reset() {
+  public reset(): void {
     this.routeStore.reset()
+    this.unmatchedRequests = []
     this.ignoreCors = false
+    this.isNetworkMockingEnabled = false
+  }
+
+  /**
+   * Records an unmatched request into the fixed-size ring buffer.
+   */
+  private recordUnmatchedRequest(method: string, url: string, headers: Record<string, string>): void {
+    this.unmatchedRequests.push({ method, url, headers })
+    if (this.unmatchedRequests.length > this.maxUnmatchedRequests) {
+      this.unmatchedRequests.shift()
+    }
   }
 
   /**
@@ -84,6 +141,7 @@ export class NetworkCommand {
     const headers = request.headers()
     let body: string | null | undefined = undefined
     let query: Record<string, string | string[]> | undefined = undefined
+    let hasFulfilled = false
 
     for (const { route: matchedRoute, urlMatch } of this.routeStore.findMatches(url, method, headers)) {
       if (body === undefined) {
@@ -113,6 +171,8 @@ export class NetworkCommand {
         )
 
         if (response && response.action === 'fulfill') {
+          hasFulfilled = true
+
           if (response.delay) {
             await new Promise((r) => setTimeout(r, response.delay))
           }
@@ -122,7 +182,7 @@ export class NetworkCommand {
             return
           }
 
-          const fulfillPayload: any = {
+          const fulfillPayload: RouteFulfillOptions = {
             status: response.status || 200,
             headers: response.headers || {},
           }
@@ -146,6 +206,11 @@ export class NetworkCommand {
       } catch (err) {
         debuglog('Error evaluating network mock: %O', err)
       }
+    }
+
+    if (!hasFulfilled) {
+      debuglog('[lupa:network] Unmatched %s request: %s', method, url)
+      this.recordUnmatchedRequest(method, url, headers)
     }
 
     // Fallback if browser says continue or error occurred

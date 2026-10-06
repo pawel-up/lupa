@@ -135,6 +135,49 @@ describe('RouteStore', () => {
     assert.strictEqual(matches[0].route.id, 2)
   })
 
+  test('matches declarative query parameters strictly', () => {
+    store.add(createMockRoute(1, { query: { role: 'admin' } }))
+
+    const validMatch = Array.from(store.findMatches('https://example.com/api/users?role=admin', 'GET', {}))
+    assert.strictEqual(validMatch.length, 1)
+
+    const matchWithExtraParams = Array.from(
+      store.findMatches('https://example.com/api/users?role=admin&page=1', 'GET', {})
+    )
+    assert.strictEqual(matchWithExtraParams.length, 1)
+
+    const invalidValueMatch = Array.from(store.findMatches('https://example.com/api/users?role=user', 'GET', {}))
+    assert.strictEqual(invalidValueMatch.length, 0)
+
+    const missingParamMatch = Array.from(store.findMatches('https://example.com/api/users', 'GET', {}))
+    assert.strictEqual(missingParamMatch.length, 0)
+  })
+
+  test('matches array query parameters correctly', () => {
+    store.add(createMockRoute(1, { query: { tags: ['admin', 'staff'] } }))
+
+    const validMatch = Array.from(store.findMatches('https://example.com/api/users?tags=admin&tags=staff', 'GET', {}))
+    assert.strictEqual(validMatch.length, 1)
+
+    const validReversedMatch = Array.from(
+      store.findMatches('https://example.com/api/users?tags=staff&tags=admin', 'GET', {})
+    )
+    assert.strictEqual(validReversedMatch.length, 1)
+
+    const invalidMatch = Array.from(store.findMatches('https://example.com/api/users?tags=admin', 'GET', {}))
+    assert.strictEqual(invalidMatch.length, 0)
+  })
+
+  test('matches non-string query values by string representation', () => {
+    store.add(createMockRoute(1, { query: { page: 1 as unknown as string, active: true as unknown as string } }))
+
+    const validMatch = Array.from(store.findMatches('https://example.com/api/users?page=1&active=true', 'GET', {}))
+    assert.strictEqual(validMatch.length, 1)
+
+    const invalidMatch = Array.from(store.findMatches('https://example.com/api/users?page=2&active=true', 'GET', {}))
+    assert.strictEqual(invalidMatch.length, 0)
+  })
+
   test('reset clears all routes', () => {
     store.add(createMockRoute(1))
     store.add(createMockRoute(2))

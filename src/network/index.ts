@@ -230,10 +230,8 @@ export class Network {
   ): Promise<NetworkInterceptor> {
     const isMatchAndRespond =
       typeof matchOrOptions === 'string' ||
-      (typeof matchOrOptions === 'object' &&
-        matchOrOptions !== null &&
-        'uri' in matchOrOptions &&
-        !('match' in matchOrOptions))
+      respond !== undefined ||
+      (typeof matchOrOptions === 'object' && matchOrOptions !== null && !('match' in matchOrOptions))
 
     if (isMatchAndRespond && respond === undefined) {
       throw new Error('The respond argument is required when using the mock(match, respond) signature.')

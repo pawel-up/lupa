@@ -49,7 +49,11 @@ class NetworkRegistry {
       serializedMatch = {
         type: 'options',
         uri: options.match.uri,
+        pathname: options.match.pathname,
+        search: options.match.search,
+        query: options.match.query,
         methods: options.match.methods ?? [],
+        headers: options.match.headers,
       }
     }
 
@@ -62,7 +66,7 @@ class NetworkRegistry {
     return interceptor
   }
 
-  async unregister(id: number) {
+  async unregister(id: number): Promise<void> {
     this.mocks = this.mocks.filter((m) => m.id !== id)
 
     await window.__lupa_command__?.('network:mock:unregister', { id })
@@ -109,7 +113,7 @@ class NetworkRegistry {
     }
   }
 
-  private serializeBody(body: any): string | null {
+  private serializeBody(body: unknown): string | null {
     if (body === null || body === undefined) return null
     if (body instanceof ArrayBuffer) {
       return this.arrayBufferToBase64(body)

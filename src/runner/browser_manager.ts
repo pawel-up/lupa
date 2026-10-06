@@ -13,6 +13,7 @@ export type BrowserName = 'chromium' | 'firefox' | 'webkit'
 export class BrowserManager {
   #browsers = new Map<BrowserName, Browser>()
   #pages = new Map<string, Page>() // keyed by chunkId
+  #commandsHandlers = new Map<string, CommandsHandler>() // keyed by chunkId
   #browserNames: BrowserName[]
   #verboseLogs: boolean
   #emitter: Emitter<RunnerEvents>
@@ -71,6 +72,7 @@ export class BrowserManager {
 
         const commandsHandler = new CommandsHandler(page)
         await commandsHandler.boot()
+        this.#commandsHandlers.set(chunkId, commandsHandler)
 
         // Capture chunkId in the closure so each page knows its own identity.
         const id = chunkId
@@ -84,6 +86,16 @@ export class BrowserManager {
         })
       }
     }
+  }
+
+  /**
+   * Retrieves the CommandsHandler associated with a specific chunk / page.
+   *
+   * @param chunkId The unique identifier of the runner chunk.
+   * @returns The associated CommandsHandler or undefined.
+   */
+  getCommandsHandler(chunkId: string): CommandsHandler | undefined {
+    return this.#commandsHandlers.get(chunkId)
   }
 
   /**
@@ -158,6 +170,7 @@ export class BrowserManager {
     }
     this.#browsers.clear()
     this.#pages.clear()
+    this.#commandsHandlers.clear()
   }
 
   /**

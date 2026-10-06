@@ -67,7 +67,7 @@ export default defineConfig({
   // Enable or disable parallel execution globally (default: true)
   parallel: true,
   
-  // Set global concurrency. Can be 'auto' (based on CPU cores) or a specific number.
+  // Set global concurrency. Can be 'auto' (default) or a specific number.
   concurrency: 'auto',
 
   suites: [
@@ -84,6 +84,18 @@ export default defineConfig({
   ]
 })
 ```
+
+### Dynamic Concurrency (`'auto'`) & Multi-Browser Scaling
+
+When `concurrency` is set to `'auto'` (or omitted), Lupa dynamically scales worker allocation according to your hardware and test configuration:
+
+1. **CPU Allocation**: Lupa allocates `Math.max(1, Math.floor(os.cpus().length / 2))` concurrent workers. Reserving headroom protects system responsiveness, prevents Playwright IPC channel saturation, and avoids false-positive test timeouts.
+2. **Multi-Browser Scaling**: When running tests across multiple browser engines simultaneously (e.g. `['chromium', 'firefox', 'webkit']`), Lupa automatically divides the worker pool per browser:
+   ```ts
+   concurrencyPerBrowser = Math.max(1, Math.floor(defaultConcurrency / browserCount))
+   ```
+   This ensures that running multi-browser suites does not multiply the total process count beyond the machine's capacity.
+3. **Explicit Overrides**: Any suite-specific numeric override (e.g., `concurrency: 1` or `concurrency: 8`) takes precedence over the `'auto'` calculation.
 
 > [!NOTE]  
 > ### Parallel Execution & Debug Mode

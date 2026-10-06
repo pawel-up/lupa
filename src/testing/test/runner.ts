@@ -480,9 +480,10 @@ export class TestRunner {
     try {
       this.#callbacks.executing.forEach((callback) => callback(this.#test))
       await this.#wrapTestInRetries()
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.#hasError = true
-      this.#errors.push({ phase: 'test', error })
+      const err = error instanceof Error ? error : new Error(String(error))
+      this.#errors.push({ phase: 'test', error: err })
     }
 
     /**

@@ -231,5 +231,7 @@ export type CommandNames =
   | 'cookies:add'
   | 'cookies:getAll'
   | 'cookies:clear'
+  | 'network:mock:getUnmatched'
+  | 'network:mock:clearUnmatched'
   | 'fileChooser:waitForEvent'
   | 'fileChooser:setFiles'

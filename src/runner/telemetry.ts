@@ -78,7 +78,36 @@ export class Telemetry {
         }
       }
 
-      if (event === 'group:end' || event === 'suite:end' || event === 'test:end') {
+      if (event === 'test:start') {
+        const chunkId = (data as { browserId?: string } | undefined)?.browserId
+        if (chunkId) {
+          this.#orchestrator.browserManager?.getCommandsHandler(chunkId)?.getNetwork().clearUnmatchedRequests()
+        }
+      }
+
+      if (event === 'test:end') {
+        const chunkId = (data as { browserId?: string } | undefined)?.browserId
+        const commandsHandler = chunkId ? this.#orchestrator.browserManager?.getCommandsHandler(chunkId) : undefined
+        const network = commandsHandler?.getNetwork()
+
+        if (data.errors && data.errors.length) {
+          for (const e of data.errors) {
+            e.error = await deserializeError(e.error, this.#cwd, vite)
+            if (
+              e.error &&
+              typeof e.error.message === 'string' &&
+              e.error.message.toLowerCase().includes('timeout') &&
+              network?.isMockingEnabled
+            ) {
+              const unmatched = network.getUnmatchedRequests()
+              if (unmatched.length > 0 && !e.error.message.includes('Recent unmatched network requests')) {
+                const formatted = unmatched.map((r) => `  • ${r.method} ${r.url}`).join('\n')
+                e.error.message += `\n\nRecent unmatched network requests (${unmatched.length}):\n${formatted}`
+              }
+            }
+          }
+        }
+      } else if (event === 'group:end' || event === 'suite:end') {
         if (data.errors && data.errors.length) {
           for (const e of data.errors) {
             e.error = await deserializeError(e.error, this.#cwd, vite)

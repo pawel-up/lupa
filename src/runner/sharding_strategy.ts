@@ -9,13 +9,25 @@ import type { TestChunk } from './test_pool_manager.js'
 export class ShardingStrategy {
   /**
    * Resolves numeric concurrency from setting or 'auto' CPU count.
+   * Dynamically calculates default concurrency based on system resources (cpus / 2)
+   * and scales worker pools across multiple configured browsers.
    *
    * @param value Setting value (number, 'auto', or undefined).
+   * @param browserCount Number of target browsers (default: 1).
    * @returns Resolved positive concurrency integer.
+   *
+   * @example
+   * ```ts
+   * const concurrency = strategy.resolveConcurrency('auto', 3)
+   * ```
    */
-  resolveConcurrency(value: number | 'auto' | undefined): number {
+  resolveConcurrency(value: number | 'auto' | undefined, browserCount = 1): number {
     if (value === 'auto') {
-      return Math.max(1, os.cpus().length - 1)
+      const defaultConcurrency = Math.max(1, Math.floor(os.cpus().length / 2))
+      if (browserCount > 1) {
+        return Math.max(1, Math.floor(defaultConcurrency / browserCount))
+      }
+      return defaultConcurrency
     }
     return Math.max(1, Number(value) || 1)
   }
@@ -35,11 +47,12 @@ export class ShardingStrategy {
     browserNames: string[],
     globalConcurrency: number | 'auto' | undefined
   ): TestChunk[] {
-    const resolvedGlobalConcurrency = this.resolveConcurrency(globalConcurrency)
+    const browserCount = browserNames.length
+    const resolvedGlobalConcurrency = this.resolveConcurrency(globalConcurrency, browserCount)
 
     const maxTierConcurrency = Math.max(
       ...tieredSuites.map((s) =>
-        s.concurrency !== undefined ? this.resolveConcurrency(s.concurrency) : resolvedGlobalConcurrency
+        s.concurrency !== undefined ? this.resolveConcurrency(s.concurrency, browserCount) : resolvedGlobalConcurrency
       )
     )
 
@@ -60,7 +73,9 @@ export class ShardingStrategy {
 
       for (const suite of tieredSuites) {
         const effectiveConcurrency =
-          suite.concurrency !== undefined ? this.resolveConcurrency(suite.concurrency) : resolvedGlobalConcurrency
+          suite.concurrency !== undefined
+            ? this.resolveConcurrency(suite.concurrency, browserCount)
+            : resolvedGlobalConcurrency
 
         suite.filesURLs.forEach((fileURL) => {
           const pageIndex = tierFileIndex++ % effectiveConcurrency

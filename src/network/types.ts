@@ -25,13 +25,24 @@ export interface CapturedRequest {
 }
 
 /**
- * Options to strictly match a request by its URI and optionally its HTTP method.
+ * Options to strictly match a request by its URI and optionally its HTTP method, search pattern, or query params.
  */
 export interface RequestMatchOptions {
-  /** The URI to match. Supports plain strings or patterns with `:` and `*` wildcards. */
-  uri: string
-  /** Optional HTTP method to strictly enforce when matching. */
+  /** The URI or pathname pattern to match. */
+  uri?: string
+  /** Explicit pathname pattern. */
+  pathname?: string
+  /** Explicit search query pattern (e.g., '*' or 'sort=:sort'). */
+  search?: string
+  /**
+   * Declarative query parameter key-value pairs to match against parsed URL parameters.
+   * Single values act as subset filters allowing extra URL params; arrays require exact set equality.
+   */
+  query?: Record<string, string | string[]>
+  /** HTTP methods to match (e.g. ['GET', 'POST']). */
   methods?: HttpMethod[]
+  /** Required headers to match. */
+  headers?: Record<string, string>
 }
 
 /**
@@ -111,6 +122,21 @@ export interface SerializedMatch {
   uri?: string
 
   /**
+   * Explicit pathname pattern.
+   */
+  pathname?: string
+
+  /**
+   * Explicit search query pattern (e.g., '*' or 'sort=:sort').
+   */
+  search?: string
+
+  /**
+   * Declarative query parameter key-value pairs to match against parsed URL parameters.
+   */
+  query?: Record<string, string | string[]>
+
+  /**
    * HTTP methods to match (e.g., ['GET', 'POST']).
    */
   methods?: string[]
@@ -146,6 +172,11 @@ export interface RouteDefinition {
   headers?: Record<string, string>
 
   /**
+   * Declarative query parameter key-value pairs to match against parsed URL parameters.
+   */
+  query?: Record<string, string | string[]>
+
+  /**
    * Maximum number of times this mock should be applied.
    */
   lifetime?: number
@@ -154,6 +185,26 @@ export interface RouteDefinition {
    * Number of times this mock has been successfully matched.
    */
   usageCount: number
+}
+
+/**
+ * Diagnostic record representing an unhandled or unmatched intercepted network request.
+ */
+export interface UnmatchedRequest {
+  /**
+   * The HTTP method used for the request (e.g., GET, POST).
+   */
+  method: string
+
+  /**
+   * The full intercepted request URL.
+   */
+  url: string
+
+  /**
+   * All HTTP headers sent with the request.
+   */
+  headers: Record<string, string>
 }
 
 /**

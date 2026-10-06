@@ -180,6 +180,75 @@ await network.mock('/api/users/:id', async (req) => {
 })
 ```
 
+### Query Strings & Relative URIs
+You can include query strings directly in your relative mock paths:
+
+- **Omitted queries match any**: Paths without query parameters (e.g. `'/api/data'`) match requests with or without query strings (`/api/data` and `/api/data?foo=bar`).
+- **Exact queries**: Paths with specific query parameters (e.g. `'/api/users?status=active'`) only intercept matching requests, letting non-matching requests fall through.
+- **Wildcard queries**: Use wildcard patterns like `'/api/history?*'` to explicitly match any query parameters.
+
+```ts
+// Matches both /api/items and /api/items?sort=desc
+await network.mock('/api/items', { status: 200, body: '[]' })
+
+// Matches /api/history with any query parameter
+await network.mock('/api/history?*', { status: 200, body: '[]' })
+
+// Matches specifically ?status=active
+await network.mock('/api/users?status=active', { 
+  status: 200, 
+  body: JSON.stringify([{ id: 1, name: 'Active User' }]) 
+})
+```
+
+### Declarative Match Options
+In addition to string URIs, `network.mock()` accepts a declarative `RequestMatchOptions` object for fine-grained control:
+
+```ts
+export interface RequestMatchOptions {
+  /** The URI or pathname pattern to match. */
+  uri?: string
+  /** Explicit pathname pattern. */
+  pathname?: string
+  /** Explicit search query pattern (e.g. '*' or 'sort=:sort'). */
+  search?: string
+  /** Declarative query parameter key-value pairs to match against parsed URL parameters. */
+  query?: Record<string, string | string[]>
+  /** HTTP methods to match (e.g. ['GET', 'POST']). */
+  methods?: HttpMethod[]
+  /** Required headers to match. */
+  headers?: Record<string, string>
+}
+```
+
+This allows you to match query parameters without manual string concatenation or regex formatting:
+
+```ts
+// Match using declarative query key-value pairs
+await network.mock(
+  {
+    uri: '/api/users',
+    query: { role: 'admin', active: 'true' },
+    methods: ['GET'],
+  },
+  {
+    status: 200,
+    body: JSON.stringify([{ id: 1, role: 'admin' }]),
+  }
+)
+
+// Match with explicit search wildcard
+await network.mock(
+  { pathname: '/api/search', search: '*' },
+  { status: 200, body: JSON.stringify({ results: [] }) }
+)
+```
+
+> [!NOTE]
+> **Query Parameter Matching Semantics**
+> - **Subset matching**: Single key-value pairs (e.g. `{ role: 'admin' }`) act as subset filters; additional query parameters on the request URL (e.g. `?role=admin&page=1`) do not invalidate the match.
+> - **Multi-value parameters**: When an array is provided (e.g. `{ tags: ['admin', 'staff'] }`), Lupa enforces exact set equality across all values for that key.
+
 ## Teardown & Lifecycle
 
 ### Automatic Test Isolation
@@ -230,3 +299,32 @@ test('handles intermittent API failure', async ({ network }) => {
   })
 })
 ```
+
+## Debugging & Observability
+
+Network tests can sometimes time out or fail when requests do not match any configured mocks. Lupa provides built-in observability to eliminate guesswork and make debugging straightforward.
+
+### Diagnostic Logging
+Lupa emits diagnostic logs for intercepted network activity. To inspect unmatched requests in real-time, run your tests with the `DEBUG` environment variable set:
+
+```bash
+DEBUG="lupa:network" npx lupa test
+```
+
+When an intercepted request falls through without matching an active mock, Lupa outputs:
+```text
+[lupa:network] Unmatched GET request: /api/users?status=pending
+```
+
+### Unmatched Requests in Test Failure Output
+When a test times out and network mocking was active, Lupa automatically inspects its in-memory ring buffer of unhandled requests for that test. If any unmatched requests were captured, Lupa appends them directly to the test error message:
+
+```text
+Error: Test timed out after 5000ms.
+
+Recent unmatched network requests (2):
+  • GET /api/users?status=pending
+  • POST /api/analytics
+```
+
+This immediately pinpoints whether a component fired a request with unexpected query parameters, headers, or paths, allowing you to update your mocks without digging through verbose network traces.
