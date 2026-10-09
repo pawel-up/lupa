@@ -14,9 +14,14 @@ export class BrowserLogs {
   configPath?: string
 
   /**
-   * When not set, all messages are suppressed, only errors are reported.
+   * When set, browser internal debug and network resource errors are also printed.
    */
   verbose = false
+
+  /**
+   * When set, all browser logs are suppressed.
+   */
+  silent = false
 
   /**
    * The list of prefixes to ignore messages containing.
@@ -33,12 +38,17 @@ export class BrowserLogs {
    * Creates an instance of BrowserLogs.
    *
    * @param page - The Playwright page to capture logs from.
+   * @param verbose - Whether to enable verbose mode including browser engine debug output.
+   * @param emitter - The event emitter to dispatch browser logs to reporters.
+   * @param configPath - Optional path to the configuration file.
+   * @param silent - Whether to suppress all browser console messages.
    */
-  constructor(page: Page, verbose = false, emitter: Emitter<RunnerEvents>, configPath?: string) {
+  constructor(page: Page, verbose = false, emitter: Emitter<RunnerEvents>, configPath?: string, silent = false) {
     this.page = page
     this.verbose = verbose
     this.emitter = emitter
     this.configPath = configPath
+    this.silent = silent
 
     this.handleConsoleMessage = this.handleConsoleMessage.bind(this)
     this.handlePageError = this.handlePageError.bind(this)
@@ -52,19 +62,47 @@ export class BrowserLogs {
     this.page.on('pageerror', this.handlePageError)
   }
 
-  protected canShow(message: string, _type: string): boolean {
-    // We do not want that. There are plenty of situations where tests intentionally
-    // cause errors (like network errors) and printing them by default is confusing.
-    // if (type === 'error') {
-    //   return true
-    // }
-    if (!this.verbose) {
+  /**
+   * Determines whether a console message should be displayed.
+   *
+   * @param message - The raw text of the console message.
+   * @param type - The console message type (e.g. 'log', 'error', 'warn').
+   * @param argsCount - Number of arguments passed to the console call. Browser engine
+   *   internal network errors typically have 0 arguments, while user console.error calls have >= 1.
+   * @returns Whether to emit the message to reporters.
+   */
+  protected canShow(message: string, type: string, argsCount = 0): boolean {
+    if (this.silent) {
       return false
     }
 
     const trimmed = message.trim()
-    const startsWithAnyPrefix = this.ignorePrefix.some((prefix) => trimmed.startsWith(prefix))
-    return !startsWithAnyPrefix
+
+    // Under verbose mode, show everything except bundler internal messages
+    if (this.verbose) {
+      return !this.ignorePrefix.some((prefix) => trimmed.startsWith(prefix))
+    }
+
+    // Suppress bundler noise (e.g. Vite HMR messages)
+    if (this.ignorePrefix.some((prefix) => trimmed.startsWith(prefix))) {
+      return false
+    }
+
+    // Suppress browser engine resource load errors (e.g. expected 404s/500s or net errors from fetch/XHR in tests).
+    // Only suppress when argsCount is 0, since browser engine network errors have 0 arguments.
+    if (
+      type === 'error' &&
+      argsCount === 0 &&
+      (trimmed.startsWith('Failed to load resource:') ||
+        trimmed.startsWith('HTTP "Response has status') ||
+        trimmed.startsWith('HTTP load failed with status') ||
+        trimmed.includes('net::ERR_'))
+    ) {
+      return false
+    }
+
+    // All explicit user output (console.log, console.warn, console.error, console.info, etc.) is shown by default
+    return true
   }
 
   protected async handleConsoleMessage(message: ConsoleMessage): Promise<void> {
@@ -74,9 +112,8 @@ export class BrowserLogs {
       return
     }
     const text = message.text()
-    if (!this.canShow(text, type)) return
-
     const args = message.args()
+    if (!this.canShow(text, type, args.length)) return
 
     let file = 'unknown'
     if (typeof message.location === 'function') {
@@ -111,6 +148,7 @@ export class BrowserLogs {
   }
 
   protected async handlePageError(error: Error): Promise<void> {
+    if (this.silent) return
     await this.emitter.emit('browser:log', { file: 'unknown', type: 'error', messages: [error] })
   }
 

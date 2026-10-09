@@ -18,7 +18,7 @@ test('BrowserLogs', async (t) => {
     console.table = originalTable
   })
 
-  await t.test('filters messages if verbose is false', async () => {
+  await t.test('emits user console log by default when verbose is false', async () => {
     const logs: any[][] = []
 
     let consoleHandler: any
@@ -39,11 +39,150 @@ test('BrowserLogs', async (t) => {
 
     const dummyMessage = {
       type: () => 'log',
-      text: () => 'Hello',
+      text: () => 'Hello user',
       args: () => [],
     }
 
     await consoleHandler(dummyMessage)
+
+    assert.strictEqual(logs.length, 1)
+    assert.deepStrictEqual(logs[0], ['unknown', 'log', ['Hello user']])
+  })
+
+  await t.test('filters browser engine network errors when verbose is false', async () => {
+    const logs: any[][] = []
+
+    let consoleHandler: any
+    const dummyPage = {
+      on: (event: string, handler: any) => {
+        if (event === 'console') consoleHandler = handler
+      },
+    }
+
+    const dummyEmitter = {
+      emit: (_event: string, payload: any) => logs.push([payload.file, payload.type, payload.messages]),
+      on: (_event: string, _handler: any) => {
+        // noop
+      },
+    }
+    const browserLogs = new BrowserLogs(dummyPage as any, false, dummyEmitter as any)
+    browserLogs.boot()
+
+    const dummyMessage = {
+      type: () => 'error',
+      text: () => 'Failed to load resource: the server responded with a status of 404 (Not Found)',
+      args: () => [],
+    }
+
+    await consoleHandler(dummyMessage)
+
+    assert.strictEqual(logs.length, 0)
+  })
+
+  await t.test('emits user console.error starting with resource failure pattern when args are present', async () => {
+    const logs: any[][] = []
+
+    let consoleHandler: any
+    const dummyPage = {
+      on: (event: string, handler: any) => {
+        if (event === 'console') consoleHandler = handler
+      },
+    }
+
+    const dummyEmitter = {
+      emit: (_event: string, payload: any) => logs.push([payload.file, payload.type, payload.messages]),
+      on: (_event: string, _handler: any) => {
+        // noop
+      },
+    }
+    const browserLogs = new BrowserLogs(dummyPage as any, false, dummyEmitter as any)
+    browserLogs.boot()
+
+    const dummyMessage = {
+      type: () => 'error',
+      text: () => 'Failed to load resource: custom backend error',
+      args: () => [
+        {
+          evaluate: async () => ({ __lupa_type: 'json', value: 'Failed to load resource: custom backend error' }),
+        },
+      ],
+    }
+
+    await consoleHandler(dummyMessage)
+
+    assert.strictEqual(logs.length, 1)
+    assert.deepStrictEqual(logs[0], ['unknown', 'error', ['Failed to load resource: custom backend error']])
+  })
+
+  await t.test('emits browser engine network errors when verbose is true', async () => {
+    const logs: any[][] = []
+
+    let consoleHandler: any
+    const dummyPage = {
+      on: (event: string, handler: any) => {
+        if (event === 'console') consoleHandler = handler
+      },
+    }
+
+    const dummyEmitter = {
+      emit: (_event: string, payload: any) => logs.push([payload.file, payload.type, payload.messages]),
+      on: (_event: string, _handler: any) => {
+        // noop
+      },
+    }
+    const browserLogs = new BrowserLogs(dummyPage as any, true, dummyEmitter as any)
+    browserLogs.boot()
+
+    const dummyMessage = {
+      type: () => 'error',
+      text: () => 'Failed to load resource: the server responded with a status of 404 (Not Found)',
+      args: () => [],
+    }
+
+    await consoleHandler(dummyMessage)
+
+    assert.strictEqual(logs.length, 1)
+    assert.deepStrictEqual(logs[0], [
+      'unknown',
+      'error',
+      ['Failed to load resource: the server responded with a status of 404 (Not Found)'],
+    ])
+  })
+
+  await t.test('filters all messages when silent is true', async () => {
+    const logs: any[][] = []
+
+    let consoleHandler: any
+    let pageErrorHandler: any
+    const dummyPage = {
+      on: (event: string, handler: any) => {
+        if (event === 'console') consoleHandler = handler
+        if (event === 'pageerror') pageErrorHandler = handler
+      },
+    }
+
+    const dummyEmitter = {
+      emit: (_event: string, payload: any) => logs.push([payload.file, payload.type, payload.messages]),
+      on: (_event: string, _handler: any) => {
+        // noop
+      },
+    }
+    const browserLogs = new BrowserLogs(dummyPage as any, false, dummyEmitter as any, undefined, true)
+    browserLogs.boot()
+
+    await consoleHandler({
+      type: () => 'log',
+      text: () => 'Hello',
+      args: () => [],
+    })
+
+    await consoleHandler({
+      type: () => 'error',
+      text: () => 'Custom error',
+      args: () => [],
+    })
+
+    await pageErrorHandler(new Error('Crash'))
 
     assert.strictEqual(logs.length, 0)
   })

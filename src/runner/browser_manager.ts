@@ -16,6 +16,7 @@ export class BrowserManager {
   #commandsHandlers = new Map<string, CommandsHandler>() // keyed by chunkId
   #browserNames: BrowserName[]
   #verboseLogs: boolean
+  #silentLogs: boolean
   #emitter: Emitter<RunnerEvents>
   #configPath?: string
 
@@ -30,21 +31,27 @@ export class BrowserManager {
   #currentWaveFinished = new Set<string>()
   #resolveWave?: () => void
 
-  constructor(browserNames: BrowserName[], verboseLogs: boolean, emitter: Emitter<RunnerEvents>, configPath?: string) {
+  constructor(
+    browserNames: BrowserName[],
+    verboseLogs: boolean,
+    emitter: Emitter<RunnerEvents>,
+    configPath?: string,
+    silentLogs = false
+  ) {
     this.#browserNames = browserNames
     this.#verboseLogs = verboseLogs
     this.#emitter = emitter
     this.#configPath = configPath
+    this.#silentLogs = silentLogs
   }
-
   async boot(poolManager: TestPoolManager, coverageManager?: CoverageManager): Promise<void> {
-    for (const name of this.#browserNames) {
-      if (name !== 'chromium' && coverageManager?.isEnabled) {
-        console.warn(
-          `\n⚠️  ${colors.yellow('Warning:')} Code coverage is only supported on Chromium-based browsers. Coverage collection will be skipped for ${name}.`
-        )
-      }
+    if (coverageManager?.isEnabled && !this.#browserNames.includes('chromium')) {
+      console.warn(
+        `\n⚠️  ${colors.yellow('Warning:')} Code coverage is only supported on Chromium-based browsers. Coverage collection will be skipped for ${this.#browserNames.join(', ')}.`
+      )
+    }
 
+    for (const name of this.#browserNames) {
       debug('launching browser: %s', name)
       let browser: Browser
       if (name === 'firefox') browser = await firefox.launch()
@@ -63,7 +70,7 @@ export class BrowserManager {
           await coverageManager.startCoverage(page, name)
         }
 
-        const logs = new BrowserLogs(page, this.#verboseLogs, this.#emitter, this.#configPath)
+        const logs = new BrowserLogs(page, this.#verboseLogs, this.#emitter, this.#configPath, this.#silentLogs)
         logs.boot()
 
         page.on('response', async (response) => {

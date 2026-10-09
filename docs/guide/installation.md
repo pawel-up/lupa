@@ -86,20 +86,20 @@ test.group('My Component', (group) => {
 You can run your tests by simply executing your entry point file using Node or `tsx`!
 
 ```bash
-npx lupa test
+npx lupa
 ```
 
 Lupa's orchestrator also acts as a CLI application, allowing you to pass standard arguments:
 
 ```bash
 # Run in watch mode with visual DevTools
-npx lupa test --watch
+npx lupa --watch
 
 # Use a specific Vite config
-npx lupa test --vite-config=vite.test.config.ts
+npx lupa --vite-config=vite.test.config.ts
 
 # See all available options
-npx lupa test --help
+npx lupa --help
 ```
 
 ## Writing assertions

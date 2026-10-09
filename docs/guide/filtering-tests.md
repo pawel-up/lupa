@@ -9,13 +9,13 @@ Using test suites is the first step towards dividing your tests by their nature.
 A great exercise is creating test suites with the resources they need. Also, when you run tests for a specific suite, Lupa will not import test files from other suites, which may result in significantly faster execution time.
 
 ```bash
-# Filter tests by suite positional argument
+# Filter tests by suite name
 
-npx lupa test components
+npx lupa -s components
 
-npx lupa test functional
+npx lupa -s functional
 
-npx lupa test e2e
+npx lupa --suites components,e2e
 ```
 
 ## Organize using folders
@@ -32,16 +32,20 @@ An example folder structure for organizing tests by `component -> behavior -> sc
 │       └── secondary.spec.ts
 ```
 
-You can run tests from a specific file or folder as follows:
+You can run tests from a specific file or folder using positional arguments or the `--files` flag:
 
-Run tests from any filename ending with "primary":
+Run tests from any file matching "primary":
 ```bash
-npx lupa test --files="primary"
+npx lupa primary
+# Or using the flag:
+npx lupa --files="primary"
 ```
 
-Run tests from any filename ending with "primary" inside the `button` folder:
+Run tests from any file matching "primary" inside the `button` folder:
 ```bash
-npx lupa test --files="button/primary"
+npx lupa "button/primary"
+# Or using the flag:
+npx lupa --files="button/primary"
 ```
 
 ## Tagging tests
@@ -62,22 +66,22 @@ test('charge user and create order', () => {
 
 You can run tests with the `@api_mock` tag as follows:
 ```bash
-npx lupa test --tags="@api_mock"
+npx lupa --tags="@api_mock"
 ```
 
 You can **ignore tests** with the `@api_mock` tag by negating it with a tilde `~` symbol:
 ```bash
-npx lupa test --tags="~@api_mock"
+npx lupa --tags="~@api_mock"
 ```
 
 You can also specify multiple tags using the `--tags` filter:
 ```bash
-npx lupa test --tags="@api_mock,@slow"
+npx lupa --tags="@api_mock,@slow"
 ```
 
 When filtering for multiple tags, all the tests containing **any** mentioned tags will run. You must use the `--match-all` flag if you want to run tests that have **all** the mentioned tags:
 ```bash
-npx lupa test --tags="@api_mock,@slow" --match-all
+npx lupa --tags="@api_mock,@slow" --match-all
 ```
 
 ## Filtering by group title
@@ -93,7 +97,7 @@ test.group('polls list', () => {
 ```
 
 ```bash
-npx lupa test --groups="polls list"
+npx lupa --groups="polls list"
 ```
 
 ## Filtering by test title
@@ -107,7 +111,7 @@ test('show list of public polls', () => {})
 ```
 
 ```bash
-npx lupa test --tests="show list of public polls"
+npx lupa --tests="show list of public polls"
 ```
 
 ## Pinning tests
@@ -131,7 +135,7 @@ test.group('polls list', () => {
 You can view the list of all the currently pinned tests using the `--list-pinned` CLI flag. The output will contain the test title and its source code location.
 
 ```bash
-npx lupa test --list-pinned
+npx lupa --list-pinned
 ```
 
 ## Running failed tests
@@ -139,5 +143,5 @@ npx lupa test --list-pinned
 You can automatically run only the tests that failed during the last run using the `--failed` CLI flag. It will run all the tests if there are no failing tests currently recorded.
 
 ```bash
-npx lupa test --failed
+npx lupa --failed
 ```

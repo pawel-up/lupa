@@ -28,18 +28,18 @@ run()
 
 ## Run selected suites
 
-You can run tests for a specific suite by specifying the suite name as a positional argument after your test runner script.
+You can run tests for a specific suite using the `-s` or `--suites` option:
 
 In the following example, only the component tests will run:
 
 ```bash
-npx lupa test components
+npx lupa -s components
 ```
 
 The following example will run the tests for both the components and the e2e suites:
 
 ```bash
-npx lupa test components e2e
+npx lupa --suites components,e2e
 ```
 
 ## Lifecycle hooks & Global Setup

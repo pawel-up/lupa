@@ -608,6 +608,51 @@ test('Integration: Lupa Framework End-to-End', async (t) => {
   )
 
   await t.test(
+    'executes list command with -s shorthand option to filter suites',
+    { timeout: TIMEOUT },
+    async (): Promise<void> => {
+      const runnerPath = path.join(process.cwd(), 'bin', 'lupa.ts')
+
+      const { exitCode, stdout, stderr } = await new Promise<{
+        exitCode: number | null
+        stdout: string
+        stderr: string
+      }>((resolve, reject): void => {
+        const child = forkSanitized(runnerPath, ['list', '-s', 'Unit Tests', '--config', 'lupa.suites.config.ts'], {
+          execArgv: ['--import', 'tsx'],
+          cwd: process.cwd(),
+          env: {
+            ...process.env,
+            FORCE_COLOR: '0',
+            CI: '1',
+          },
+          stdio: 'pipe',
+        })
+
+        let out = ''
+        let err = ''
+
+        child.stdout?.on('data', (data) => (out += data))
+        child.stderr?.on('data', (data) => (err += data))
+
+        child.on('close', (code) => {
+          resolve({ exitCode: code, stdout: out, stderr: err })
+        })
+
+        child.on('error', reject)
+      })
+
+      const output = stdout + '\n' + stderr
+
+      assert.strictEqual(exitCode, 0, `Expected runner to exit with code 0. Output:\n${output}`)
+      assert.ok(
+        output.includes('unit 1 - no suite'),
+        `Expected output to include 'unit 1 - no suite'. Output:\n${output}`
+      )
+    }
+  )
+
+  await t.test(
     'executes list command with --pinned option and correctly outputs only pinned tests',
     { timeout: TIMEOUT },
     async (): Promise<void> => {
@@ -656,4 +701,124 @@ test('Integration: Lupa Framework End-to-End', async (t) => {
       assert.ok(output.includes('Total tests: 1'), `Expected output to show Total tests: 1. Output:\n${output}`)
     }
   )
+
+  await t.test(
+    'executes test file directly using positional argument without test subcommand',
+    { timeout: TIMEOUT },
+    async () => {
+      const runnerPath = path.join(process.cwd(), 'bin', 'lupa.ts')
+
+      const { exitCode, stdout, stderr } = await new Promise<{
+        exitCode: number | null
+        stdout: string
+        stderr: string
+      }>((resolve, reject): void => {
+        const child = forkSanitized(runnerPath, ['tests/fixtures/integration/dummy.spec.ts'], {
+          execArgv: ['--import', 'tsx'],
+          cwd: process.cwd(),
+          env: {
+            ...process.env,
+            FORCE_COLOR: '0',
+            CI: '1',
+          },
+          stdio: 'pipe',
+        })
+
+        let out = ''
+        let err = ''
+
+        child.stdout?.on('data', (data) => (out += data))
+        child.stderr?.on('data', (data) => (err += data))
+
+        child.on('close', (code) => {
+          resolve({ exitCode: code, stdout: out, stderr: err })
+        })
+
+        child.on('error', reject)
+      })
+
+      const output = stdout + '\n' + stderr
+
+      assert.strictEqual(exitCode, 0, `Expected runner to exit with code 0. Output:\n${output}`)
+      assert.ok(output.includes('Tests  7 passed'), `Expected 7 passed tests. Output:\n${output}`)
+      assert.ok(output.includes('Browser logs:'), `Expected browser logs by default. Output:\n${output}`)
+    }
+  )
+
+  await t.test('suppresses browser logs when --silent flag is passed', { timeout: TIMEOUT }, async () => {
+    const runnerPath = path.join(process.cwd(), 'bin', 'lupa.ts')
+
+    const { exitCode, stdout, stderr } = await new Promise<{
+      exitCode: number | null
+      stdout: string
+      stderr: string
+    }>((resolve, reject): void => {
+      const child = forkSanitized(runnerPath, ['tests/fixtures/integration/dummy.spec.ts', '--silent'], {
+        execArgv: ['--import', 'tsx'],
+        cwd: process.cwd(),
+        env: {
+          ...process.env,
+          FORCE_COLOR: '0',
+          CI: '1',
+        },
+        stdio: 'pipe',
+      })
+
+      let out = ''
+      let err = ''
+
+      child.stdout?.on('data', (data) => (out += data))
+      child.stderr?.on('data', (data) => (err += data))
+
+      child.on('close', (code) => {
+        resolve({ exitCode: code, stdout: out, stderr: err })
+      })
+
+      child.on('error', reject)
+    })
+
+    const output = stdout + '\n' + stderr
+
+    assert.strictEqual(exitCode, 0, `Expected runner to exit with code 0. Output:\n${output}`)
+    assert.ok(output.includes('Tests  7 passed'), `Expected 7 passed tests. Output:\n${output}`)
+    assert.ok(!output.includes('Browser logs:'), `Expected NO browser logs with --silent. Output:\n${output}`)
+  })
+
+  await t.test('executes test suite with -s shorthand flag', { timeout: TIMEOUT }, async () => {
+    const runnerPath = path.join(process.cwd(), 'bin', 'lupa.ts')
+
+    const { exitCode, stdout, stderr } = await new Promise<{
+      exitCode: number | null
+      stdout: string
+      stderr: string
+    }>((resolve, reject): void => {
+      const child = forkSanitized(runnerPath, ['-s', 'Unit Tests', '--config', 'lupa.suites.config.ts'], {
+        execArgv: ['--import', 'tsx'],
+        cwd: process.cwd(),
+        env: {
+          ...process.env,
+          FORCE_COLOR: '0',
+          CI: '1',
+        },
+        stdio: 'pipe',
+      })
+
+      let out = ''
+      let err = ''
+
+      child.stdout?.on('data', (data) => (out += data))
+      child.stderr?.on('data', (data) => (err += data))
+
+      child.on('close', (code) => {
+        resolve({ exitCode: code, stdout: out, stderr: err })
+      })
+
+      child.on('error', reject)
+    })
+
+    const output = stdout + '\n' + stderr
+
+    assert.strictEqual(exitCode, 0, `Expected runner to exit with code 0. Output:\n${output}`)
+    assert.ok(output.includes('Tests  1 passed'), `Expected 1 passed test. Output:\n${output}`)
+  })
 })

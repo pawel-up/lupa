@@ -72,6 +72,10 @@ export type CLIArgs = {
    */
   verbose?: boolean
   /**
+   * Whether to suppress all browser console logs
+   */
+  silent?: boolean
+  /**
    * Browser(s) to run tests in
    */
   browser?: string | string[]

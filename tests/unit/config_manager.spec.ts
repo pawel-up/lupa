@@ -20,7 +20,8 @@ test('ConfigManager', async (t) => {
   await t.test('merges CLI filters', () => {
     const config: Config = { files: [] }
     const cliArgs: CLIArgs = {
-      _: ['unit', 'e2e'],
+      _: ['auth.spec.ts'],
+      suites: ['unit', 'e2e'],
       tags: '@fast,@slow',
       tests: ['Math works'],
       groups: 'Math,Physics', // groups is parsed with splitByComma = false
@@ -33,14 +34,14 @@ test('ConfigManager', async (t) => {
     assert.deepStrictEqual(hydrated.filters.tags, ['@fast', '@slow'])
     assert.deepStrictEqual(hydrated.filters.tests, ['Math works'])
     assert.deepStrictEqual(hydrated.filters.groups, ['Math,Physics'])
-    assert.deepStrictEqual(hydrated.filters.files, ['user.spec.ts'])
+    assert.deepStrictEqual(hydrated.filters.files, ['user.spec.ts', 'auth.spec.ts'])
     assert.deepStrictEqual(hydrated.filters.suites, ['unit', 'e2e'])
   })
 
-  await t.test('merges CLI filters and prioritizes explicit suites option', () => {
+  await t.test('merges CLI filters and supports suites option', () => {
     const config: Config = { files: [] }
     const cliArgs: CLIArgs = {
-      _: ['unit'],
+      _: ['auth.spec.ts'],
       suites: 'functional,integration',
     }
 
@@ -48,6 +49,36 @@ test('ConfigManager', async (t) => {
     const hydrated = manager.hydrate()
 
     assert.deepStrictEqual(hydrated.filters.suites, ['functional', 'integration'])
+    assert.deepStrictEqual(hydrated.filters.files, ['auth.spec.ts'])
+  })
+
+  await t.test('routes positional arguments to suites when cliArgs.list is true', () => {
+    const config: Config = { files: [] }
+    const cliArgs: CLIArgs = {
+      _: ['unit', 'e2e'],
+      list: true,
+    }
+
+    const manager = new ConfigManager(config, cliArgs)
+    const hydrated = manager.hydrate()
+
+    assert.deepStrictEqual(hydrated.filters.suites, ['unit', 'e2e'])
+    assert.strictEqual(hydrated.filters.files, undefined)
+  })
+
+  await t.test('supports both positional suites and explicit files filter when cliArgs.list is true', () => {
+    const config: Config = { files: [] }
+    const cliArgs: CLIArgs = {
+      _: ['unit'],
+      files: 'math.spec.ts',
+      list: true,
+    }
+
+    const manager = new ConfigManager(config, cliArgs)
+    const hydrated = manager.hydrate()
+
+    assert.deepStrictEqual(hydrated.filters.suites, ['unit'])
+    assert.deepStrictEqual(hydrated.filters.files, ['math.spec.ts'])
   })
 
   await t.test('overwrites config with CLI args', () => {

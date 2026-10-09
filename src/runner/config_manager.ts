@@ -66,15 +66,24 @@ export class ConfigManager {
     if (this.#cliArgs.tests) {
       filters.tests = this.#processAsArray(this.#cliArgs.tests, false)
     }
+    const filesFilter: string[] = []
     if (this.#cliArgs.files) {
-      filters.files = this.#processAsArray(this.#cliArgs.files, true)
+      filesFilter.push(...this.#processAsArray(this.#cliArgs.files, true))
     }
+    if (!this.#cliArgs.list && this.#cliArgs._ && this.#cliArgs._.length) {
+      filesFilter.push(...this.#processAsArray(this.#cliArgs._, true))
+    }
+    if (filesFilter.length) {
+      filters.files = Array.from(new Set(filesFilter))
+    }
+
     if (this.#cliArgs.groups) {
       filters.groups = this.#processAsArray(this.#cliArgs.groups, false)
     }
+
     if (this.#cliArgs.suites) {
       filters.suites = this.#processAsArray(this.#cliArgs.suites, true)
-    } else if (this.#cliArgs._ && this.#cliArgs._.length) {
+    } else if (this.#cliArgs.list && this.#cliArgs._ && this.#cliArgs._.length) {
       filters.suites = this.#processAsArray(this.#cliArgs._, true)
     }
 

@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import { test } from 'node:test'
 import assert from 'node:assert'
-import { chromium } from 'playwright'
+import { chromium, firefox, webkit } from 'playwright'
 import { BrowserManager } from '../../../src/runner/browser_manager.js'
 import { Emitter } from '../../../src/testing/emitter.js'
 import type { RunnerEvents } from '../../../src/types.js'
@@ -213,5 +213,85 @@ test('BrowserManager - Dependency reload and warning handling', async (t) => {
     // Trigger again, reload should execute
     await responseHandler(mock504Response)
     assert.strictEqual(reloadCalled, 4, 'reload count should be reset')
+  })
+
+  await t.test('does not warn about coverage when at least one browser is chromium', async () => {
+    const emitter = new Emitter<RunnerEvents>()
+    const manager = new BrowserManager(['chromium', 'firefox'], false, emitter)
+
+    const warnings: string[] = []
+    const originalConsoleWarn = console.warn
+    console.warn = (msg: string) => {
+      warnings.push(msg)
+    }
+
+    const mockPage = {
+      on: () => {},
+      exposeFunction: async () => {},
+      goto: async () => {},
+      url: () => 'http://localhost/__lupa__/runner.html?chunkId=chunk-1',
+    }
+
+    chromium.launch = (async () => ({ newPage: async () => mockPage })) as any
+    const originalFirefoxLaunch = firefox.launch
+    firefox.launch = (async () => ({ newPage: async () => mockPage })) as any
+
+    const mockPoolManager = {
+      getChunkIdsForBrowser: () => ['chunk-1'],
+    }
+    const mockCoverageManager = {
+      isEnabled: true,
+      startCoverage: async () => {},
+    }
+
+    try {
+      await manager.boot(mockPoolManager as any, mockCoverageManager as any)
+      assert.strictEqual(warnings.length, 0, 'should not warn when chromium is among browsers')
+    } finally {
+      console.warn = originalConsoleWarn
+      firefox.launch = originalFirefoxLaunch
+    }
+  })
+
+  await t.test('warns about coverage when none of the selected browsers is chromium', async () => {
+    const emitter = new Emitter<RunnerEvents>()
+    const manager = new BrowserManager(['firefox', 'webkit'], false, emitter)
+
+    const warnings: string[] = []
+    const originalConsoleWarn = console.warn
+    console.warn = (msg: string) => {
+      warnings.push(msg)
+    }
+
+    const mockPage = {
+      on: () => {},
+      exposeFunction: async () => {},
+      goto: async () => {},
+      url: () => 'http://localhost/__lupa__/runner.html?chunkId=chunk-1',
+    }
+
+    const originalFirefoxLaunch = firefox.launch
+    const originalWebkitLaunch = webkit.launch
+    firefox.launch = (async () => ({ newPage: async () => mockPage })) as any
+    webkit.launch = (async () => ({ newPage: async () => mockPage })) as any
+
+    const mockPoolManager = {
+      getChunkIdsForBrowser: () => ['chunk-1'],
+    }
+    const mockCoverageManager = {
+      isEnabled: true,
+      startCoverage: async () => {},
+    }
+
+    try {
+      await manager.boot(mockPoolManager as any, mockCoverageManager as any)
+      assert.strictEqual(warnings.length, 1, 'should warn once when no selected browser is chromium')
+      assert.match(warnings[0], /Code coverage is only supported on Chromium-based browsers/)
+      assert.match(warnings[0], /firefox, webkit/)
+    } finally {
+      console.warn = originalConsoleWarn
+      firefox.launch = originalFirefoxLaunch
+      webkit.launch = originalWebkitLaunch
+    }
   })
 })

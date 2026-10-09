@@ -33,7 +33,7 @@ program.name('lupa').description(packageJson.description).version(packageJson.ve
 program.addCommand(initCommand)
 program.addCommand(skillsCommand)
 program.addCommand(listCommand)
-program.addCommand(testCommand)
+program.addCommand(testCommand, { isDefault: true })
 
 program.parseAsync(process.argv).catch((err) => {
   const e = err as Error

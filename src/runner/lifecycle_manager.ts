@@ -96,7 +96,13 @@ export class LifecycleManager {
     })
 
     if (!this.browserManager) {
-      this.browserManager = new BrowserManager(browserNames, !!cliArgs.verbose, this.browserEmitter, config.configPath)
+      this.browserManager = new BrowserManager(
+        browserNames,
+        !!cliArgs.verbose,
+        this.browserEmitter,
+        config.configPath,
+        !!cliArgs.silent
+      )
     }
 
     await this.browserManager.boot(this.poolManager, this.serverManager.coverageManager)

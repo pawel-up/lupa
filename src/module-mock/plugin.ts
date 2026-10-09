@@ -160,7 +160,7 @@ export function moduleMockVitePlugin(): Plugin {
           newSpec = `${spec.slice(0, qIndex)}?${existing.toString()}`
         }
 
-        if (imp.type === 'static') {
+        if (imp.type === 'static' || imp.type === 'reexport-star') {
           s.overwrite(imp.start, imp.end, newSpec)
         } else if (imp.type === 'dynamic') {
           const firstChar = code[imp.start]

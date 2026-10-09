@@ -8,9 +8,11 @@ import { colors } from '../../../src/runner/helpers.js'
 
 const examples = `
 ${colors.yellow('Examples:')}
-  $ npx lupa test                                          ${colors.dim('# Run all tests')}
-  $ npx lupa test --files auth.spec.ts                     ${colors.dim('# Run tests in a specific file')}
-  $ npx lupa test --files="functional/user"                ${colors.dim('# Run tests in a specific directory')}
+  $ npx lupa                                               ${colors.dim('# Run all tests')}
+  $ npx lupa auth.spec.ts                                  ${colors.dim('# Run tests in a specific file')}
+  $ npx lupa tests/unit/                                   ${colors.dim('# Run tests in a specific directory')}
+  $ npx lupa -s unit                                       ${colors.dim('# Run specific test suite')}
+  $ npx lupa --suites unit,e2e                             ${colors.dim('# Run multiple test suites')}
   $ npx lupa test --tags="@github"                         ${colors.dim('# Run tests that match any of the tags')}
   $ npx lupa test --tags="~@github"                        ${colors.dim('# Run tests that exclude the tag')}
   $ npx lupa test --tags="@regression,@slow"               ${colors.dim('# Run tests that match any of the tags')}
@@ -21,24 +23,26 @@ ${colors.yellow('Examples:')}
   $ npx lupa test --coverage                               ${colors.dim('# Run tests with coverage reporting')}
   $ npx lupa test --reporters html                         ${colors.dim('# Run tests with html reporter')}
   $ npx lupa test --config lupa.config.ts                  ${colors.dim('# Run tests with a custom config file')}
+  $ npx lupa test --silent                                 ${colors.dim('# Run tests suppressing browser console logs')}
 `
 
 const notes = `
 ${colors.yellow('Notes:')}
-  - When groups and tests filters are applied together. We will first filter the
-    tests by group title and then apply the tests filter.
+  - Positional arguments are file names or glob patterns to filter tests by.
+  - When groups and tests filters are applied together, tests are first filtered by
+    group title and then by test title.
   - The timeout defined on test object takes precedence over the ${colors.green('--timeout')} flag.
   - The retries defined on test object takes precedence over the ${colors.green('--retries')} flag.
-  - The ${colors.green('--files')} flag checks for the file names ending with the filter substring.
-  - The ${colors.green('--tags')} filter runs tests that has one or more of the supplied tags.
-  - You can use the ${colors.green('--match-all')} flag to run tests that has all the supplied tags.
+  - The ${colors.green('--files')} flag or positional arguments check for file names matching the filter substring.
+  - The ${colors.green('--tags')} filter runs tests that have one or more of the supplied tags.
+  - You can use the ${colors.green('--match-all')} flag to run tests that have all the supplied tags.
 `
 
 export const testCommand = new Command('test')
   .description('Run Lupa tests')
-  .argument('[suites...]', 'Run specific test suites')
+  .argument('[files...]', 'Filter tests by file name or glob pattern')
   .option('-c, --config <path>', 'Path to the configuration file', 'lupa.config.ts')
-  .option('--suites <names...>', 'Filter tests by suite name')
+  .option('-s, --suites <names...>', 'Filter tests by suite name')
   .option('--tests <titles...>', 'Filter tests by the test title')
   .option('--groups <titles...>', 'Filter tests by the group title')
   .option('--tags <tags...>', 'Filter tests by tags')
@@ -66,7 +70,8 @@ export const testCommand = new Command('test')
     ])
   )
   .option('--watch', 'Watch for file changes and re-run tests')
-  .option('--verbose', 'Enable verbose logging')
+  .option('--verbose', 'Enable verbose logging including browser engine debug output')
+  .option('-q, --silent', 'Suppress all browser console logs')
   .option('--force-exit', 'Forcefully exit the process')
   .option('--parallel', 'Enable parallel execution')
   .option('--concurrency <concurrency>', 'Number of concurrent pages per browser')
@@ -75,11 +80,11 @@ export const testCommand = new Command('test')
   .option('--coverage-dir <dir>', 'Specify the directory to write coverage reports to')
   .addHelpText('after', examples)
   .addHelpText('after', notes)
-  .action(async (suites, options, command) => {
+  .action(async (files, options, command) => {
     try {
       // 1. Process arguments for the test runner.
       const cliArgs: CLIArgs = command.opts()
-      cliArgs._ = suites
+      cliArgs._ = files
 
       // 2. Load Configuration
       let configPath = path.resolve(process.cwd(), options.config)

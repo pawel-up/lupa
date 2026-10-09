@@ -6,23 +6,25 @@ While the test execution is entirely driven by your `lupa.config.ts` file, the C
 
 ---
 
-## `lupa test`
+## `lupa` (or `lupa test`)
 
-The primary command for executing your Lupa test suite. By default, it automatically detects and loads `lupa.config.ts` from your current directory and runs the test runner.
+The primary command for executing your Lupa test suite. When executed without a subcommand (e.g. `npx lupa`), Lupa automatically runs the `test` command. It detects and loads `lupa.config.ts` from your current directory and executes the test runner.
 
 ```bash
-npx lupa test [suites...]
+npx lupa [files...]
+# Or explicitly:
+npx lupa test [files...]
 ```
 
 ### Filtering & Options
 You can narrow down what gets executed using various filters:
 
-- `[suites...]`: Positional arguments to run specific test suites (e.g. `npx lupa test "Unit Tests"`).
-- `--suites <names...>`: Filter tests by suite name (e.g. `npx lupa test --suites "Unit Tests"`).
-- `--files <files...>`: Filter tests by file name substring (e.g. `npx lupa test --files auth.spec.ts`)
-- `--tests <titles...>`: Filter tests by test title (e.g. `npx lupa test --tests "Login"`)
-- `--groups <titles...>`: Filter tests by group title
-- `--tags <tags...>`: Filter tests by tags (e.g. `npx lupa test --tags="@slow"`)
+- `[files...]`: Positional arguments to filter tests by file name or glob pattern (e.g. `npx lupa auth.spec.ts` or `npx lupa tests/unit/`).
+- `-s, --suites <names...>`: Filter tests by suite name (e.g. `npx lupa -s "Unit Tests"` or `npx lupa --suites unit,e2e`).
+- `--files <files...>`: Filter tests by file name substring (e.g. `npx lupa --files auth.spec.ts`).
+- `--tests <titles...>`: Filter tests by test title (e.g. `npx lupa --tests "Login"`).
+- `--groups <titles...>`: Filter tests by group title.
+- `--tags <tags...>`: Filter tests by tags (e.g. `npx lupa --tags="@slow"`).
 - `--match-all`: Run tests that match all supplied tags instead of any of them.
 - `--failed`: Only run tests that failed during the last run.
 
@@ -34,12 +36,17 @@ You can narrow down what gets executed using various filters:
 
 ### Runner Options
 - `-c, --config <path>`: Path to a custom configuration file (defaults to `lupa.config.ts`).
-- `--reporters <names...>`: Activate one or more test reporters (e.g., `npx lupa test --reporters html`).
+- `--reporters <names...>`: Activate one or more test reporters (e.g., `npx lupa --reporters html`).
 - `--browser <browser>`: Specify the browser to run tests in (choices: `chromium`, `firefox`, `webkit`).
 - `--coverage`: Enable V8 code coverage instrumentation and collection.
 - `--coverage-reporters <reporters...>`: Comma-separated list or multiple values of coverage report formats.
 - `--coverage-dir <dir>`: Directory where coverage reports are written.
-- `--verbose`: Enable verbose logging.
+- `-q, --silent`: Suppress all browser console logs.
+- `--verbose`: Enable verbose logging including browser engine debug output and network resource errors.
+
+::: tip Browser Console Output
+By default, Lupa displays explicit user console output (`console.log`, `console.warn`, `console.error`, `console.info`) emitted from your browser tests while filtering noisy browser engine network errors (such as expected 404s/500s or network drops triggered by tests). Pass `--verbose` to view internal engine/network logs, or `-q, --silent` to suppress all browser logs.
+:::
 
 ---
 
@@ -64,7 +71,7 @@ npx lupa list --format json
 You can restrict the listing to specific suites by passing them as positional arguments or using the `--suites` option:
 
 - `[suites...]`: Positional arguments to specify which test suites to list (e.g. `npx lupa list "Unit Tests"`).
-- `--suites <names...>`: Filter tests by suite name (e.g. `npx lupa list --suites "Unit Tests"`).
+- `-s, --suites <names...>`: Filter tests by suite name (e.g. `npx lupa list -s "Unit Tests"`).
 
 The `list` command also accepts the same filtering options as the `test` command (such as `--files`, `--tests`, `--groups`, and `--tags`). For example:
 
