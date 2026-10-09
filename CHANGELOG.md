@@ -1,3 +1,10 @@
+# [0.9.0](https://github.com/pawel-up/lupa/compare/v0.8.0...v0.9.0) (2026-10-09)
+
+
+### Features
+
+* add silent browser log option and set test as default CLI command ([b14cffb](https://github.com/pawel-up/lupa/commit/b14cffbcd7df0842dbd46d83a7b5bfca61d0f40c))
+
 # [0.8.0](https://github.com/pawel-up/lupa/compare/v0.7.0...v0.8.0) (2026-10-06)
 
 
