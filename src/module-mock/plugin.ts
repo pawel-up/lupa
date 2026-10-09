@@ -120,9 +120,11 @@ export function moduleMockVitePlugin(): Plugin {
       const lines: string[] = [`const __m__ = (window.__LUPA_MOCKS__ ?? {})[${mockRef}]?.[${pathRef}] ?? {}`]
 
       for (const exp of exports) {
-        const name = exp.n
-        if (name !== 'default') {
-          lines.push(`export const ${name} = __m__[${JSON.stringify(name)}]`)
+        if ('name' in exp && !exp.typeOnly) {
+          const name = exp.name
+          if (name !== 'default') {
+            lines.push(`export const ${name} = __m__[${JSON.stringify(name)}]`)
+          }
         }
       }
 
@@ -145,10 +147,8 @@ export function moduleMockVitePlugin(): Plugin {
       const s = new MagicString(code)
 
       for (const imp of imports) {
-        const spec = imp.n
+        const spec = imp.type !== 'import-meta' ? imp.specifier : null
         if (!spec || !isRelativeOrAbsoluteSpecifier(spec)) continue
-
-        const rawChunk = code.slice(imp.s, imp.e)
 
         const qIndex = spec.indexOf('?')
         let newSpec: string
@@ -160,9 +160,14 @@ export function moduleMockVitePlugin(): Plugin {
           newSpec = `${spec.slice(0, qIndex)}?${existing.toString()}`
         }
 
-        const specStart = code.indexOf(rawChunk, imp.s)
-        if (specStart !== -1) {
-          s.overwrite(specStart, specStart + rawChunk.length, newSpec)
+        if (imp.type === 'static') {
+          s.overwrite(imp.start, imp.end, newSpec)
+        } else if (imp.type === 'dynamic') {
+          const firstChar = code[imp.start]
+          const lastChar = code[imp.end - 1]
+          if ((firstChar === "'" || firstChar === '"' || firstChar === '`') && firstChar === lastChar) {
+            s.overwrite(imp.start + 1, imp.end - 1, newSpec)
+          }
         }
       }
 
