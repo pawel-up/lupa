@@ -1,5 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert'
+import { stripVTControlCharacters } from 'node:util'
 import { ProgressReporter } from '../../../src/reporters/progress.js'
 import { Emitter } from '../../../src/testing/emitter.js'
 import type { Runner, RunnerEvents, FileStartNode, FileEndNode, WithCorrelation } from '../../../src/types.js'
@@ -207,7 +208,7 @@ test('ProgressReporter', async (t) => {
 
     // Progress bar should show 2/2 test files | 2 passed
     let lastLog = logs[logs.length - 1]
-    assert.ok(lastLog.includes('2/2 test files | 2 passed'))
+    assert.ok(stripVTControlCharacters(lastLog).includes('2/2 test files | 2 passed'))
 
     // Incremental run: only file1 changed! Config has filters.files = ['file1.spec.ts']
     const incrementalConfig: any = { watch: true, filters: { files: ['file1.spec.ts'] } }
@@ -224,7 +225,7 @@ test('ProgressReporter', async (t) => {
 
     // Must STILL show 2/2 test files and 2 passed (not reset to 1/2 or 1 passed!)
     lastLog = logs[logs.length - 1]
-    assert.ok(lastLog.includes('2/2 test files | 2 passed'))
+    assert.ok(stripVTControlCharacters(lastLog).includes('2/2 test files | 2 passed'))
   })
 
   await t.test('clears browser states when explicitly entering focus mode (isFocused = true)', async () => {
@@ -255,7 +256,7 @@ test('ProgressReporter', async (t) => {
     await emitter.emit('test:end', { file: 'file1.spec.ts', browserId: 'chromium-0', hasError: false } as any)
     await emitter.emit('file:end', { file: 'file1.spec.ts', browserId: 'chromium-0' } as any)
 
-    assert.ok(logs[logs.length - 1].includes('1/2 test files | 1 passed'))
+    assert.ok(stripVTControlCharacters(logs[logs.length - 1]).includes('1/2 test files | 1 passed'))
 
     // Enter focus mode on file2 (isFocused: true, estimatedTotalFiles: 1)
     await emitter.emit('runner:start', { estimatedTotalFiles: 1, isFocused: true } as any)
@@ -265,6 +266,6 @@ test('ProgressReporter', async (t) => {
 
     // States from file1 were cleared; only file2 is present
     const lastLog = logs[logs.length - 1]
-    assert.ok(lastLog.includes('1/1 test files | 1 passed'))
+    assert.ok(stripVTControlCharacters(lastLog).includes('1/1 test files | 1 passed'))
   })
 })
