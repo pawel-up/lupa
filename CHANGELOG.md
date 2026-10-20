@@ -1,3 +1,10 @@
+## [0.9.3](https://github.com/pawel-up/lupa/compare/v0.9.2...v0.9.3) (2026-10-20)
+
+
+### Bug Fixes
+
+* updating dependencies ([d3b04ea](https://github.com/pawel-up/lupa/commit/d3b04eaf3066e92183a0df6aec10394b612e415f))
+
 ## [0.9.2](https://github.com/pawel-up/lupa/compare/v0.9.1...v0.9.2) (2026-10-20)
 
 
