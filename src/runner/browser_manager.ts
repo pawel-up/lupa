@@ -30,6 +30,7 @@ export class BrowserManager {
   #currentWaveChunkIds = new Set<string>()
   #currentWaveFinished = new Set<string>()
   #resolveWave?: () => void
+  #isClosed = false
 
   constructor(
     browserNames: BrowserName[],
@@ -54,8 +55,14 @@ export class BrowserManager {
     for (const name of this.#browserNames) {
       debug('launching browser: %s', name)
       let browser: Browser
-      if (name === 'firefox') browser = await firefox.launch()
-      else if (name === 'webkit') browser = await webkit.launch()
+      if (name === 'firefox') {
+        browser = await firefox.launch({
+          firefoxUserPrefs: {
+            'privacy.bounceTrackingProtection.enable': false,
+            'privacy.bounceTrackingProtection.mode': 0,
+          },
+        })
+      } else if (name === 'webkit') browser = await webkit.launch()
       else browser = await chromium.launch()
 
       this.#browsers.set(name, browser)
@@ -136,14 +143,18 @@ export class BrowserManager {
         const url = new URL(urlBase)
         url.searchParams.set('chunkId', chunkId)
         try {
-          await page.goto(url.href)
-        } catch (err: any) {
+          await page.goto(url.href, { waitUntil: 'domcontentloaded' })
+        } catch (err: unknown) {
+          const error = err as Error | undefined
           if (
-            err?.message?.includes('interrupted by another navigation') ||
-            err?.message?.includes('net::ERR_ABORTED') ||
-            err?.message?.includes('Target closed')
+            this.#isClosed ||
+            (error?.name === 'TimeoutError' && this.#isClosed) ||
+            error?.message?.includes('interrupted by another navigation') ||
+            error?.message?.includes('net::ERR_ABORTED') ||
+            error?.message?.includes('Target closed') ||
+            error?.message?.includes('Browser has been closed')
           ) {
-            debug('Ignored expected page navigation interruption for chunk %s: %s', chunkId, err.message)
+            debug('Ignored expected page navigation interruption for chunk %s: %s', chunkId, error?.message)
           } else {
             throw err
           }
@@ -167,6 +178,22 @@ export class BrowserManager {
   }
 
   async close(): Promise<void> {
+    this.#isClosed = true
+    if (this.#resolveWave) {
+      this.#resolveWave()
+      this.#resolveWave = undefined
+    }
+
+    // Explicitly close all pages first with runBeforeUnload: false
+    // so in-flight page.goto navigations abort immediately.
+    await Promise.all(
+      Array.from(this.#pages.values()).map((page) =>
+        page.close({ runBeforeUnload: false }).catch((err) => {
+          debug('ignored page close error on shutdown: %s', err?.message)
+        })
+      )
+    )
+
     for (const [name, browser] of this.#browsers.entries()) {
       try {
         debug('closing browser %s', name)

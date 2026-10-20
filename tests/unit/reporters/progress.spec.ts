@@ -163,4 +163,108 @@ test('ProgressReporter', async (t) => {
     const expectedFirefoxWhite = colors.white('█'.repeat(6))
     assert.ok(updatedLog.includes(`${firefoxPrefix}|${expectedFirefoxWhite}${' '.repeat(24)}|`))
   })
+
+  await t.test('preserves previous test files and cumulative counts during incremental watch runs', async () => {
+    const reporter = new ProgressReporter()
+    const emitter = new Emitter<RunnerEvents>()
+
+    const mockRunner = {
+      getSummary: (): any => ({
+        hasError: false,
+        duration: 100,
+        aggregates: { total: 0, passed: 0, failed: 0, todo: 0, skipped: 0 },
+        failureTree: [],
+        failedTestsTitles: [],
+        importErrors: [],
+      }),
+      config: { watch: true },
+      poolManager: {
+        browserNames: ['chromium'],
+        getChunk: (): any => undefined,
+      },
+    } as unknown as Runner
+
+    // Boot with watch: true
+    reporter.boot(mockRunner, emitter, { watch: true } as any)
+
+    // Initial run: all 2 files run
+    await emitter.emit('runner:start', { estimatedTotalFiles: 2, isFocused: false } as any)
+    await emitter.emit('file:start', { file: 'file1.spec.ts', browserId: 'chromium-0' } as any)
+    await emitter.emit('test:end', {
+      file: 'file1.spec.ts',
+      browserId: 'chromium-0',
+      hasError: false,
+    } as any)
+    await emitter.emit('file:end', { file: 'file1.spec.ts', browserId: 'chromium-0' } as any)
+
+    await emitter.emit('file:start', { file: 'file2.spec.ts', browserId: 'chromium-0' } as any)
+    await emitter.emit('test:end', {
+      file: 'file2.spec.ts',
+      browserId: 'chromium-0',
+      hasError: false,
+    } as any)
+    await emitter.emit('file:end', { file: 'file2.spec.ts', browserId: 'chromium-0' } as any)
+
+    // Progress bar should show 2/2 test files | 2 passed
+    let lastLog = logs[logs.length - 1]
+    assert.ok(lastLog.includes('2/2 test files | 2 passed'))
+
+    // Incremental run: only file1 changed! Config has filters.files = ['file1.spec.ts']
+    const incrementalConfig: any = { watch: true, filters: { files: ['file1.spec.ts'] } }
+    reporter.config = incrementalConfig
+
+    await emitter.emit('runner:start', { estimatedTotalFiles: 2, isFocused: false } as any)
+    await emitter.emit('file:start', { file: 'file1.spec.ts', browserId: 'chromium-0' } as any)
+    await emitter.emit('test:end', {
+      file: 'file1.spec.ts',
+      browserId: 'chromium-0',
+      hasError: false,
+    } as any)
+    await emitter.emit('file:end', { file: 'file1.spec.ts', browserId: 'chromium-0' } as any)
+
+    // Must STILL show 2/2 test files and 2 passed (not reset to 1/2 or 1 passed!)
+    lastLog = logs[logs.length - 1]
+    assert.ok(lastLog.includes('2/2 test files | 2 passed'))
+  })
+
+  await t.test('clears browser states when explicitly entering focus mode (isFocused = true)', async () => {
+    const reporter = new ProgressReporter()
+    const emitter = new Emitter<RunnerEvents>()
+
+    const mockRunner = {
+      getSummary: (): any => ({
+        hasError: false,
+        duration: 100,
+        aggregates: { total: 0, passed: 0, failed: 0, todo: 0, skipped: 0 },
+        failureTree: [],
+        failedTestsTitles: [],
+        importErrors: [],
+      }),
+      config: { watch: true },
+      poolManager: {
+        browserNames: ['chromium'],
+        getChunk: (): any => undefined,
+      },
+    } as unknown as Runner
+
+    reporter.boot(mockRunner, emitter, { watch: true } as any)
+
+    // Initial run: file1 has 5 tests
+    await emitter.emit('runner:start', { estimatedTotalFiles: 2 } as any)
+    await emitter.emit('file:start', { file: 'file1.spec.ts', browserId: 'chromium-0' } as any)
+    await emitter.emit('test:end', { file: 'file1.spec.ts', browserId: 'chromium-0', hasError: false } as any)
+    await emitter.emit('file:end', { file: 'file1.spec.ts', browserId: 'chromium-0' } as any)
+
+    assert.ok(logs[logs.length - 1].includes('1/2 test files | 1 passed'))
+
+    // Enter focus mode on file2 (isFocused: true, estimatedTotalFiles: 1)
+    await emitter.emit('runner:start', { estimatedTotalFiles: 1, isFocused: true } as any)
+    await emitter.emit('file:start', { file: 'file2.spec.ts', browserId: 'chromium-0' } as any)
+    await emitter.emit('test:end', { file: 'file2.spec.ts', browserId: 'chromium-0', hasError: false } as any)
+    await emitter.emit('file:end', { file: 'file2.spec.ts', browserId: 'chromium-0' } as any)
+
+    // States from file1 were cleared; only file2 is present
+    const lastLog = logs[logs.length - 1]
+    assert.ok(lastLog.includes('1/1 test files | 1 passed'))
+  })
 })

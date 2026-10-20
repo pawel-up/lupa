@@ -6,7 +6,7 @@ import type { RunnerEvents } from '../types.js'
 import { FilesManager } from './files_manager.js'
 import debug from './debug.js'
 import { CommandsHandler } from '../commands/rpc_handler.js'
-import { colors } from './helpers.js'
+import { colors, matchesPath } from './helpers.js'
 import { Runner } from './runner.js'
 import type { Orchestrator } from './orchestrator.js'
 
@@ -14,8 +14,11 @@ export class Cli {
   #orchestrator: Orchestrator
 
   #focusedFile: string | null = null
+  #focusedPath: string | null = null
   #originalFilesFilter: string[] | undefined
   #fileEvents = new Map<string, { eventName: string; data: any }[]>()
+  #suiteStartEvents = new Map<string, any>()
+  #suiteEndEvents = new Map<string, any>()
   #isReplaying = false
   #excludedFilePaths = new Set<string>()
 
@@ -25,18 +28,71 @@ export class Cli {
     this.#orchestrator = orchestrator
   }
 
-  setExcludedFilePaths(paths: Set<string>) {
+  setExcludedFilePaths(paths: Set<string>): void {
     this.#excludedFilePaths = paths
   }
 
-  get focusedFile() {
+  get focusedFile(): string | null {
     return this.#focusedFile
   }
 
-  printWaitingMessage() {
+  get focusedPath(): string | null {
+    return this.#focusedPath
+  }
+
+  get isFocused(): boolean {
+    return !!this.#focusedPath
+  }
+
+  get originalFilesFilter(): string[] | undefined {
+    return this.#originalFilesFilter
+  }
+
+  /**
+   * Determines whether the focused file is executing in the current cycle.
+   * Always returns true when focus mode is inactive.
+   */
+  isFocusedRunning(activeFilesFilter?: string[]): boolean {
+    const focusedPath = this.#focusedPath
+    if (!this.isFocused || !focusedPath) return true
+    if (!activeFilesFilter || activeFilesFilter.length === 0) return true
+    return activeFilesFilter.some((f) => matchesPath(f, focusedPath))
+  }
+
+  /**
+   * Sets focus to a specific test file path.
+   */
+  focusOnFile(filePath: string): void {
+    this.#focusedPath = filePath
+    this.#focusedFile = filePath.split('/').pop() || null
+    this.#orchestrator.config.filters.files = [filePath]
+  }
+
+  /**
+   * Returns buffered events for all executed files.
+   */
+  getFileEvents(): Map<string, { eventName: string; data: any }[]> {
+    return this.#fileEvents
+  }
+
+  /**
+   * Returns buffered suite:start events.
+   */
+  getSuiteStartEvents(): Map<string, any> {
+    return this.#suiteStartEvents
+  }
+
+  /**
+   * Returns buffered suite:end events.
+   */
+  getSuiteEndEvents(): Map<string, any> {
+    return this.#suiteEndEvents
+  }
+
+  printWaitingMessage(): void {
     if (this.#focusedFile) {
       console.log(
-        `\n${colors.cyan(`[Focus Mode: ${this.#focusedFile}]`)} Waiting for file changes... (Press Enter to re-run, q to quit, f to pick another, Esc to clear focus, d to debug)`
+        `\n${colors.cyan(`[Focus Mode: ${this.#focusedFile}]`)} Waiting for file changes... (Press Enter to re-run, Esc or q to exit focus, f to pick another, d to debug)`
       )
     } else {
       console.log(
@@ -45,19 +101,23 @@ export class Cli {
     }
   }
 
+  #currentRunningTestFile: string | null = null
+
   /**
    * Clears the event buffer for files that are about to be re-run
    */
-  clearEventBufferFor(filesFilter?: string[]) {
-    if (!filesFilter) {
+  clearEventBufferFor(filesFilter?: string[]): void {
+    if (!filesFilter || filesFilter.length === 0) {
       this.#fileEvents.clear()
+      this.#suiteStartEvents.clear()
+      this.#suiteEndEvents.clear()
       return
     }
 
     // Clear only events for files that match the filter
-    for (const file of this.#fileEvents.keys()) {
-      if (filesFilter.some((f) => file.includes(f) || f.includes(file))) {
-        this.#fileEvents.set(file, [])
+    for (const file of Array.from(this.#fileEvents.keys())) {
+      if (filesFilter.some((f) => matchesPath(file, f))) {
+        this.#fileEvents.delete(file)
       }
     }
   }
@@ -66,11 +126,17 @@ export class Cli {
    * Re-emits cached events for test files that were NOT executed in the current watch cycle
    * so reporters render full suite progress and accurate totals.
    */
-  async replayCachedEventsForUnchangedFiles(activeNodeEmitter: Emitter<RunnerEvents>, activeFilesFilter?: string[]) {
+  async replayCachedEventsForUnchangedFiles(
+    activeNodeEmitter: Emitter<RunnerEvents>,
+    activeFilesFilter?: string[]
+  ): Promise<void> {
     this.#isReplaying = true
     try {
+      for (const suiteStart of this.#suiteStartEvents.values()) {
+        await activeNodeEmitter.emit('suite:start', suiteStart)
+      }
       for (const [file, events] of this.#fileEvents.entries()) {
-        if (activeFilesFilter && activeFilesFilter.some((f) => file.includes(f) || f.includes(file))) {
+        if (activeFilesFilter && activeFilesFilter.some((f) => matchesPath(file, f))) {
           continue
         }
         for (const event of events) {
@@ -93,10 +159,43 @@ export class Cli {
       const eventName = eventObj.name || eventObj.eventName
       const data = eventObj.data || eventObj.eventData
 
+      if (eventName === 'file:start') {
+        this.#currentRunningTestFile = data?.file || null
+      } else if (eventName === 'file:end') {
+        if (this.#currentRunningTestFile === data?.file) {
+          this.#currentRunningTestFile = null
+        }
+      } else if (eventName === 'runner:end') {
+        this.#currentRunningTestFile = null
+      }
+
       // We don't buffer events if we are just replaying
       if (!this.#isReplaying) {
-        if (['file:start', 'file:end', 'group:start', 'test:start', 'test:end', 'group:end'].includes(eventName)) {
-          const fileName = data?.file || data?.meta?.fileName || ''
+        if (
+          [
+            'file:start',
+            'file:end',
+            'group:start',
+            'group:end',
+            'test:start',
+            'test:end',
+            'runner:import_error',
+            'browser:log',
+          ].includes(eventName)
+        ) {
+          let fileName = data?.file || data?.meta?.file || data?.meta?.fileName || ''
+          if (!fileName || fileName === 'unknown') {
+            fileName =
+              this.#currentRunningTestFile ||
+              (this.#orchestrator.config.filters?.files?.length === 1
+                ? this.#orchestrator.config.filters.files[0]
+                : '') ||
+              (this.isFocused ? (this.#focusedPath ?? '') : '') ||
+              ''
+            if (fileName && data && (!data.file || data.file === 'unknown')) {
+              data.file = fileName
+            }
+          }
           if (fileName) {
             let events = this.#fileEvents.get(fileName)
             if (!events) {
@@ -105,6 +204,12 @@ export class Cli {
             }
             events.push({ eventName, data })
           }
+        } else if (eventName === 'suite:start') {
+          const key = `${data?.name}:${data?.browserId}`
+          this.#suiteStartEvents.set(key, data)
+        } else if (eventName === 'suite:end') {
+          const key = `${data?.name}:${data?.browserId}`
+          this.#suiteEndEvents.set(key, data)
         }
       }
 
@@ -116,17 +221,26 @@ export class Cli {
         }
       }
 
-      const focused = this.#focusedFile
-      if (focused) {
-        const fileName = data?.file || data?.meta?.fileName || ''
-        if (fileName && !fileName.includes(focused)) {
+      if (this.isFocused) {
+        const focusedPath = this.#focusedPath
+        const currentFilters = this.#orchestrator.config.filters?.files || []
+        const isFocusedRunning = this.isFocusedRunning(currentFilters)
+
+        // If the focused file is NOT running in this execution (background run), suppress from active reporters
+        if (!isFocusedRunning) {
           return
         }
+
+        // Clamp estimated total files to 1 for the focused file
         if (eventName === 'runner:start') {
-          const currentFilters = this.#orchestrator.config.filters?.files || []
-          if (!currentFilters.some((f) => f.includes(focused))) {
-            return
-          }
+          await filteredEmitter.emit('runner:start', { ...data, estimatedTotalFiles: 1, isFocused: true })
+          return
+        }
+
+        // Suppress events belonging to other files
+        const fileName = data?.file || data?.meta?.file || data?.meta?.fileName || ''
+        if (fileName && focusedPath && !matchesPath(fileName, focusedPath)) {
+          return
         }
       }
 
@@ -151,7 +265,7 @@ export class Cli {
       }
     }
 
-    const fileFilters = this.#orchestrator.config.filters?.files
+    const fileFilters = this.#originalFilesFilter
     if (fileFilters && fileFilters.length > 0) {
       return urls.filter((u) => fileFilters.some((allowed) => u.pathname.endsWith(allowed)))
     }
@@ -199,43 +313,53 @@ export class Cli {
     return Array.from(affected)
   }
 
-  #onKeypress = async (_str: string | undefined, key: Key) => {
+  #onKeypress = async (_str: string | undefined, key: Key): Promise<void> => {
     if (key.ctrl && key.name === 'c') {
       await this.#orchestrator.shutdown(0)
     }
 
     if (key.name === 'return' || key.name === 'enter') {
-      this.#orchestrator.executeTests()
+      if (this.isFocused && this.#focusedPath) {
+        this.#orchestrator.config.filters.files = [this.#focusedPath]
+      }
+      await this.#orchestrator.executeTests()
     } else if (key.name === 'q') {
-      await this.#orchestrator.shutdown(0)
-    } else if (key.name === 'f') {
-      // Toggle focus mode
-      if (this.#focusedFile) {
-        // If already in focus mode, pressing f again lets them pick a new file
-        await this.#promptFocusFile()
+      if (this.isFocused) {
+        await this.exitFocusMode()
       } else {
-        // Enter focus mode
-        await this.#promptFocusFile()
+        await this.#orchestrator.shutdown(0)
       }
     } else if (key.name === 'escape') {
-      if (this.#focusedFile) {
-        this.#focusedFile = null
-        this.#orchestrator.config.filters.files = this.#originalFilesFilter
-        console.log('\n[Watch Mode] Exited focus mode. Re-rendering previous results...')
-        await this.#replayEvents()
+      if (this.isFocused) {
+        await this.exitFocusMode()
       }
+    } else if (key.name === 'f') {
+      await this.#promptFocusFile()
     } else if (key.name === 'd') {
-      this.handleDebugBrowser()
+      await this.handleDebugBrowser()
     }
   }
 
-  protected async handleDebugBrowser() {
-    if (!this.#focusedFile) {
+  /**
+   * Exits focus mode and replays all captured test results without re-executing.
+   */
+  async exitFocusMode(): Promise<void> {
+    if (!this.#focusedPath && !this.#focusedFile) return
+
+    this.#focusedFile = null
+    this.#focusedPath = null
+    this.#orchestrator.config.filters.files = this.#originalFilesFilter
+    console.log('\n[Watch Mode] Exited focus mode. Re-rendering previous results...')
+    await this.#replayEvents()
+  }
+
+  protected async handleDebugBrowser(): Promise<void> {
+    if (!this.#focusedPath) {
       console.log('\n[Focus Mode] Select a file to debug')
       await this.#promptFocusFile()
     }
 
-    if (!this.#focusedFile) {
+    if (!this.#focusedPath) {
       return
     }
 
@@ -244,7 +368,7 @@ export class Cli {
       return
     }
 
-    let launchClass = chromium
+    let launchClass: BrowserType = chromium
     if (this.#orchestrator.defaultBrowserType === 'firefox') launchClass = firefox
     if (this.#orchestrator.defaultBrowserType === 'webkit') launchClass = webkit
 
@@ -252,11 +376,16 @@ export class Cli {
   }
 
   protected async openDebugBrowser(launchClass: BrowserType): Promise<void> {
-    console.log('\nOpening debug browser...')
+    console.log(`\nOpening debug browser for ${this.#focusedFile}...`)
 
     const launchOptions: any = { headless: false }
     if (launchClass === chromium) {
       launchOptions.devtools = true
+    } else if (launchClass === firefox) {
+      launchOptions.firefoxUserPrefs = {
+        'privacy.bounceTrackingProtection.enable': false,
+        'privacy.bounceTrackingProtection.mode': 0,
+      }
     }
 
     this.debugBrowser = await launchClass.launch(launchOptions)
@@ -283,15 +412,16 @@ export class Cli {
       vite.resolvedUrls?.local[0] || `http://localhost:${vite.config.server.port}`
     )
 
-    const focusedPath = this.#orchestrator.config.filters?.files?.[0]
+    const focusedPath = this.#focusedPath
     const browserName = this.#orchestrator.defaultBrowserType
-    // we need to find the chunk that corresponds to the focused file to pass it to the debug page,
-    // so it can load the correct test files and config
     const chunkId = focusedPath
       ? (this.#orchestrator.poolManager?.getChunkIdForFile(browserName, focusedPath) ?? `${browserName}-0`)
       : `${browserName}-0`
     url.searchParams.append('chunkId', chunkId)
     url.searchParams.append('debug', '1')
+    if (focusedPath) {
+      url.searchParams.append('file', focusedPath)
+    }
 
     await debugPage.goto(url.toString())
   }
@@ -299,7 +429,7 @@ export class Cli {
   #pendingWatchFile: string | null = null
   #isExecutingWatch = false
 
-  async start() {
+  async start(): Promise<void> {
     // Keep a reference to the original configured files filters
     this.#orchestrator.config.filters = this.#orchestrator.config.filters || {}
     this.#originalFilesFilter = this.#orchestrator.config.filters.files
@@ -330,21 +460,45 @@ export class Cli {
     this.#isExecutingWatch = true
 
     try {
-      const affected = await this.#getAffectedTestFiles(file)
-      const targetFiles =
-        affected.length > 0 ? affected : file.includes('.spec.') || file.includes('.test.') ? [file] : []
+      const isTestFile = file.includes('.spec.') || file.includes('.test.')
+      let targetFiles: string[] = []
 
-      if (targetFiles.length > 0) {
-        if (!this.#focusedFile) {
-          console.log(`\n[Watch Mode] File changed. Found ${targetFiles.length} affected test file(s). Re-running...`)
+      if (isTestFile) {
+        targetFiles = [file]
+      } else {
+        const affected = await this.#getAffectedTestFiles(file)
+        targetFiles = affected
+      }
+
+      if (targetFiles.length === 0) {
+        debug('Ignoring change in %s as no test files depend on it', file)
+        return
+      }
+
+      if (this.isFocused) {
+        const focusedPath = this.#focusedPath as string
+        const isFocusedAffected = targetFiles.some(
+          (f) => f === focusedPath || f.endsWith(focusedPath) || focusedPath.endsWith(f)
+        )
+
+        if (isFocusedAffected) {
+          targetFiles = [
+            focusedPath,
+            ...targetFiles.filter((f) => f !== focusedPath && !f.endsWith(focusedPath) && !focusedPath.endsWith(f)),
+          ]
+          debug('[Focus Mode] Focused file %s affected. Prioritizing at head of execution queue.', focusedPath)
         } else {
-          debug('[Focus Mode] Unfocused file %s changed. Executing in background to update cache.', file)
+          debug('[Focus Mode] Unfocused file %s changed. Executing in background to update cache and errors.', file)
         }
+
+        this.#orchestrator.config.filters.files = targetFiles
+        await this.#orchestrator.executeTests()
+        this.#orchestrator.config.filters.files = [focusedPath]
+      } else {
+        console.log(`\n[Watch Mode] File changed. Found ${targetFiles.length} affected test file(s). Re-running...`)
         this.#orchestrator.config.filters.files = targetFiles
         await this.#orchestrator.executeTests()
         this.#orchestrator.config.filters.files = this.#originalFilesFilter
-      } else {
-        debug('Ignoring change in %s as no test files depend on it', file)
       }
     } finally {
       this.#isExecutingWatch = false
@@ -375,10 +529,9 @@ export class Cli {
       if (process.stdin.isTTY) process.stdin.setRawMode(true)
       process.stdin.on('keypress', this.#onKeypress)
       const selected = allFiles[0]
-      this.#focusedFile = selected.pathname.split('/').pop() || null
-      this.#orchestrator.config.filters.files = [selected.pathname]
+      this.focusOnFile(selected.pathname)
       console.log(`\nAuto-focusing on: ${this.#focusedFile}`)
-      this.#orchestrator.executeTests()
+      await this.#orchestrator.executeTests()
       return
     }
 
@@ -386,7 +539,7 @@ export class Cli {
     for (const events of this.#fileEvents.values()) {
       for (const event of events) {
         if (event.eventName === 'test:end' && event.data?.hasError) {
-          const fileName = event.data?.file || event.data?.meta?.fileName
+          const fileName = event.data?.file || event.data?.meta?.file || event.data?.meta?.fileName
           if (fileName) failedFiles.add(fileName)
         }
       }
@@ -439,13 +592,12 @@ export class Cli {
     }
 
     const selected = displayList[num - 1]
-    this.#focusedFile = selected.pathname.split('/').pop() || null
-    this.#orchestrator.config.filters.files = [selected.pathname]
+    this.focusOnFile(selected.pathname)
     console.log(`\nFocusing on: ${this.#focusedFile}`)
-    this.#orchestrator.executeTests()
+    await this.#orchestrator.executeTests()
   }
 
-  async #replayEvents() {
+  async #replayEvents(): Promise<void> {
     this.#isReplaying = true
     console.clear()
 
@@ -461,13 +613,26 @@ export class Cli {
       replayRunner.registerReporter(reporter)
     }
 
+    const totalFiles = poolManager.getFilesCount(true) || this.#fileEvents.size
     await replayRunner.start()
-    await replayEmitter.emit('runner:start', { estimatedTotalFiles: 0 })
+    await replayEmitter.emit('runner:start', {
+      estimatedTotalFiles: totalFiles,
+      isReplay: true,
+      isFocused: false,
+    } as any)
+
+    for (const suiteStart of this.#suiteStartEvents.values()) {
+      await replayEmitter.emit('suite:start', suiteStart)
+    }
 
     for (const events of this.#fileEvents.values()) {
       for (const event of events) {
         await replayEmitter.emit(event.eventName as any, event.data)
       }
+    }
+
+    for (const suiteEnd of this.#suiteEndEvents.values()) {
+      await replayEmitter.emit('suite:end', suiteEnd)
     }
 
     await replayRunner.end()

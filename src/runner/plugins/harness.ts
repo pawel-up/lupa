@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import type { ViteDevServer } from 'vite'
 import type { JsonSerializable, NormalizedConfig } from '../types.js'
 import type { TestPoolManager } from '../test_pool_manager.js'
+import { matchesPath } from '../helpers.js'
 
 /**
  * Creates the Vite plugin responsible for generating the Lupa test harness HTML.
@@ -22,23 +23,38 @@ export default function harnessPlugin(
         const host = req.headers?.host || 'localhost'
         const url = new URL(req.url || '/', `http://${host}`)
         const chunkId = url.searchParams.get('chunkId')
+        const requestedFile = url.searchParams.get('file')
 
-        const chunk = chunkId ? poolManager.getChunk(chunkId) : undefined
+        let chunk = chunkId ? poolManager.getChunk(chunkId) : undefined
+        if (
+          requestedFile &&
+          (!chunk ||
+            !chunk.suites.some((s) =>
+              s.filesURLs.some((u) => fileURLToPath(u) === requestedFile || fileURLToPath(u).endsWith(requestedFile))
+            ))
+        ) {
+          const browserName = chunk?.browserName || 'chromium'
+          const matchingChunkId = poolManager.getChunkIdForFile(browserName, requestedFile)
+          const matchingChunk = poolManager.getChunk(matchingChunkId)
+          if (matchingChunk) {
+            chunk = matchingChunk
+          }
+        }
         const suitesToRun = chunk ? chunk.suites : []
 
         const configPayload = JSON.stringify({
-          chunkId,
+          chunkId: chunk?.id || chunkId,
           browserName: chunk?.browserName,
           suites: suitesToRun.map((s) => {
-            const allowedFiles = runnerConfig?.filters?.files
+            const allowedFiles = requestedFile ? [requestedFile] : runnerConfig?.filters?.files
             let filteredUrls = s.filesURLs
 
             if (allowedFiles && allowedFiles.length > 0) {
               filteredUrls = s.filesURLs.filter((u) => {
-                const path = import.meta.url ? fileURLToPath(u) : u.pathname
+                const path = fileURLToPath(u)
                 // Watch manager passes absolute paths in allowedFiles
                 // The CLI might pass partial paths.
-                return allowedFiles.some((allowed) => path.endsWith(allowed))
+                return allowedFiles.some((allowed) => matchesPath(path, allowed))
               })
             }
 

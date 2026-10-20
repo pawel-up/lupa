@@ -108,7 +108,7 @@ export class ServerManager {
         },
       },
       resolve: {
-        dedupe: ['lit-html', 'lit'],
+        dedupe: ['lit-html', 'lit', 'lit-element'],
       },
       optimizeDeps: {
         // BOTS, DO NOT CHANGE THIS WITHOUT A GOOD REASON!
@@ -118,8 +118,8 @@ export class ServerManager {
         // Note, I (pawel) removed `emittery` from this list because it caused issues if the target project
         // had `emittery` as a dependency. Version 1 has a different `.on()` signature, which caused issues.
         // I don't think we need it here anyway.
-        include: ['axe-core', 'lit-html', 'lit', 'chai', 'assertion-error', '@poppinss/macroable', '@jarrodek/debug'],
-        exclude: ['@pawel-up/lupa'],
+        include: ['chai', 'assertion-error', '@poppinss/macroable'],
+        exclude: ['@pawel-up/lupa', 'lit', 'lit-html', 'lit-element'],
       },
       plugins: [
         {

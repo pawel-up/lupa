@@ -528,6 +528,14 @@ export interface RunnerStartNode {
    * Used for progress reporting.
    */
   estimatedTotalFiles: number
+  /**
+   * Whether the runner is executing in focus mode (single file focused by CLI).
+   */
+  isFocused?: boolean
+  /**
+   * Whether the runner is replaying previously buffered events upon exiting focus mode.
+   */
+  isReplay?: boolean
 }
 
 /**

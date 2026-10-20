@@ -185,4 +185,29 @@ test('TestPoolManager', async (t) => {
       assert.equal(serialSuite, undefined)
     }
   })
+
+  await t.test('hasFilesForChunk returns true when chunk has matching files and false when empty or no match', () => {
+    const manager = new TestPoolManager(mockConfig, browsers, suites)
+
+    // With no filter, both chunks have files
+    assert.equal(manager.hasFilesForChunk('chromium-t100-0'), true)
+    assert.equal(manager.hasFilesForChunk('chromium-t100-1'), true)
+    assert.equal(manager.hasFilesForChunk('non-existent'), false)
+
+    // With filter targeting test1.spec.ts (which lives in chunk 0)
+    assert.equal(manager.hasFilesForChunk('chromium-t100-0', ['test1.spec.ts']), true)
+    assert.equal(manager.hasFilesForChunk('chromium-t100-1', ['test1.spec.ts']), false)
+
+    // With filter targeting test2.spec.ts (which lives in chunk 1)
+    assert.equal(manager.hasFilesForChunk('chromium-t100-0', ['test2.spec.ts']), false)
+    assert.equal(manager.hasFilesForChunk('chromium-t100-1', ['test2.spec.ts']), true)
+
+    // With filter that matches no files
+    assert.equal(manager.hasFilesForChunk('chromium-t100-0', ['nonexistent.spec.ts']), false)
+    assert.equal(manager.hasFilesForChunk('chromium-t100-1', ['nonexistent.spec.ts']), false)
+
+    // Substring collision without directory boundary should not match
+    assert.equal(manager.hasFilesForChunk('chromium-t100-0', ['supertest1.spec.ts']), false)
+    assert.equal(manager.hasFilesForChunk('chromium-t100-0', ['est1.spec.ts']), false)
+  })
 })

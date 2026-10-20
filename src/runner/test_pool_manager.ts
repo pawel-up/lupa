@@ -3,6 +3,7 @@ import type { NormalizedConfig } from './types.js'
 import { PlannedTestSuite } from '../types.js'
 import { PriorityPlanner, DEFAULT_PRIORITY } from './priority_planner.js'
 import { ShardingStrategy } from './sharding_strategy.js'
+import { matchesPath } from './helpers.js'
 
 /**
  * Represents a discrete chunk of tests assigned to a specific browser page slot.
@@ -123,6 +124,28 @@ export class TestPoolManager {
     }
 
     return result
+  }
+
+  /**
+   * Checks whether a chunk contains any test files matching the optional files filter.
+   * If no filter is provided, returns true if the chunk has at least one file.
+   *
+   * @param chunkId - The unique ID of the chunk.
+   * @param filesFilter - Optional list of file paths/suffixes to match against.
+   * @returns True if the chunk has matching test files to execute.
+   */
+  hasFilesForChunk(chunkId: string, filesFilter?: string[]): boolean {
+    const chunk = this.#chunks.get(chunkId)
+    if (!chunk) return false
+    if (!filesFilter || filesFilter.length === 0) {
+      return chunk.suites.some((s) => s.filesURLs.length > 0)
+    }
+    return chunk.suites.some((s) =>
+      s.filesURLs.some((u) => {
+        const path = fileURLToPath(u)
+        return filesFilter.some((allowed) => matchesPath(path, allowed))
+      })
+    )
   }
 
   /**

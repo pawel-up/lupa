@@ -83,10 +83,47 @@ export function formatPinnedTest(title: string, transformedStack: string) {
 /**
  * Prints a summary of all the pinned tests
  */
-export function printPinnedTests(pinnedTests: string[]) {
+export function printPinnedTests(pinnedTests: string[]): void {
   if (pinnedTests.length) {
     console.log(colors.bgYellow().black(` ${pinnedTests.length} pinned test(s) found `))
     pinnedTests.forEach((row) => console.log(row))
     console.log('')
   }
+}
+
+/**
+ * Determines whether two file paths refer to the same file or whether one
+ * path is a suffix of the other matching on a directory boundary.
+ *
+ * Prevents false-positive substring collisions between files like
+ * `file.spec.ts` and `superfile.spec.ts`.
+ *
+ * @param pathA - First path to compare (absolute or relative)
+ * @param pathB - Second path to compare (absolute or relative)
+ * @returns `true` if the paths match exactly or at a directory boundary; otherwise `false`
+ */
+export function matchesPath(pathA: string, pathB: string): boolean {
+  if (!pathA || !pathB) {
+    return false
+  }
+
+  const a = string.toUnixSlash(pathA)
+  const b = string.toUnixSlash(pathB)
+
+  if (a === b) {
+    return true
+  }
+
+  const normA = a.startsWith('/') ? a.slice(1) : a
+  const normB = b.startsWith('/') ? b.slice(1) : b
+
+  if (!normA || !normB) {
+    return false
+  }
+
+  if (a.endsWith('/' + normB) || b.endsWith('/' + normA)) {
+    return true
+  }
+
+  return false
 }

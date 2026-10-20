@@ -80,7 +80,7 @@ export class ProgressReporter extends BaseReporter {
   protected override onTestEnd(payload: WithCorrelation<TestEndNode>): void {
     const browserName = this.#getBrowserName(payload.browserId)
     const state = this.#getOrCreateBrowserState(browserName)
-    const file = payload.file || (payload.meta as any)?.fileName
+    const file = payload.file || payload.meta?.file || (payload.meta as any)?.fileName
 
     let fStat: FileTestStats | undefined
     if (file) {
@@ -110,11 +110,14 @@ export class ProgressReporter extends BaseReporter {
     this.#logs = []
     this.#lastRenderTime = Date.now()
 
-    const isFocusedMode = !!this.config?.filters?.files?.length && this.config.filters.files.length === 1
-    const isWatchMode = !!this.config?.watch
+    const isFocusedMode = Boolean(node.isFocused)
+    const isReplay = Boolean(node.isReplay)
+    const isWatchMode = Boolean(this.config?.watch)
+    const isFullRun = !this.config?.filters?.files || this.config.filters.files.length === 0
 
-    // Reset browser states completely if not in watch mode or if switching focus mode
-    if (!isWatchMode || isFocusedMode) {
+    // Reset browser states completely if not in watch mode, if in focus mode,
+    // if full suite run, or if replaying events
+    if (!isWatchMode || isFocusedMode || isReplay || isFullRun) {
       this.#browserStates.clear()
     }
 

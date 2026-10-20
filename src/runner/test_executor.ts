@@ -3,6 +3,7 @@ import type { RunnerEvents } from '../types.js'
 import { Runner } from './runner.js'
 import debug from './debug.js'
 import type { Orchestrator } from './orchestrator.js'
+import type { TestPoolManager } from './test_pool_manager.js'
 
 const DEFAULT_GLOBAL_TIMEOUT = 120_000
 
@@ -59,8 +60,13 @@ export class TestExecutor {
 
     const { config, cliArgs, poolManager, cli, reporters, refinerFilters, exceptionsManager } = this.#orchestrator
 
+    const isFocusedMode = cli.isFocused
+    const isFocusedRunning = cli.isFocusedRunning(config.filters?.files)
+
     if (this.#orchestrator.isWatchMode) {
-      console.clear()
+      if (isFocusedRunning) {
+        console.clear()
+      }
       cli.clearEventBufferFor(config.filters?.files)
     }
 
@@ -114,7 +120,7 @@ export class TestExecutor {
     this.activeNodeRunner.reporterEmitter = cli.createFilteredEmitter(this.activeNodeEmitter)
 
     this.activeNodeEmitter.on('test:end', (payload: any) => {
-      const filePath = payload.file || payload.meta?.fileName
+      const filePath = payload.file || payload.meta?.file || payload.meta?.fileName
       if (filePath) {
         const hash = this.#orchestrator.testCache.computeFileHash(filePath, this.#orchestrator.vite)
         const status = payload.hasError ? 'fail' : 'pass'
@@ -134,13 +140,13 @@ export class TestExecutor {
 
     config.refiner.matchAllTags(cliArgs.matchAll ?? false)
 
-    const isFocusedMode = !!cli.focusedFile
-    const estimatedTotalFiles =
-      this.#orchestrator.isWatchMode && !isFocusedMode
-        ? poolManager.getFilesCount(true) || 0
-        : poolManager.getFilesCount() || 0
+    const estimatedTotalFiles = this.#computeEstimatedTotalFiles(poolManager, isFocusedRunning)
 
-    await this.activeNodeRunner.start({ estimatedTotalFiles })
+    await this.activeNodeRunner.start({ estimatedTotalFiles, isFocused: isFocusedMode })
+
+    if (this.#orchestrator.isWatchMode && !isFocusedMode && config.filters?.files && config.filters.files.length > 0) {
+      await cli.replayCachedEventsForUnchangedFiles(this.activeNodeEmitter, config.filters.files)
+    }
 
     if (!this.#orchestrator.isWatchMode) {
       this.globalTimeout = setTimeout(async () => {
@@ -153,7 +159,15 @@ export class TestExecutor {
       this.globalTimeout?.unref()
     }
 
-    this.#runWaves().catch((err) => exceptionsManager.notifyException(err))
+    if (this.#orchestrator.isWatchMode) {
+      try {
+        await this.#runWaves()
+      } catch (err) {
+        exceptionsManager.notifyException(err)
+      }
+    } else {
+      this.#runWaves().catch((err) => exceptionsManager.notifyException(err))
+    }
   }
 
   async #runWaves(): Promise<void> {
@@ -189,7 +203,12 @@ export class TestExecutor {
           break
         }
         const allBrowserChunkIds = browserNames.flatMap((b) => poolManager.getChunkIdsByTier(b).get(priority) ?? [])
-        await browserManager.navigateAndWait(`${serverUrl}__lupa__/runner.html`, allBrowserChunkIds)
+        const activeChunkIds = allBrowserChunkIds.filter((id) =>
+          poolManager.hasFilesForChunk(id, this.#orchestrator.config.filters?.files)
+        )
+        if (activeChunkIds.length === 0) continue
+
+        await browserManager.navigateAndWait(`${serverUrl}__lupa__/runner.html`, activeChunkIds)
 
         if (this.#orchestrator.isShuttingDown) {
           break
@@ -231,10 +250,29 @@ export class TestExecutor {
       if (!isWatchMode) {
         await this.#orchestrator.shutdown(exitCode)
       } else {
-        cli.printWaitingMessage()
+        if (cli.isFocusedRunning(this.#orchestrator.config.filters?.files)) {
+          cli.printWaitingMessage()
+        }
       }
     } finally {
       this.isRunning = false
     }
+  }
+
+  /**
+   * Computes the estimated total number of test files for the current execution cycle.
+   */
+  #computeEstimatedTotalFiles(poolManager: TestPoolManager, isFocusedRunning: boolean): number {
+    const { isWatchMode, cli } = this.#orchestrator
+
+    if (cli.isFocused) {
+      return isFocusedRunning ? 1 : poolManager.getFilesCount()
+    }
+
+    if (isWatchMode) {
+      return cli.originalFilesFilter?.length ?? poolManager.getFilesCount(true)
+    }
+
+    return poolManager.getFilesCount()
   }
 }

@@ -212,8 +212,8 @@ export class ConfigManager {
       harness: this.#config.harness,
       parallel,
       concurrency,
-      watch: this.#config.watch ?? this.#cliArgs.watch === true,
-      list: this.#config.list ?? this.#cliArgs.list === true,
+      watch: this.#cliArgs.watch !== undefined ? this.#cliArgs.watch === true : (this.#config.watch ?? false),
+      list: this.#cliArgs.list !== undefined ? this.#cliArgs.list === true : (this.#config.list ?? false),
     }
 
     /**

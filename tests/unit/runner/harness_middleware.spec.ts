@@ -112,4 +112,47 @@ test('Lupa Harness Middleware', async (t) => {
     assert.ok(responseContent.includes('<link rel="stylesheet" href="https://cdn.example.com/theme.css">'))
     assert.ok(responseContent.includes('window.__lupa__ ='))
   })
+
+  await t.test('filters suites to requested file when ?file= query param is provided', async () => {
+    const config = {} as NormalizedConfig
+    const poolMock = {
+      getChunk: () => ({
+        id: 'chromium-0',
+        browserName: 'chromium',
+        suites: [
+          {
+            name: 'default',
+            filesURLs: [new URL('file:///app/tests/a.spec.ts'), new URL('file:///app/tests/b.spec.ts')],
+          },
+        ],
+      }),
+      getChunkIdForFile: () => 'chromium-0',
+    } as unknown as TestPoolManager
+
+    const plugin = lupaHarnessPlugin(poolMock, [], config, '/fake-harness.js')
+
+    let responseContent = ''
+    const res = {
+      setHeader: () => {},
+      end: (content: string) => {
+        responseContent = content
+      },
+    }
+
+    const mockServer = {
+      middlewares: {
+        use: (path: string, handler: any) => {
+          if (path === '/__lupa__/runner.html') {
+            handler({ url: '/__lupa__/runner.html?chunkId=chromium-0&debug=1&file=%2Fapp%2Ftests%2Fa.spec.ts' }, res)
+          }
+        },
+      },
+    } as unknown as ViteDevServer
+
+    plugin.configureServer(mockServer)
+
+    assert.ok(responseContent.includes('<script>window.__lupa__ ='))
+    assert.ok(responseContent.includes('/app/tests/a.spec.ts'))
+    assert.ok(!responseContent.includes('/app/tests/b.spec.ts'))
+  })
 })

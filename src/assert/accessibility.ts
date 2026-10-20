@@ -1,4 +1,4 @@
-import axe from 'axe-core'
+import type axe from 'axe-core'
 import type { Assert } from './assert.js'
 
 /**
@@ -38,7 +38,14 @@ export async function assertIsAccessible(
   }
 
   // Ensure axe runs
-  const results = await axe.run(context, options ?? {})
+  const axeModule = (await import('axe-core')) as any
+  // Axe is an UMD module that exposes itself as a global, but depending on Vite
+  // config it can be actually exported.
+  const axeInstance = axeModule.default || axeModule.axe || (window as unknown as { axe: typeof axe }).axe
+  if (!axeInstance) {
+    throw new Error('Failed to load axe-core: axe instance not found on window')
+  }
+  const results = await axeInstance.run(context, options ?? {})
 
   const hasViolations = results.violations.length > 0
 

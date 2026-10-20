@@ -7,10 +7,10 @@
  * file that was distributed with this source code.
  */
 
-import { debuglog } from '@jarrodek/debug'
+import { createBrowserDebug } from '../testing/debug.js'
 import { type HookHandler, type CleanupHandler, type HookHandlerProvider } from './types.js'
 
-const debug = debuglog('lupa:hooks')
+const debug = createBrowserDebug('lupa:hooks')
 
 /**
  * Runner allows running a set of specific hook handlers for a given

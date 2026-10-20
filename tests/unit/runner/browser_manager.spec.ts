@@ -294,4 +294,45 @@ test('BrowserManager - Dependency reload and warning handling', async (t) => {
       webkit.launch = originalWebkitLaunch
     }
   })
+
+  await t.test('close() closes all pages immediately and resolves pending wave', async () => {
+    const emitter = new Emitter<RunnerEvents>()
+    const manager = new BrowserManager(['chromium'], false, emitter)
+
+    let pageClosed = false
+    let browserClosed = false
+
+    const mockPage = {
+      on: () => {},
+      exposeFunction: async () => {},
+      goto: async () => {},
+      close: async () => {
+        pageClosed = true
+      },
+      url: () => 'http://localhost/__lupa__/runner.html?chunkId=chunk-1',
+    }
+
+    chromium.launch = (async () => ({
+      newPage: async () => mockPage,
+      close: async () => {
+        browserClosed = true
+      },
+    })) as any
+
+    const mockPoolManager = {
+      getChunkIdsForBrowser: () => ['chunk-1'],
+    }
+
+    await manager.boot(mockPoolManager as any)
+
+    // Trigger navigateAndWait (which will remain pending until resolveWave or __lupa_runner_end__)
+    const navigatePromise = manager.navigateAndWait('http://localhost/__lupa__/runner.html', ['chunk-1'])
+
+    // Calling close() while navigateAndWait is pending should resolve it and close page
+    await manager.close()
+    await navigatePromise
+
+    assert.strictEqual(pageClosed, true, 'page should be closed explicitly')
+    assert.strictEqual(browserClosed, true, 'browser should be closed')
+  })
 })
